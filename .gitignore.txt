@@ -1,0 +1,24 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+
+# --- Data & Annotations (Keep these local!) ---
+data/
+datasets/
+
+# --- Model Weights (Too large for standard Git) ---
+model/*.pt
+model/*.h5
+model/*.onnx
+*.pt
+*.pkl
+
+# --- IDE & OS ---
+.DS_Store
+.vscode/
+.idea/
+*.log
