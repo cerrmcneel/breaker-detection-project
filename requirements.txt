@@ -1,7 +1,4 @@
-﻿ultralytics
-numpy
-pandas
-opencv-python
-fastapi
+﻿fastapi
 uvicorn
 python-multipart
+cloudflared
