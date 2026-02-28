@@ -289,9 +289,19 @@
         async function initCamera() {
             if (isCameraActive) return;
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
-                });
+                let stream;
+                try {
+                    // Try to get the rear (environment) camera first (ideal for mobile)
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: { exact: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+                    });
+                } catch (e) {
+                    // If exact rear camera fails (like on desktop/laptops), fallback to any available camera
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: { width: { ideal: 1280 }, height: { ideal: 720 } }
+                    });
+                }
+
                 video.srcObject = stream;
                 cameraContainer.style.display = 'block';
                 isCameraActive = true;
