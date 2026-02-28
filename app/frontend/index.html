@@ -164,6 +164,56 @@
         .instruction-card li {
             margin-bottom: 8px;
         }
+
+        /* Progress Tracker Styles */
+        .progress-container {
+            margin-bottom: 1.5rem;
+            text-align: left;
+            padding: 15px;
+            background: #fff;
+            border: 1px solid #e1e4e8;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .progress-title {
+            font-weight: bold;
+            color: #1a1a1a;
+            font-size: 14px;
+        }
+
+        .progress-badge {
+            background: #0070f3;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .progress-bar-bg {
+            background-color: #e1e4e8;
+            border-radius: 6px;
+            height: 12px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            background: linear-gradient(90deg, #0070f3, #00c6ff);
+            height: 100%;
+            width: 0%;
+            /* Dynamic */
+            transition: width 0.5s ease-out;
+            border-radius: 6px;
+        }
     </style>
 </head>
 
@@ -186,6 +236,17 @@
                 <li><strong>💡 Lighting:</strong> Ensure the area isn't too dark; use your flash if needed.</li>
                 <li><strong>📦 Full View:</strong> Make sure the entire panel fits inside the guided box.</li>
             </ul>
+        </div>
+
+        <!-- Progress Tracker -->
+        <div class="progress-container">
+            <div class="progress-header">
+                <span class="progress-title">Goal: 100 Photos by Wednesday</span>
+                <span class="progress-badge" id="progress-text">0 / 100</span>
+            </div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="progress-bar"></div>
+            </div>
         </div>
 
         <form id="uploadForm">
@@ -439,6 +500,40 @@
         let animationFrameId = null;
         let isCameraActive = false;
 
+        const GOAL_TARGET = 100;
+
+        async function fetchCount() {
+            try {
+                const response = await fetch('/count/');
+                if (response.ok) {
+                    const data = await response.json();
+                    updateProgress(data.count);
+                }
+            } catch (err) {
+                console.error("Failed to fetch upload count:", err);
+            }
+        }
+
+        function updateProgress(currentCount) {
+            const progressText = document.getElementById('progress-text');
+            const progressBar = document.getElementById('progress-bar');
+
+            progressText.textContent = `${currentCount} / ${GOAL_TARGET}`;
+
+            // Calculate percentage, capped at 100%
+            const percentage = Math.min((currentCount / GOAL_TARGET) * 100, 100);
+            progressBar.style.width = `${percentage}%`;
+
+            // Turn green if goal is met
+            if (currentCount >= GOAL_TARGET) {
+                progressBar.style.background = 'linear-gradient(90deg, #28a745, #34ce57)';
+                progressText.style.background = '#28a745';
+            }
+        }
+
+        // Initialize progress on page load
+        fetchCount();
+
         async function initCamera() {
             if (isCameraActive) return;
             try {
@@ -627,6 +722,8 @@
                     statusDiv.className = "success";
                     form.reset();
                     fileNameDisplay.textContent = "No file chosen";
+                    // Update progress counter after a successful upload
+                    fetchCount();
                 } else {
                     const errorText = await response.text();
                     statusDiv.textContent = `Error: ${errorText}`;

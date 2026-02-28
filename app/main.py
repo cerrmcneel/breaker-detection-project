@@ -99,6 +99,16 @@ async def upload_image(
         logger.error(f"Error uploading file: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/count/")
+async def get_upload_count():
+    try:
+        # Filter out anything that isn't a file (like subdirectories if any exist)
+        count = len([f for f in os.listdir(UPLOAD_DIR) if os.path.isfile(os.path.join(UPLOAD_DIR, f))])
+        return {"count": count}
+    except Exception as e:
+        logger.error(f"Error getting file count: {e}")
+        raise HTTPException(status_code=500, detail="Could not retrieve file count.")
+
 # Mount frontend directory for static files
 # Create app/frontend if it doesn't exist to avoid startup errors
 FRONTEND_PATH = os.path.join("app", "frontend")
