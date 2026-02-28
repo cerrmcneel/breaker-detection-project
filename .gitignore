@@ -3,8 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 .venv/
+.venv2/
 env/
 venv/
+.env
 
 # --- Data & Annotations (Keep these local!) ---
 data/

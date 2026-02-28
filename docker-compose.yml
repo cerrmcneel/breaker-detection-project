@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: breaker-app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount the NAS share directory to where the app expects to save data
+      # Before running docker-compose up, make sure your NAS is mounted locally in Ubuntu!
+      # e.g., /mnt/nas/breaker_data:/code/data
+      - ./data:/code/data
+    environment:
+      - PYTHONUNBUFFERED=1
+  # Optional Cloudflare Tunnel container (Uncomment if using Cloudflare)
+  # tunnel:
+  #   image: cloudflare/cloudflared:latest
+  #   container_name: cloudflared-tunnel
+  #   restart: unless-stopped
+  #   command: tunnel run
+  #   environment:
+  #     - TUNNEL_TOKEN=YOUR_CLOUDFLARE_TOKEN_HERE
