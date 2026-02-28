@@ -104,10 +104,6 @@
             transform: translateX(-50%) scale(0.9);
         }
 
-        .fallback-upload {
-            display: none;
-        }
-
         #submit-btn {
             background-color: #0070f3;
             color: white;
@@ -164,7 +160,7 @@
             margin: 0;
             padding-left: 20px;
         }
-        
+
         .instruction-card li {
             margin-bottom: 8px;
         }
@@ -189,6 +185,16 @@
         </div>
 
         <form id="uploadForm">
+            <div id="upload-options" style="display: flex; gap: 10px; margin-bottom: 20px; justify-content: center;">
+                <button type="button" class="btn" id="start-camera-btn" style="flex: 1;">📸 Use Camera</button>
+
+                <div class="upload-btn-wrapper" style="margin-bottom: 0; flex: 1; display: flex;">
+                    <button type="button" class="btn" style="width: 100%;">📁 Upload File</button>
+                    <input type="file" name="file" id="fileInput" accept="image/*"
+                        style="width: 100%; height: 100%; cursor: pointer; right: 0; bottom: 0;">
+                </div>
+            </div>
+
             <!-- Camera UI -->
             <div id="camera-container">
                 <video id="video-feed" autoplay playsinline muted></video>
@@ -197,12 +203,7 @@
             </div>
             <canvas id="hidden-canvas" style="display: none;"></canvas>
 
-            <!-- Fallback -->
-            <div id="fallback-wrapper" class="upload-btn-wrapper fallback-upload">
-                <button type="button" class="btn">Choose Image Instead</button>
-                <input type="file" name="file" id="fileInput" accept="image/*" capture="environment">
-            </div>
-            <p id="fileName" class="fallback-upload">No file chosen</p>
+            <p id="fileName" style="margin-bottom: 1rem; margin-top: -10px;">No file chosen</p>
 
             <div style="margin-bottom: 1.5rem; text-align: left;">
                 <label for="countrySelect" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Select
@@ -279,13 +280,14 @@
         const hiddenCanvas = document.getElementById('hidden-canvas');
         const hiddenCtx = hiddenCanvas.getContext('2d');
         const captureBtn = document.getElementById('capture-btn');
-        const fallbackEls = document.querySelectorAll('.fallback-upload');
+        const startCameraBtn = document.getElementById('start-camera-btn');
 
         let capturedBlob = null;
         let animationFrameId = null;
         let isCameraActive = false;
 
         async function initCamera() {
+            if (isCameraActive) return;
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
@@ -293,6 +295,10 @@
                 video.srcObject = stream;
                 cameraContainer.style.display = 'block';
                 isCameraActive = true;
+
+                // Clear any previously selected file
+                fileInput.value = "";
+                fileNameDisplay.textContent = "No file chosen";
 
                 video.onloadedmetadata = () => {
                     overlayCanvas.width = video.clientWidth;
@@ -303,13 +309,13 @@
                 };
             } catch (err) {
                 console.error("Camera access failed", err);
-                fallbackEls.forEach(el => {
-                    if (el.tagName === 'DIV') el.style.display = 'inline-block';
-                    else el.style.display = 'block';
-                });
+                alert("Camera access failed or was denied.");
             }
         }
-        initCamera();
+
+        startCameraBtn.addEventListener('click', () => {
+            initCamera();
+        });
 
         function analyzeFrame() {
             if (!isCameraActive) return;
@@ -407,6 +413,16 @@
         fileInput.addEventListener('change', function () {
             if (this.files && this.files.length > 0) {
                 fileNameDisplay.textContent = this.files[0].name;
+                capturedBlob = null; // Reset captured image if user selects a file instead
+                if (isCameraActive) {
+                    cancelAnimationFrame(animationFrameId);
+                    isCameraActive = false;
+                    video.pause();
+                    if (video.srcObject) {
+                        video.srcObject.getTracks().forEach(track => track.stop());
+                    }
+                    cameraContainer.style.display = 'none';
+                }
             } else {
                 fileNameDisplay.textContent = "No file chosen";
             }
