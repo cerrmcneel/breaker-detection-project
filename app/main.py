@@ -14,9 +14,10 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Breaker Detection Data Collection Beta")
 
-# Directories
-UPLOAD_DIR = os.path.join("data", "images", "raw_uploads")
-LOG_FILE = os.path.join("data", "upload_log.json")
+# Directly use NAS directory per user request
+UPLOAD_DIR = "/mnt/nas/breaker_data/project_breaker/raw_uploads/"
+# We keep the log file in the same base directory as the images
+LOG_FILE = os.path.join(os.path.dirname(UPLOAD_DIR), "upload_log.json")
 
 # Ensure upload directory exists
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -100,6 +101,7 @@ async def upload_image(
 
 # Mount frontend directory for static files
 # Create app/frontend if it doesn't exist to avoid startup errors
+FRONTEND_PATH = os.path.join("app", "frontend")
 os.makedirs(os.path.join("app", "frontend"), exist_ok=True)
 app.mount("/", StaticFiles(directory=os.path.join("app", "frontend"), html=True), name="frontend")
 
