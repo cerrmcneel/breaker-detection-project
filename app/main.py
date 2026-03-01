@@ -3,14 +3,21 @@ import uuid
 import re
 import json
 import logging
+import hashlib
 from datetime import datetime
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+seen_hashes = set()
 
 app = FastAPI(title="Breaker Detection Data Collection Beta")
 
@@ -27,13 +34,25 @@ MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 ALLOWED_MIME_TYPES = {"image/jpeg", "image/png", "image/gif"}
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif"}
 
+# Pre-load existing hashes
+if os.path.exists(LOG_FILE):
+    try:
+        with open(LOG_FILE, "r") as f:
+            _entries = json.load(f)
+            for _e in _entries:
+                if "hash" in _e:
+                    seen_hashes.add(_e["hash"])
+    except json.JSONDecodeError:
+        pass
+
 # Helper function to log metadata
-def log_metadata(original_filename: str, saved_filename: str, country: str):
+def log_metadata(original_filename: str, saved_filename: str, country: str, file_hash: str = ""):
     entry = {
         "timestamp": datetime.now().isoformat(),
         "original_filename": original_filename,
         "saved_filename": saved_filename,
-        "country": country
+        "country": country,
+        "hash": file_hash
     }
     
     # Simple append to a JSON list in a file (not efficient for huge scale, but fine for beta)
@@ -76,22 +95,34 @@ async def upload_image(
         
         # 4. Save the file with streaming and size limit to prevent memory exhaustion
         file_size = 0
+        file_hash_obj = hashlib.sha256()
         with open(file_path, "wb") as f:
             # Read 1MB at a time
             while chunk := await file.read(1024 * 1024):
                 file_size += len(chunk)
+                file_hash_obj.update(chunk)
                 if file_size > MAX_FILE_SIZE:
                     f.close()
                     os.remove(file_path) # Clean up partial file on failure
                     raise HTTPException(status_code=413, detail="File too large. Maximum size is 10MB.")
                 f.write(chunk)
             
+        file_hash = file_hash_obj.hexdigest()
+        
+        # Deduplication check
+        if file_hash in seen_hashes:
+            os.remove(file_path)
+            logger.info(f"Discarded duplicate {file.filename} (hash: {file_hash})")
+            return JSONResponse(content={"message": "Duplicate discarded", "filename": unique_filename, "duplicate": True}, status_code=200)
+
+        seen_hashes.add(file_hash)
+
         # Log metadata
-        log_metadata(file.filename, unique_filename, country)
+        log_metadata(file.filename, unique_filename, country, file_hash)
         
         logger.info(f"Saved {file.filename} as {unique_filename}")
         
-        return JSONResponse(content={"message": "Upload successful", "filename": unique_filename}, status_code=200)
+        return JSONResponse(content={"message": "Upload successful", "filename": unique_filename, "duplicate": False}, status_code=200)
 
     except HTTPException:
         raise
@@ -108,6 +139,18 @@ async def get_upload_count():
     except Exception as e:
         logger.error(f"Error getting file count: {e}")
         raise HTTPException(status_code=500, detail="Could not retrieve file count.")
+
+@app.post("/verify-admin/")
+async def verify_admin(password: str = Form(...)):
+    admin_password = os.getenv("ADMIN_PASSWORD")
+    if not admin_password:
+        # Failsafe if env var isn't configured
+        raise HTTPException(status_code=500, detail="Admin password not configured on server.")
+        
+    if password == admin_password:
+        return {"verified": True}
+    else:
+        raise HTTPException(status_code=401, detail="Incorrect password.")
 
 # Mount frontend directory for static files
 # Create app/frontend if it doesn't exist to avoid startup errors
