@@ -149,14 +149,22 @@ async def get_upload_count():
         logger.error(f"Error getting file count: {e}")
         raise HTTPException(status_code=500, detail="Could not retrieve file count.")
 
+from pydantic import BaseModel
+
+class AdminVerifyRequest(BaseModel):
+    password: str
+
 @app.post("/verify-admin/")
-async def verify_admin(password: str = Form(...)):
+async def verify_admin(req: AdminVerifyRequest):
     admin_password = os.getenv("ADMIN_PASSWORD")
     if not admin_password:
         # Failsafe if env var isn't configured
         raise HTTPException(status_code=500, detail="Admin password not configured on server.")
         
-    if password == admin_password:
+    if not req.password:
+        raise HTTPException(status_code=400, detail="Password is required.")
+        
+    if req.password == admin_password:
         return {"verified": True}
     else:
         raise HTTPException(status_code=401, detail="Incorrect password.")

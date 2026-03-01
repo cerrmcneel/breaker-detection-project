@@ -677,12 +677,10 @@
             if (pwd === null) return; // User cancelled
 
             try {
-                const formData = new FormData();
-                formData.append('password', pwd);
-
                 const response = await fetch('/verify-admin/', {
                     method: 'POST',
-                    body: formData
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: pwd })
                 });
 
                 if (response.ok) {
