@@ -19,4 +19,4 @@ services:
     restart: unless-stopped
     command: tunnel run
     environment:
-      - TUNNEL_TOKEN=eyJhbGciOiJIUz... (PASTE ONLY THE KEY STARTING WITH eyJ HERE)
+      - TUNNEL_TOKEN=eyJhIjoiMjgyNjc1NzA5YjcyMThlYTZmNWI5MTU0NmJiMmRiOWIiLCJ0IjoiNzQyMWE3MjAtMDBlMC00M2MzLWFkODQtODc4YzUyNzIzYTYzIiwicyI6Ik5EazVZVEZrT1RJdE0yTmpaUzAwTURBeExUa3pNREF0TURWaVptTTNZalE1WlRrMyJ9
