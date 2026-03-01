@@ -8,7 +8,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - Z:\project_breaker\raw_uploads:/app/data
+      - /mnt/nas/breaker_data/project_breaker/raw_uploads:/app/data
     environment:
       - PYTHONUNBUFFERED=1
       - UPLOAD_DIR=/app/data

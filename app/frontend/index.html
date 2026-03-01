@@ -260,7 +260,13 @@
         <p data-i18n="phase">Phase 1: Beta Collection</p>
 
         <!-- Hidden Batch Upload Input -->
-        <input type="file" id="batchFileInput" multiple accept="image/*" style="display: none;">
+        <div id="batch-upload-container"
+            style="display: none; margin-bottom: 15px; padding: 15px; border: 2px dashed #0070f3; border-radius: 8px; background-color: #f0f7ff;">
+            <p style="margin-top: 0; margin-bottom: 10px; font-weight: bold; color: #0070f3;">Admin Batch Upload
+                Unlocked</p>
+            <input type="file" id="batchFileInput" multiple accept="image/*"
+                style="display: block; width: 100%; cursor: pointer;">
+        </div>
 
         <div class="instruction-card">
             <h3><span data-i18n="tips_title">Tips for a Perfect Photo 📸</span></h3>
@@ -680,7 +686,8 @@
                 });
 
                 if (response.ok) {
-                    batchFileInput.click();
+                    document.getElementById('batch-upload-container').style.display = 'block';
+                    alert("Admin mode unlocked. You can now select files for batch upload below.");
                 } else {
                     alert("Incorrect password.");
                 }
