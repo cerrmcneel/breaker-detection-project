@@ -21,8 +21,8 @@ seen_hashes = set()
 
 app = FastAPI(title="Breaker Detection Data Collection Beta")
 
-# Directly use NAS directory per user request
-UPLOAD_DIR = "/mnt/nas/breaker_data/project_breaker/raw_uploads/"
+# Use UPLOAD_DIR from environment (Docker maps this to the NAS), fallback to local for dev
+UPLOAD_DIR = os.getenv("UPLOAD_DIR", "data/images/raw_uploads")
 # We keep the log file in the same base directory as the images
 LOG_FILE = os.path.join(os.path.dirname(UPLOAD_DIR), "upload_log.json")
 
