@@ -21,6 +21,15 @@ seen_hashes = set()
 
 app = FastAPI(title="Breaker Detection Data Collection Beta")
 
+# Disable caching globally for the beta phase to ensure frontend updates immediately propagate
+@app.middleware("http")
+async def add_cache_control_header(request, call_next):
+    response = await call_next(request)
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
 # Use UPLOAD_DIR from environment (Docker maps this to the NAS), fallback to local for dev
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "data/images/raw_uploads")
 # We keep the log file in the same base directory as the images
