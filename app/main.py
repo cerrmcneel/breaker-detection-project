@@ -98,8 +98,12 @@ async def upload_image(
         if not file_extension or file_extension not in ALLOWED_EXTENSIONS:
             raise HTTPException(status_code=400, detail="Invalid file extension. Only .jpg, .jpeg, .png, and .gif are allowed.")
             
-        # Generate unique filename
-        unique_filename = f"{uuid.uuid4()}{file_extension}"
+        # Generate unique filename with country prefix
+        safe_country = "".join(c for c in country if c.isalnum() or c.isspace() or c == "-").strip().upper()
+        if not safe_country:
+            safe_country = "UNKNOWN"
+            
+        unique_filename = f"{safe_country}_{uuid.uuid4()}{file_extension}"
         file_path = os.path.join(UPLOAD_DIR, unique_filename)
         
         # 4. Save the file with streaming and size limit to prevent memory exhaustion
