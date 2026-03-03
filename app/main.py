@@ -4,6 +4,7 @@ import re
 import json
 import logging
 import hashlib
+import asyncio
 from datetime import datetime
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from fastapi.responses import JSONResponse, HTMLResponse
@@ -18,6 +19,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 seen_hashes = set()
+# Lock to prevent race conditions when multiple identical images upload at the exact same millisecond
+upload_lock = asyncio.Lock()
 
 app = FastAPI(title="Breaker Detection Data Collection Beta")
 
@@ -43,16 +46,24 @@ MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 ALLOWED_MIME_TYPES = {"image/jpeg", "image/png", "image/gif"}
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif"}
 
-# Pre-load existing hashes
-if os.path.exists(LOG_FILE):
-    try:
-        with open(LOG_FILE, "r") as f:
-            _entries = json.load(f)
-            for _e in _entries:
-                if "hash" in _e:
-                    seen_hashes.add(_e["hash"])
-    except json.JSONDecodeError:
-        pass
+@app.on_event("startup")
+async def startup_event():
+    logger.info("Starting up: Scanning existing files for deduplication hashes...")
+    if not os.path.exists(UPLOAD_DIR):
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
+        return
+        
+    for filename in os.listdir(UPLOAD_DIR):
+        file_path = os.path.join(UPLOAD_DIR, filename)
+        if os.path.isfile(file_path):
+            try:
+                with open(file_path, "rb") as f:
+                    file_hash = hashlib.sha256(f.read()).hexdigest()
+                    seen_hashes.add(file_hash)
+            except Exception as e:
+                logger.error(f"Error reading {file_path} for hash: {e}")
+                
+    logger.info(f"Startup complete: Discovered {len(seen_hashes)} unique hashes on disk.")
 
 # Helper function to log metadata
 def log_metadata(original_filename: str, saved_filename: str, country: str, file_hash: str = ""):
@@ -109,33 +120,37 @@ async def upload_image(
         # 4. Save the file with streaming and size limit to prevent memory exhaustion
         file_size = 0
         file_hash_obj = hashlib.sha256()
-        with open(file_path, "wb") as f:
-            # Read 1MB at a time
-            while chunk := await file.read(1024 * 1024):
-                file_size += len(chunk)
-                file_hash_obj.update(chunk)
-                if file_size > MAX_FILE_SIZE:
-                    f.close()
-                    os.remove(file_path) # Clean up partial file on failure
-                    raise HTTPException(status_code=413, detail="File too large. Maximum size is 10MB.")
-                f.write(chunk)
-            
+        
+        # Read the file to get the hash but DO NOT save it yet
+        # Store in memory temporarily since these are <10MB images
+        file_bytes = await file.read()
+        file_size = len(file_bytes)
+        
+        if file_size > MAX_FILE_SIZE:
+             raise HTTPException(status_code=413, detail="File too large. Maximum size is 10MB.")
+             
+        file_hash_obj.update(file_bytes)
         file_hash = file_hash_obj.hexdigest()
         
-        # Deduplication check
-        if file_hash in seen_hashes:
-            os.remove(file_path)
-            logger.info(f"Discarded duplicate {file.filename} (hash: {file_hash})")
-            return JSONResponse(content={"message": "Duplicate discarded", "filename": unique_filename, "duplicate": True}, status_code=200)
-
-        seen_hashes.add(file_hash)
-
-        # Log metadata
-        log_metadata(file.filename, unique_filename, country, file_hash)
-        
-        logger.info(f"Saved {file.filename} as {unique_filename}")
-        
-        return JSONResponse(content={"message": "Upload successful", "filename": unique_filename, "duplicate": False}, status_code=200)
+        # Concurrency safety lock
+        async with upload_lock:
+            # Deduplication check FIRST before writing anything to disk
+            if file_hash in seen_hashes:
+                logger.info(f"Discarded duplicate {file.filename} (hash: {file_hash})")
+                return JSONResponse(content={"message": "Duplicate discarded", "filename": file.filename, "duplicate": True}, status_code=200)
+    
+            seen_hashes.add(file_hash)
+            
+            # Now safe to write the file
+            with open(file_path, "wb") as f:
+                f.write(file_bytes)
+    
+            # Log metadata
+            log_metadata(file.filename, unique_filename, country, file_hash)
+            
+            logger.info(f"Saved {file.filename} as {unique_filename}")
+            
+            return JSONResponse(content={"message": "Upload successful", "filename": unique_filename, "duplicate": False}, status_code=200)
 
     except HTTPException:
         raise
