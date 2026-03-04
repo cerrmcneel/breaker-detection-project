@@ -125,6 +125,47 @@
             cursor: not-allowed;
         }
 
+        #camera-guide-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70%;
+            height: 60%;
+            border: 3px dashed rgba(255, 255, 255, 0.8);
+            z-index: 15;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        .guide-label {
+            color: white;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-bottom: -30px;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        #brightness-warning {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 0, 0, 0.8);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: bold;
+            z-index: 15;
+            display: none;
+            white-space: nowrap;
+        }
+
         #status {
             margin-top: 1rem;
             font-weight: 500;
@@ -310,6 +351,10 @@
             <div id="camera-container">
                 <video id="video-feed" autoplay playsinline muted></video>
                 <canvas id="overlay-canvas"></canvas>
+                <div id="camera-guide-overlay">
+                    <div class="guide-label">Center breakers here and get closer</div>
+                </div>
+                <div id="brightness-warning">⚠️ Lighting is too dark</div>
                 <div id="capture-btn"></div>
             </div>
             <canvas id="hidden-canvas" style="display: none;"></canvas>
@@ -766,12 +811,12 @@
                 try {
                     // Try to get the rear (environment) camera first (ideal for mobile)
                     stream = await navigator.mediaDevices.getUserMedia({
-                        video: { facingMode: { exact: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+                        video: { facingMode: { exact: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }
                     });
                 } catch (e) {
                     // If exact rear camera fails (like on desktop/laptops), fallback to any available camera
                     stream = await navigator.mediaDevices.getUserMedia({
-                        video: { width: { ideal: 1280 }, height: { ideal: 720 } }
+                        video: { width: { ideal: 1920 }, height: { ideal: 1080 } }
                     });
                 }
 
@@ -822,52 +867,14 @@
             }
             const avgBrightness = totalBrightness / (pw * ph);
 
-            // Calculate variance to guess framing/focus density
-            let sumSqDiff = 0;
-            for (let i = 0; i < data.length; i += 4) {
-                const b = (0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
-                sumSqDiff += (b - avgBrightness) * (b - avgBrightness);
-            }
-            const variance = sumSqDiff / (pw * ph);
-
-            let boxColor = '#00ff00';
-            let adviceText = translations[currentLang].advice_perfect;
-
-            if (avgBrightness < 60) {
-                boxColor = '#ff0000';
-                adviceText = translations[currentLang].advice_dark;
-            } else if (avgBrightness > 210) {
-                boxColor = '#ff0000';
-                adviceText = translations[currentLang].advice_bright;
-            } else if (variance < 300) {
-                // Low detail means it's blurry, a blank wall, or too close
-                boxColor = '#ff0000';
-                adviceText = translations[currentLang].advice_close;
-            } else if (variance > 4000) {
-                // High detail means viewing the whole chaotic room
-                boxColor = '#ff0000';
-                adviceText = translations[currentLang].advice_far;
+            const warningElement = document.getElementById('brightness-warning');
+            if (avgBrightness < 40) {
+                warningElement.style.display = 'block';
+            } else {
+                warningElement.style.display = 'none';
             }
 
             overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-
-            const boxW = overlayCanvas.width * 0.8;
-            const boxH = overlayCanvas.height * 0.8;
-            const boxX = (overlayCanvas.width - boxW) / 2;
-            const boxY = (overlayCanvas.height - boxH) / 2 - 20;
-
-            overlayCtx.lineWidth = 4;
-            overlayCtx.strokeStyle = boxColor;
-            overlayCtx.strokeRect(boxX, boxY, boxW, boxH);
-
-            overlayCtx.fillStyle = boxColor;
-            overlayCtx.font = "bold 16px Arial";
-            overlayCtx.textAlign = "center";
-            overlayCtx.shadowColor = "black";
-            overlayCtx.shadowBlur = 4;
-            overlayCtx.fillText(adviceText, overlayCanvas.width / 2, boxY - 10);
-            overlayCtx.shadowBlur = 0;
-
             animationFrameId = requestAnimationFrame(analyzeFrame);
         }
 
@@ -878,15 +885,15 @@
             isCameraActive = false;
             video.pause();
 
-            overlayCtx.fillStyle = "rgba(255, 255, 255, 0.8)";
+            overlayCtx.fillStyle = "white";
             overlayCtx.fillRect(0, 0, overlayCanvas.width, overlayCanvas.height);
             setTimeout(() => {
                 overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
                 overlayCtx.fillStyle = "#00ff00";
-                overlayCtx.font = "bold 20px Arial";
+                overlayCtx.font = "bold 40px Arial";
                 overlayCtx.textAlign = "center";
-                overlayCtx.fillText(translations[currentLang].camera_captured, overlayCanvas.width / 2, overlayCanvas.height / 2);
-            }, 100);
+                overlayCtx.fillText("✅ Success!", overlayCanvas.width / 2, overlayCanvas.height / 2);
+            }, 150);
 
             hiddenCanvas.toBlob((blob) => {
                 capturedBlob = blob;
