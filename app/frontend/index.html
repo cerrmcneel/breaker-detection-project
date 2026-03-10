@@ -275,14 +275,120 @@
             background: linear-gradient(90deg, #0070f3, #00c6ff);
             height: 100%;
             width: 0%;
-            /* Dynamic */
-            transition: width 0.5s ease-out;
             border-radius: 6px;
+        }
+
+        /* Navigation Bar Styles */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            z-index: 1000;
+            box-sizing: border-box;
+            /* Ensure padding doesn't widen the bar past 100% */
+        }
+
+        .nav-brand {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #0070f3;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: #1a1a1a;
+            font-weight: 500;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .nav-link:hover {
+            background-color: #f0f7ff;
+            color: #0070f3;
+        }
+
+        .nav-link.active {
+            color: #0070f3;
+            background-color: #e6f0fa;
+        }
+
+        /* Adjust container margin so it isn't hidden under the fixed navbar */
+        .container {
+            margin-top: 80px;
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        /* RCD Test Section Styles */
+        .rcd-section {
+            background-color: #f8f9fa;
+            border: 1px solid #e1e4e8;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .rcd-toggle {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .rcd-toggle input[type="checkbox"] {
+            margin-right: 10px;
+            transform: scale(1.2);
+        }
+
+        .rcd-options {
+            display: none;
+            margin-top: 15px;
+            padding-left: 24px;
+        }
+
+        .rcd-option {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+
+        .rcd-option input[type="radio"] {
+            margin-right: 8px;
         }
     </style>
 </head>
 
 <body>
+    <!-- Top Navigation Bar -->
+    <nav class="navbar">
+        <a href="/" class="nav-brand" data-i18n="nav_brand">⚡ BreakerAudit</a>
+        <div class="nav-links">
+            <a href="/" class="nav-link active" data-i18n="nav_home">Home</a>
+            <a href="/blog.html" class="nav-link" data-i18n="nav_blog">Blog</a>
+        </div>
+    </nav>
+
     <div class="container">
         <!-- Language Switcher -->
         <div class="lang-switcher">
@@ -320,6 +426,8 @@
                     needed.</li>
                 <li data-i18n="tip_4"><strong>📦 Full View:</strong> Make sure the entire panel fits inside the guided
                     box.</li>
+                <li data-i18n="tip_5"><strong>🔘 RCD Test:</strong> For best results test press the button on the RCD.
+                </li>
             </ul>
         </div>
 
@@ -564,6 +672,31 @@
                     <option value="Zimbabwe">Zimbabwe</option>
                 </select>
             </div>
+
+            <!-- Optional RCD Test Section -->
+            <div class="rcd-section">
+                <label class="rcd-toggle">
+                    <input type="checkbox" id="rcd-tested-checkbox" onchange="toggleRcdOptions()">
+                    <span data-i18n="rcd_test_prompt">Did you test the RCD button? (Optional)</span>
+                </label>
+                <div class="rcd-options" id="rcd-options-container">
+                    <div class="rcd-option">
+                        <input type="radio" id="rcd-responsive" name="rcd_test_result" value="Responsive">
+                        <label for="rcd-responsive" data-i18n="rcd_opt_responsive">Responsive (Instantly
+                            tripped)</label>
+                    </div>
+                    <div class="rcd-option">
+                        <input type="radio" id="rcd-slow" name="rcd_test_result" value="Slow">
+                        <label for="rcd-slow" data-i18n="rcd_opt_slow">Slow (Took a moment to trip)</label>
+                    </div>
+                    <div class="rcd-option">
+                        <input type="radio" id="rcd-unresponsive" name="rcd_test_result" value="Unresponsive">
+                        <label for="rcd-unresponsive" data-i18n="rcd_opt_unresponsive">Unresponsive (Did not
+                            trip)</label>
+                    </div>
+                </div>
+            </div>
+
             <button type="submit" id="submit-btn" data-i18n="upload_btn">Upload</button>
         </form>
 
@@ -598,6 +731,9 @@
             en: {
                 photo_by: "Photo by",
                 on_unsplash: "on Unsplash",
+                nav_brand: "⚡ BreakerAudit",
+                nav_home: "Home",
+                nav_blog: "Blog",
                 title: "Breaker Upload",
                 phase: "Phase 1: Beta Collection",
                 tips_title: "Tips for a Perfect Photo 📸",
@@ -605,6 +741,7 @@
                 tip_2: "<strong>📱 Straight On:</strong> Hold the phone parallel to the wall (avoid steep angles).",
                 tip_3: "<strong>💡 Lighting:</strong> Ensure the area isn't too dark; use your flash if needed.",
                 tip_4: "<strong>📦 Full View:</strong> Make sure the entire panel fits inside the guided box.",
+                tip_5: "<strong>🔘 RCD Test:</strong> For best results test press the button on the RCD.",
                 goal: "Goal: 100 Photos by Wednesday",
                 use_camera: "📸 Use Camera",
                 upload_file: "📁 Upload File",
@@ -623,11 +760,18 @@
                 advice_dark: "Too dark! Find better lighting.",
                 advice_bright: "Too bright! Avoid glare.",
                 advice_close: "Too close! Move backward.",
-                advice_far: "Too far! Move closer to the breaker."
+                advice_far: "Too far! Move closer to the breaker.",
+                rcd_test_prompt: "Did you test the RCD button? (Optional)",
+                rcd_opt_responsive: "Responsive (Instantly tripped)",
+                rcd_opt_slow: "Slow (Took a moment to trip)",
+                rcd_opt_unresponsive: "Unresponsive (Did not trip)"
             },
             es: {
                 photo_by: "Foto de",
                 on_unsplash: "en Unsplash",
+                nav_brand: "⚡ BreakerAudit",
+                nav_home: "Inicio",
+                nav_blog: "Blog",
                 title: "Subida de Interruptores",
                 phase: "Fase 1: Colección Beta",
                 tips_title: "Consejos para una Foto Perfecta 📸",
@@ -635,6 +779,7 @@
                 tip_2: "<strong>📱 Frente al Panel:</strong> Sostenga el teléfono paralelo a la pared (evite ángulos pronunciados).",
                 tip_3: "<strong>💡 Iluminación:</strong> Asegúrese de que el área no esté muy oscura; use el flash si es necesario.",
                 tip_4: "<strong>📦 Vista Completa:</strong> Asegúrese de que todo el panel quepa dentro del cuadro de guía.",
+                tip_5: "<strong>🔘 Prueba RCD:</strong> Para obtener mejores resultados, presione el botón de prueba en el RCD.",
                 goal: "Meta: 100 Fotos para el Miércoles",
                 use_camera: "📸 Usar Cámara",
                 upload_file: "📁 Subir Archivo",
@@ -653,7 +798,11 @@
                 advice_dark: "¡Muy oscuro! Busque mejor iluminación.",
                 advice_bright: "¡Muy brillante! Evite el resplandor.",
                 advice_close: "¡Muy cerca! Muévase hacia atrás.",
-                advice_far: "¡Muy lejos! Acérquese al interruptor."
+                advice_far: "¡Muy lejos! Acérquese al interruptor.",
+                rcd_test_prompt: "¿Probó el botón del Diferencial? (Opcional)",
+                rcd_opt_responsive: "Responde (Disparó instantáneamente)",
+                rcd_opt_slow: "Lento (Tardó en disparar)",
+                rcd_opt_unresponsive: "No responde (No disparó)"
             }
         };
 
@@ -679,6 +828,29 @@
             // Re-render JS dynamic text depending on current state
             if (fileNameDisplay.textContent === translations['en'].no_file || fileNameDisplay.textContent === translations['es'].no_file) {
                 fileNameDisplay.textContent = translations[lang].no_file;
+            }
+
+            // Persist language selection
+            localStorage.setItem('breakerLang', lang);
+        }
+
+        // Initialize language from localStorage or default to English
+        const savedLang = localStorage.getItem('breakerLang') || 'en';
+        setLanguage(savedLang);
+
+        // Toggle visibility of RCD options
+        function toggleRcdOptions() {
+            const checkbox = document.getElementById('rcd-tested-checkbox');
+            const optionsContainer = document.getElementById('rcd-options-container');
+            if (checkbox.checked) {
+                optionsContainer.style.display = 'block';
+            } else {
+                optionsContainer.style.display = 'none';
+                // Reset radio buttons if unchecked
+                const radios = document.getElementsByName('rcd_test_result');
+                for (let i = 0; i < radios.length; i++) {
+                    radios[i].checked = false;
+                }
             }
         }
 
@@ -767,6 +939,17 @@
                 const formData = new FormData();
                 formData.append('file', file);
                 formData.append('country', countrySelect.value || "Unknown");
+
+                // Get RCD Test result if tested
+                const rcdTested = document.getElementById('rcd-tested-checkbox').checked;
+                let rcdResult = "Not Tested";
+                if (rcdTested) {
+                    const selectedRcd = document.querySelector('input[name="rcd_test_result"]:checked');
+                    if (selectedRcd) {
+                        rcdResult = selectedRcd.value;
+                    }
+                }
+                formData.append('rcd_test_result', rcdResult);
 
                 try {
                     const response = await fetch('/upload/', {
@@ -937,6 +1120,17 @@
             const formData = new FormData();
             formData.append('file', fileToUpload);
             formData.append('country', countrySelect.value);
+
+            // Get RCD Test result if tested
+            const rcdTested = document.getElementById('rcd-tested-checkbox').checked;
+            let rcdResult = "Not Tested";
+            if (rcdTested) {
+                const selectedRcd = document.querySelector('input[name="rcd_test_result"]:checked');
+                if (selectedRcd) {
+                    rcdResult = selectedRcd.value;
+                }
+            }
+            formData.append('rcd_test_result', rcdResult);
 
             submitBtn.disabled = true;
             statusDiv.textContent = translations[currentLang].status_uploading;

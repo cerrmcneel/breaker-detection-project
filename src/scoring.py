@@ -1,5 +1,5 @@
 import pandas as pd
-#derine a function to calculate a safety score
+#define a function to calculate a safety score
 def calculate_safety_score(row):
     score =50
     #overprotection bonus
@@ -26,16 +26,13 @@ def calculate_safety_score(row):
     for kw in ['burnt', 'corroded', 'loose']:
         if kw in comments:
             score -= 15            
+            
+    # RCD Test Penalties
+    rcd_test = str(row.get('rcd_test_result', '')).lower()
+    if rcd_test == 'unresponsive':
+        score -= 30
+    elif rcd_test == 'slow':
+        score -= 10
+        
     return score
 
-
-# Sort scores from lowset to highest
-
-dangerous_panels = breakers.sort_values('safety_score').head()
-
-
-print("--- Top 5 Safety Risks ---")
-print(dangerous_panels[['filename', 'safety_score', 'comments']])
-
-print("\nScore Distribution:")
-print(breakers['safety_score'].describe())

@@ -66,13 +66,14 @@ async def startup_event():
     logger.info(f"Startup complete: Discovered {len(seen_hashes)} unique hashes on disk.")
 
 # Helper function to log metadata
-def log_metadata(original_filename: str, saved_filename: str, country: str, file_hash: str = ""):
+def log_metadata(original_filename: str, saved_filename: str, country: str, file_hash: str = "", rcd_test_result: str = "Not Tested"):
     entry = {
         "timestamp": datetime.now().isoformat(),
         "original_filename": original_filename,
         "saved_filename": saved_filename,
         "country": country,
-        "hash": file_hash
+        "hash": file_hash,
+        "rcd_test_result": rcd_test_result
     }
     
     # Simple append to a JSON list in a file (not efficient for huge scale, but fine for beta)
@@ -92,7 +93,8 @@ def log_metadata(original_filename: str, saved_filename: str, country: str, file
 @app.post("/upload/")
 async def upload_image(
     file: UploadFile = File(...),
-    country: str = Form(default="Unknown")
+    country: str = Form(default="Unknown"),
+    rcd_test_result: str = Form(default="Not Tested")
 ):
     try:
         # 1. Input Validation for Country
@@ -146,7 +148,7 @@ async def upload_image(
                 f.write(file_bytes)
     
             # Log metadata
-            log_metadata(file.filename, unique_filename, country, file_hash)
+            log_metadata(file.filename, unique_filename, country, file_hash, rcd_test_result)
             
             logger.info(f"Saved {file.filename} as {unique_filename}")
             

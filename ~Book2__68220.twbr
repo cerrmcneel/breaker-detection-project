@@ -869,12 +869,12 @@
     </worksheet>
   </worksheets>
   <dashboards>
-    <dashboard enable-sort-zone-taborder='true' name='Dashboard 5'>
+    <dashboard enable-sort-zone-taborder='true' name='Data Leakage'>
       <style />
-      <size maxheight='1360' maxwidth='1520' sizing-mode='range' />
+      <size maxheight='860' maxwidth='1150' sizing-mode='range' />
       <zones>
         <zone h='100000' id='4' type-v2='layout-basic' w='100000' x='0' y='0'>
-          <zone h='98062' id='3' is-centered='0' is-scaled='1' param='C:/Users/PC GAMING/Downloads/Screenshot 2026-03-07 004225.png' type-v2='bitmap' w='98910' x='545' y='969'>
+          <zone h='98066' id='3' is-centered='0' is-scaled='1' param='C:/Users/PC GAMING/Downloads/output.png' type-v2='bitmap' w='98608' x='696' y='967'>
             <zone-style>
               <format attr='border-color' value='#000000' />
               <format attr='border-style' value='none' />
@@ -894,18 +894,8 @@
         <devicelayout auto-generated='true' name='Phone'>
           <size maxheight='700' minheight='700' sizing-mode='vscroll' />
           <zones>
-            <zone h='100000' id='6' type-v2='layout-basic' w='100000' x='0' y='0'>
-              <zone h='98062' id='5' param='vert' type-v2='layout-flow' w='98910' x='545' y='969'>
-                <zone fixed-size='280' h='98062' id='3' is-centered='0' is-fixed='true' is-scaled='1' param='C:/Users/PC GAMING/Downloads/Screenshot 2026-03-07 004225.png' type-v2='bitmap' w='98910' x='545' y='969'>
-                  <zone-style>
-                    <format attr='border-color' value='#000000' />
-                    <format attr='border-style' value='none' />
-                    <format attr='border-width' value='0' />
-                    <format attr='margin' value='4' />
-                    <format attr='padding' value='0' />
-                  </zone-style>
-                </zone>
-              </zone>
+            <zone h='100000' id='2' type-v2='layout-basic' w='100000' x='0' y='0'>
+              <zone h='84000' id='1' param='vert' type-v2='layout-flow' w='84000' x='8000' y='8000' />
               <zone-style>
                 <format attr='border-color' value='#000000' />
                 <format attr='border-style' value='none' />
@@ -916,14 +906,14 @@
           </zones>
         </devicelayout>
       </devicelayouts>
-      <simple-id uuid='{D67C8FA7-D918-414D-A038-6B991533E8EA}' />
+      <simple-id uuid='{71629D41-CDFB-4E8C-ADE8-BA25E1316DE5}' />
     </dashboard>
-    <dashboard enable-sort-zone-taborder='true' name='Dashboard 6'>
+    <dashboard enable-sort-zone-taborder='true' name='Panel'>
       <style />
-      <size maxheight='860' maxwidth='1420' minheight='460' minwidth='1120' sizing-mode='range' />
+      <size maxheight='860' maxwidth='1420' minheight='560' minwidth='1220' sizing-mode='range' />
       <zones>
         <zone h='100000' id='4' type-v2='layout-basic' w='100000' x='0' y='0'>
-          <zone h='98066' id='3' is-scaled='1' param='C:/Users/PC GAMING/Downloads/unnamed.jpg' type-v2='bitmap' w='98874' x='563' y='967'>
+          <zone h='98066' id='3' is-centered='0' is-scaled='1' param='C:/Users/PC GAMING/Downloads/PXL_20260304_072834277.jpg' type-v2='bitmap' w='98874' x='563' y='967'>
             <zone-style>
               <format attr='border-color' value='#000000' />
               <format attr='border-style' value='none' />
@@ -943,18 +933,8 @@
         <devicelayout auto-generated='true' name='Phone'>
           <size maxheight='700' minheight='700' sizing-mode='vscroll' />
           <zones>
-            <zone h='100000' id='6' type-v2='layout-basic' w='100000' x='0' y='0'>
-              <zone h='98066' id='5' param='vert' type-v2='layout-flow' w='98874' x='563' y='967'>
-                <zone fixed-size='280' h='98066' id='3' is-fixed='true' is-scaled='1' param='C:/Users/PC GAMING/Downloads/unnamed.jpg' type-v2='bitmap' w='98874' x='563' y='967'>
-                  <zone-style>
-                    <format attr='border-color' value='#000000' />
-                    <format attr='border-style' value='none' />
-                    <format attr='border-width' value='0' />
-                    <format attr='margin' value='4' />
-                    <format attr='padding' value='0' />
-                  </zone-style>
-                </zone>
-              </zone>
+            <zone h='100000' id='2' type-v2='layout-basic' w='100000' x='0' y='0'>
+              <zone h='84000' id='1' param='vert' type-v2='layout-flow' w='84000' x='8000' y='8000' />
               <zone-style>
                 <format attr='border-color' value='#000000' />
                 <format attr='border-style' value='none' />
@@ -965,7 +945,7 @@
           </zones>
         </devicelayout>
       </devicelayouts>
-      <simple-id uuid='{06B38F01-4B3D-423A-BD1B-03279AEDBF9B}' />
+      <simple-id uuid='{ABA023C9-D955-436C-8A64-01521CEFCFCB}' />
     </dashboard>
     <dashboard enable-sort-zone-taborder='true' name='PanelSafe 2026 Audit Summary'>
       <style />
@@ -1244,17 +1224,19 @@
             <zone h='3216' id='3' type-v2='title' w='98426' x='787' y='830' />
             <zone h='10477' id='4' is-fixed='true' paired-zone-id='5' removable='false' type-v2='flipboard-nav' w='98426' x='787' y='4046' />
             <zone h='84647' id='5' paired-zone-id='4' removable='false' type-v2='flipboard' w='98426' x='787' y='14523'>
-              <flipboard active-id='9' nav-type='caption' show-nav-arrows='true'>
+              <flipboard active-id='11' nav-type='caption' show-nav-arrows='true'>
                 <story-points>
                   <story-point caption='MCBs and RCDs can become unresponsive or faulty over time. ' captured-sheet='The Hidden Legacy: A Public Safety Crisis' id='1' />
+                  <story-point caption='A standard and not too old of a panel in Spain. The Same that did not prevent the fire. ' captured-sheet='Panel' id='10' />
                   <story-point caption='An easy way to collect data' captured-sheet='Panelsafe' id='2' />
                   <story-point caption='Turning photos into features' captured-sheet='Turning Photos into Features' id='3' />
-                  <story-point captured-sheet='The data' id='9' />
-                  <story-point caption='The Brains' captured-sheet='Dashboard 5' id='4' />
+                  <story-point caption='The data' captured-sheet='The data' id='9' />
+                  <story-point caption='The Brains' captured-sheet='The Brains' id='4' />
                   <story-point caption='A panel can be safe without critical components, redundency' captured-sheet='Simultaneity' id='6' />
+                  <story-point caption='Not much linear relations' captured-sheet='Data Leakage' id='11' />
                   <story-point caption='The data is Biased' captured-sheet='Has_OVP' id='8' />
                   <story-point caption='Older panels safety score is much lower' captured-sheet='SafetyVsAge' id='5' />
-                  <story-point caption='More than just an audit' captured-sheet='Dashboard 6' id='7' />
+                  <story-point caption='More than just an audit' captured-sheet='The Vision' id='7' />
                 </story-points>
               </flipboard>
             </zone>
@@ -1268,6 +1250,55 @@
         </zone>
       </zones>
       <simple-id uuid='{E3A3C6EB-6DFF-4DF5-8669-638FF8898692}' />
+    </dashboard>
+    <dashboard enable-sort-zone-taborder='true' name='The Brains'>
+      <style />
+      <size maxheight='1360' maxwidth='1520' sizing-mode='range' />
+      <zones>
+        <zone h='100000' id='4' type-v2='layout-basic' w='100000' x='0' y='0'>
+          <zone h='98062' id='3' is-centered='0' is-scaled='1' param='C:/Users/PC GAMING/Downloads/Screenshot 2026-03-07 004225.png' type-v2='bitmap' w='98910' x='545' y='969'>
+            <zone-style>
+              <format attr='border-color' value='#000000' />
+              <format attr='border-style' value='none' />
+              <format attr='border-width' value='0' />
+              <format attr='margin' value='4' />
+            </zone-style>
+          </zone>
+          <zone-style>
+            <format attr='border-color' value='#000000' />
+            <format attr='border-style' value='none' />
+            <format attr='border-width' value='0' />
+            <format attr='margin' value='8' />
+          </zone-style>
+        </zone>
+      </zones>
+      <devicelayouts>
+        <devicelayout auto-generated='true' name='Phone'>
+          <size maxheight='700' minheight='700' sizing-mode='vscroll' />
+          <zones>
+            <zone h='100000' id='6' type-v2='layout-basic' w='100000' x='0' y='0'>
+              <zone h='98062' id='5' param='vert' type-v2='layout-flow' w='98910' x='545' y='969'>
+                <zone fixed-size='280' h='98062' id='3' is-centered='0' is-fixed='true' is-scaled='1' param='C:/Users/PC GAMING/Downloads/Screenshot 2026-03-07 004225.png' type-v2='bitmap' w='98910' x='545' y='969'>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+              </zone>
+              <zone-style>
+                <format attr='border-color' value='#000000' />
+                <format attr='border-style' value='none' />
+                <format attr='border-width' value='0' />
+                <format attr='margin' value='8' />
+              </zone-style>
+            </zone>
+          </zones>
+        </devicelayout>
+      </devicelayouts>
+      <simple-id uuid='{D67C8FA7-D918-414D-A038-6B991533E8EA}' />
     </dashboard>
     <dashboard enable-sort-zone-taborder='true' name='The Hidden Legacy: A Public Safety Crisis'>
       <style />
@@ -1365,6 +1396,55 @@
         </devicelayout>
       </devicelayouts>
       <simple-id uuid='{7978625D-7F04-42F5-B2A9-23577136F671}' />
+    </dashboard>
+    <dashboard enable-sort-zone-taborder='true' name='The Vision'>
+      <style />
+      <size maxheight='860' maxwidth='1420' minheight='460' minwidth='1120' sizing-mode='range' />
+      <zones>
+        <zone h='100000' id='4' type-v2='layout-basic' w='100000' x='0' y='0'>
+          <zone h='98066' id='3' is-scaled='1' param='C:/Users/PC GAMING/Downloads/unnamed.jpg' type-v2='bitmap' w='98874' x='563' y='967'>
+            <zone-style>
+              <format attr='border-color' value='#000000' />
+              <format attr='border-style' value='none' />
+              <format attr='border-width' value='0' />
+              <format attr='margin' value='4' />
+            </zone-style>
+          </zone>
+          <zone-style>
+            <format attr='border-color' value='#000000' />
+            <format attr='border-style' value='none' />
+            <format attr='border-width' value='0' />
+            <format attr='margin' value='8' />
+          </zone-style>
+        </zone>
+      </zones>
+      <devicelayouts>
+        <devicelayout auto-generated='true' name='Phone'>
+          <size maxheight='700' minheight='700' sizing-mode='vscroll' />
+          <zones>
+            <zone h='100000' id='6' type-v2='layout-basic' w='100000' x='0' y='0'>
+              <zone h='98066' id='5' param='vert' type-v2='layout-flow' w='98874' x='563' y='967'>
+                <zone fixed-size='280' h='98066' id='3' is-fixed='true' is-scaled='1' param='C:/Users/PC GAMING/Downloads/unnamed.jpg' type-v2='bitmap' w='98874' x='563' y='967'>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+              </zone>
+              <zone-style>
+                <format attr='border-color' value='#000000' />
+                <format attr='border-style' value='none' />
+                <format attr='border-width' value='0' />
+                <format attr='margin' value='8' />
+              </zone-style>
+            </zone>
+          </zones>
+        </devicelayout>
+      </devicelayouts>
+      <simple-id uuid='{06B38F01-4B3D-423A-BD1B-03279AEDBF9B}' />
     </dashboard>
     <dashboard enable-sort-zone-taborder='true' name='The data'>
       <style />
@@ -1615,22 +1695,32 @@
       <active id='-1' />
       <simple-id uuid='{696D8648-64A8-45C3-8233-3955E8646098}' />
     </window>
-    <window class='dashboard' name='Dashboard 5'>
+    <window class='dashboard' name='The Brains'>
       <viewpoints />
       <active id='3' />
       <simple-id uuid='{EB81AE43-A098-40EF-A2D1-7ABD6321806A}' />
     </window>
-    <window class='dashboard' name='Dashboard 6'>
+    <window class='dashboard' name='The Vision'>
       <viewpoints />
       <active id='3' />
       <simple-id uuid='{4E819C31-8711-439F-9CDC-03DFD0F90546}' />
     </window>
-    <window class='dashboard' maximized='true' name='The data'>
+    <window class='dashboard' name='The data'>
       <viewpoints />
       <active id='3' />
       <simple-id uuid='{D4EE4634-F06B-4D30-9C9F-E3CBCDC2002F}' />
     </window>
-    <window class='dashboard' name='Story 1'>
+    <window class='dashboard' name='Panel'>
+      <viewpoints />
+      <active id='3' />
+      <simple-id uuid='{4495CE47-EBB2-405A-8260-6EFEF08A6C51}' />
+    </window>
+    <window class='dashboard' name='Data Leakage'>
+      <viewpoints />
+      <active id='-1' />
+      <simple-id uuid='{F02C16EE-2660-4ADE-BE64-DB4DF221FCF3}' />
+    </window>
+    <window class='dashboard' maximized='true' name='Story 1'>
       <viewpoints />
       <active id='-1' />
       <simple-id uuid='{25C70D38-D45B-4B09-AD32-2B8E53794EA6}' />

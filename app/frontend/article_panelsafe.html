@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Silent Heart of Your Home - BreakerAudit</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* Navigation Bar Styles */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+
+        .nav-brand {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #0070f3;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: #1a1a1a;
+            font-weight: 500;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .nav-link:hover {
+            background-color: #f0f7ff;
+            color: #0070f3;
+        }
+
+        .nav-link.active {
+            color: #0070f3;
+            background-color: #e6f0fa;
+        }
+
+        /* Language Switcher */
+        .lang-switcher {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+            margin-top: 80px;
+            gap: 10px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .lang-btn {
+            background-color: transparent;
+            border: 1px solid #ccc;
+            padding: 4px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .lang-btn.active {
+            background-color: #0070f3;
+            color: white;
+            border-color: #0070f3;
+        }
+
+        /* Article Container */
+        .article-container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+            line-height: 1.6;
+            color: #333;
+            box-sizing: border-box;
+        }
+
+        .article-header {
+            margin-bottom: 30px;
+        }
+
+        .article-header h1 {
+            color: #1a1a1a;
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            line-height: 1.2;
+        }
+
+        .article-header .meta {
+            color: #888;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .article-image {
+            width: 100%;
+            height: auto;
+            max-height: 400px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .article-container h2 {
+            color: #1a1a1a;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        .article-container p {
+            margin-bottom: 20px;
+            font-size: 1.05rem;
+        }
+
+        .article-container blockquote {
+            border-left: 4px solid #0070f3;
+            margin: 0 0 20px 0;
+            padding: 10px 20px;
+            background-color: #f0f7ff;
+            color: #0051a2;
+            font-style: italic;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            color: #0070f3;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Hidden by default for language toggling */
+        .lang-es {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="navbar">
+        <a href="/" class="nav-brand" id="nav-brand">⚡ BreakerAudit</a>
+        <div class="nav-links">
+            <a href="/" class="nav-link" id="nav-home">Home</a>
+            <a href="/blog.html" class="nav-link active" id="nav-blog">Blog</a>
+        </div>
+    </nav>
+
+    <!-- Language Switcher -->
+    <div class="lang-switcher">
+        <button class="lang-btn active" id="btn-en" onclick="setLanguage('en')">EN</button>
+        <button class="lang-btn" id="btn-es" onclick="setLanguage('es')">ES</button>
+    </div>
+
+    <!-- Article Content -->
+    <div class="article-container">
+
+        <!-- English Version -->
+        <article class="lang-en" id="content-en">
+            <div class="article-header">
+                <h1>The Silent Heart of Your Home: Why We Built PanelSafe</h1>
+                <div class="meta">March 10, 2026 • 3 min read</div>
+            </div>
+
+            <img src="/assets/markus-spiske-unsplash.jpg" alt="Electrical Breaker Board" class="article-image">
+            <div style="font-size: 0.85rem; color: #666; margin-top: -20px; margin-bottom: 30px; text-align: center;">
+                Photo by <a href="https://unsplash.com/@markusspiske" target="_blank"
+                    style="color: #0070f3; text-decoration: none;">Markus Spiske</a> on Unsplash
+            </div>
+
+            <p>The next time you walk into a typical house in Spain, I challenge you to do something: open the breaker
+                board. With the permission of the owner, of course. Look at it for a moment. Could you tell me if that
+                panel is safe?</p>
+            <p>Our houses are our castles. We trust the walls to keep out the rain and the locks to keep out the world.
+                But there is a silent, working heart in every home—the breaker board—that we assume is immortal. In
+                reality, it’s often the most neglected and dangerous part of the house.</p>
+
+            <h2>The Hidden Risk</h2>
+            <p>Imagine you are standing in front of your electrical panel and you realize that you have no idea if it is
+                safe. Besides pushing the button on the RCD (Residual Current Device) to see if it is responsive, most
+                consumers are in the dark.</p>
+            <p>Let's be honest: how many people really know what that button is for? If you’re like most people, you
+                haven't touched that ‘test’ button in years. That ignorance isn't just a lapse in maintenance; it’s a
+                risk. In 2024, 41.9% of fires in Spain started right there, behind that plastic cover. This isn't just a
+                technical standard; it’s a survival standard.</p>
+
+            <h2>Bridging the Gap</h2>
+            <p>We shouldn't have to wait weeks for an appointment or spend hundreds of euros just to find out if we are
+                at risk. We designed PanelSafe to bridge that gap. By simply snapping a photo, our app analyzes your
+                panel and gives you an instant Safety Score.</p>
+            <blockquote>Why does the score matter? Think of an outdated Type AC differential like a smoke detector that
+                can only hear a certain pitch of scream. It works, but it’s "deaf" to the modern electronic noise of
+                your laptop, LED bulbs, and EV charger. PanelSafe looks for these deaf components so you don't have to.
+            </blockquote>
+
+            <h2>From Data Scarcity to Professional Compliance</h2>
+            <p>The purpose of PanelSafe is to give consumers clarity. It identifies if an update is recommended and
+                connects them with local qualified professionals. Updating a panel isn't just about fire safety; it’s
+                about protecting the thousands of euros of sensitive electronics we plug into our walls every day.</p>
+            <p>We are building this on an algorithm designed by electricians. By crowdsourcing our first 50 images,
+                we’ve created an initial dataset that serves as a vital snapshot of the state of electrical safety in
+                Spain.</p>
+            <p>Let's be clear: a photo is not a legal certification. Any professional will tell you that. But this is
+                where the trajectory changes. We aren't just building a "score"—we are building the brain of a
+                professional-grade tool. We are moving from helping the homeowner understand their risk to helping the
+                electrician eliminate the paperwork that keeps them from doing their best work.</p>
+            <p>The goal of PanelSafe isn’t just an app; it’s a new standard. From these first 50 images to a fully
+                automated compliance tool, we are documenting a journey from data scarcity to a safer, more transparent
+                electrical grid.</p>
+
+            <a href="/blog.html" class="back-link">← Back to Blog</a>
+        </article>
+
+        <!-- Spanish Version -->
+        <article class="lang-es" id="content-es">
+            <div class="article-header">
+                <h1>El Corazón Silencioso de su Hogar: Por Qué Construimos PanelSafe</h1>
+                <div class="meta">10 Mar, 2026 • 3 min de lectura</div>
+            </div>
+
+            <img src="/assets/markus-spiske-unsplash.jpg" alt="Cuadro Eléctrico" class="article-image">
+            <div style="font-size: 0.85rem; color: #666; margin-top: -20px; margin-bottom: 30px; text-align: center;">
+                Foto de <a href="https://unsplash.com/@markusspiske" target="_blank"
+                    style="color: #0070f3; text-decoration: none;">Markus Spiske</a> en Unsplash
+            </div>
+
+            <p>La próxima vez que entre a una casa típica en España, le desafío a hacer algo: abra el cuadro eléctrico.
+                Con el permiso del propietario, por supuesto. Mírelo por un momento. ¿Podría decirme si ese panel es
+                seguro?</p>
+            <p>Nuestras casas son nuestros castillos. Confiamos en las paredes para que no entre la lluvia y en las
+                cerraduras para que no entre el mundo. Pero hay un corazón silencioso y trabajador en cada hogar, el
+                cuadro eléctrico, que asumimos es inmortal. En realidad, a menudo es la parte más descuidada y peligrosa
+                de la casa.</p>
+
+            <h2>El Riesgo Oculto</h2>
+            <p>Imagine que está parado frente a su panel eléctrico y se da cuenta de que no tiene idea de si es seguro.
+                Aparte de presionar el botón en el Diferencial (RCD) para ver si responde, la mayoría de los
+                consumidores están a oscuras.</p>
+            <p>Seamos honestos: ¿cuántas personas realmente saben para qué es ese botón? Si usted es como la mayoría de
+                las personas, no ha tocado ese botón de 'prueba' en años. Esa ignorancia no es solo un lapso en el
+                mantenimiento; es un riesgo. En 2024, el 41.9% de los incendios en España comenzaron justo ahí, detrás
+                de esa cubierta de plástico. Este no es solo un estándar técnico; es un estándar de supervivencia.</p>
+
+            <h2>Cerrando la Brecha</h2>
+            <p>No deberíamos tener que esperar semanas para una cita o gastar cientos de euros solo para descubrir si
+                estamos en riesgo. Diseñamos PanelSafe para cerrar esa brecha. Simplemente tomando una foto, nuestra
+                aplicación analiza su panel y le brinda un Puntaje de Seguridad instantáneo.</p>
+            <blockquote>¿Por qué importa el puntaje? Piense en un diferencial anticuado Tipo AC como un detector de humo
+                que solo puede escuchar un cierto tono de grito. Funciona, pero está "sordo" al ruido electrónico
+                moderno de su computadora portátil, bombillas LED y cargador de vehículos eléctricos. PanelSafe busca
+                esos componentes sordos para que usted no tenga que hacerlo.</blockquote>
+
+            <h2>De la Escasez de Datos al Cumplimiento Profesional</h2>
+            <p>El propósito de PanelSafe es dar claridad a los consumidores. Identifica si se recomienda una
+                actualización y los conecta con profesionales calificados locales. Actualizar un panel no se trata solo
+                de seguridad contra incendios; se trata de proteger los miles de euros en aparatos electrónicos
+                sensibles que conectamos a nuestras paredes todos los días.</p>
+            <p>Estamos construyendo esto sobre un algoritmo diseñado por electricistas. A través del crowdsourcing de
+                nuestras primeras 50 imágenes, hemos creado un conjunto de datos inicial que sirve como una instantánea
+                vital del estado de la seguridad eléctrica en España.</p>
+            <p>Seamos claros: una foto no es una certificación legal. Cualquier profesional le dirá eso. Pero aquí es
+                donde cambia la trayectoria. No solo estamos construyendo un "puntaje"—estamos construyendo el cerebro
+                de una herramienta de nivel profesional. Estamos pasando de ayudar al propietario a comprender su riesgo
+                a ayudar al electricista a eliminar el papeleo que le impide hacer su mejor trabajo.</p>
+            <p>El objetivo de PanelSafe no es solo una aplicación; es un nuevo estándar. Desde estas primeras 50
+                imágenes hasta una herramienta de cumplimiento totalmente automatizada, estamos documentando un viaje
+                desde la escasez de datos hasta una red eléctrica más segura y transparente.</p>
+
+            <a href="/blog.html" class="back-link">← Volver al Blog</a>
+        </article>
+
+    </div>
+
+    <script>
+        function setLanguage(lang) {
+            // Update UI buttons
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${lang}`).classList.add('active');
+
+            // Update Navbar translations
+            if (lang === 'es') {
+                document.getElementById('nav-home').textContent = "Inicio";
+                document.getElementById('nav-blog').textContent = "Blog";
+                document.title = "El Corazón Silencioso de su Hogar - BreakerAudit";
+            } else {
+                document.getElementById('nav-home').textContent = "Home";
+                document.getElementById('nav-blog').textContent = "Blog";
+                document.title = "The Silent Heart of Your Home - BreakerAudit";
+            }
+
+            // Toggle visibility of articles
+            if (lang === 'en') {
+                document.getElementById('content-en').style.display = 'block';
+                document.getElementById('content-es').style.display = 'none';
+            } else if (lang === 'es') {
+                document.getElementById('content-en').style.display = 'none';
+                document.getElementById('content-es').style.display = 'block';
+            }
+
+            // Persist language selection
+            localStorage.setItem('breakerLang', lang);
+        }
+
+        // Initialize language from localStorage or default to English
+        const savedLang = localStorage.getItem('breakerLang') || 'en';
+        setLanguage(savedLang);
+    </script>
+</body>
+
+</html>
