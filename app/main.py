@@ -11,6 +11,10 @@ from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 
+import argparse
+import random
+import string
+
 # Load environment variables
 load_dotenv()
 
@@ -23,6 +27,11 @@ seen_hashes = set()
 upload_lock = asyncio.Lock()
 
 app = FastAPI(title="Breaker Detection Data Collection Beta")
+
+def generate_tracking_id():
+    """Generate a random 5-character alphanumeric code."""
+    chars = string.ascii_uppercase + string.digits
+    return "BKR-" + "".join(random.choices(chars, k=5))
 
 # Disable caching globally for the beta phase to ensure frontend updates immediately propagate
 @app.middleware("http")
@@ -66,14 +75,17 @@ async def startup_event():
     logger.info(f"Startup complete: Discovered {len(seen_hashes)} unique hashes on disk.")
 
 # Helper function to log metadata
-def log_metadata(original_filename: str, saved_filename: str, country: str, file_hash: str = "", rcd_test_result: str = "Not Tested"):
+def log_metadata(original_filename: str, saved_filename: str, country: str, file_hash: str = "", rcd_test_result: str = "Not Tested", tracking_id: str = ""):
     entry = {
         "timestamp": datetime.now().isoformat(),
         "original_filename": original_filename,
         "saved_filename": saved_filename,
         "country": country,
         "hash": file_hash,
-        "rcd_test_result": rcd_test_result
+        "rcd_test_result": rcd_test_result,
+        "tracking_id": tracking_id,
+        "manual_score": None,
+        "manual_feedback": ""
     }
     
     # Simple append to a JSON list in a file (not efficient for huge scale, but fine for beta)
@@ -143,16 +155,27 @@ async def upload_image(
     
             seen_hashes.add(file_hash)
             
+            # Generate tracking ID
+            tracking_id = generate_tracking_id()
+
             # Now safe to write the file
             with open(file_path, "wb") as f:
                 f.write(file_bytes)
     
             # Log metadata
-            log_metadata(file.filename, unique_filename, country, file_hash, rcd_test_result)
+            log_metadata(file.filename, unique_filename, country, file_hash, rcd_test_result, tracking_id)
             
-            logger.info(f"Saved {file.filename} as {unique_filename}")
+            logger.info(f"Saved {file.filename} as {unique_filename} with tracking ID {tracking_id}")
             
-            return JSONResponse(content={"message": "Upload successful", "filename": unique_filename, "duplicate": False}, status_code=200)
+            return JSONResponse(
+                content={
+                    "message": "Upload successful", 
+                    "filename": unique_filename, 
+                    "duplicate": False,
+                    "tracking_id": tracking_id
+                }, 
+                status_code=200
+            )
 
     except HTTPException:
         raise
@@ -169,6 +192,35 @@ async def get_upload_count():
     except Exception as e:
         logger.error(f"Error getting file count: {e}")
         raise HTTPException(status_code=500, detail="Could not retrieve file count.")
+
+@app.get("/score/{tracking_id}")
+async def get_score(tracking_id: str):
+    """Retrieve the manual safety score for a given tracking ID."""
+    if not os.path.exists(LOG_FILE):
+        raise HTTPException(status_code=404, detail="Log file not found.")
+        
+    try:
+        with open(LOG_FILE, "r") as f:
+            entries = json.load(f)
+            
+        # Search backwards since newer entries are appended
+        for entry in reversed(entries):
+            if entry.get("tracking_id") == tracking_id:
+                if entry.get("manual_score") is not None:
+                    return {
+                        "status": "scored",
+                        "score": entry.get("manual_score"),
+                        "feedback": entry.get("manual_feedback", "")
+                    }
+                else:
+                    return {"status": "pending"}
+                    
+        raise HTTPException(status_code=404, detail="Tracking ID not found.")
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="Error reading log data.")
+    except Exception as e:
+        logger.error(f"Error checking score for {tracking_id}: {e}")
+        raise HTTPException(status_code=500, detail="An error occurred while checking the score.")
 
 from pydantic import BaseModel
 
