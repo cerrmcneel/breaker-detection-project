@@ -5,376 +5,337 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Breaker Data Collection</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary: #0066FF;
+            --primary-dark: #0051CC;
+            --primary-light: #E6F0FF;
+            --bg: #F8FAFC;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --text: #1E293B;
+            --text-muted: #64748B;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --radius: 16px;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f0f2f5;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            background-image: radial-gradient(at 0% 0%, rgba(0, 102, 255, 0.05) 0px, transparent 50%),
+                              radial-gradient(at 100% 100%, rgba(0, 102, 255, 0.05) 0px, transparent 50%);
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             min-height: 100vh;
             margin: 0;
             padding: 20px;
+            color: var(--text);
+            -webkit-tap-highlight-color: transparent;
         }
 
         .container {
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 2.5rem 2rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255, 255, 255, 0.5);
             text-align: center;
-            max-width: 400px;
+            max-width: 440px;
             width: 100%;
+            margin-top: 80px;
+            transition: transform 0.3s ease;
         }
 
         h1 {
-            color: #1a1a1a;
-            margin-bottom: 1.5rem;
-        }
-
-        .upload-btn-wrapper {
-            position: relative;
-            overflow: hidden;
-            display: inline-block;
+            color: var(--text);
+            font-weight: 800;
+            letter-spacing: -0.025em;
             margin-bottom: 1rem;
+            font-size: 2rem;
         }
 
         .btn {
-            border: 2px solid gray;
-            color: gray;
-            background-color: white;
-            padding: 8px 20px;
-            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 12px;
             font-size: 16px;
-            font-weight: bold;
+            font-weight: 600;
             cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+            width: 100%;
         }
 
-        .upload-btn-wrapper input[type=file] {
-            font-size: 100px;
-            position: absolute;
-            left: 0;
-            top: 0;
-            opacity: 0;
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 102, 255, 0.3);
         }
 
-        #camera-container {
+        .btn-primary:active {
+            transform: scale(0.98);
+            background-color: var(--primary-dark);
+        }
+
+        .btn-outline {
+            background-color: white;
+            color: var(--text);
+            border: 1px solid #E2E8F0;
+        }
+
+        .btn-outline:active {
+            background-color: #F1F5F9;
+        }
+
+        #camera-preview-container {
             position: relative;
             width: 100%;
-            height: 300px;
-            background-color: #000;
-            border-radius: 8px;
+            border-radius: 12px;
             overflow: hidden;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
             display: none;
+            background: #000;
+            aspect-ratio: 3/4;
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.5);
         }
 
-        #video-feed,
-        #overlay-canvas {
+        #preview-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .preview-overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            pointer-events: none;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-sizing: border-box;
+            background-image: 
+                linear-gradient(to right, white 1px, transparent 1px),
+                linear-gradient(to bottom, white 1px, transparent 1px);
+            background-size: 33.33% 33.33%;
+            opacity: 0.2;
         }
 
-        #overlay-canvas {
-            z-index: 10;
-        }
-
-        #capture-btn {
-            position: absolute;
-            bottom: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background-color: rgba(255, 255, 255, 0.8);
-            border: 4px solid #fff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-            cursor: pointer;
-            z-index: 20;
-            transition: transform 0.1s;
-        }
-
-        #capture-btn:active {
-            transform: translateX(-50%) scale(0.9);
-        }
-
-        #submit-btn {
-            background-color: #0070f3;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            width: 100%;
-            transition: background-color 0.2s;
-        }
-
-        #submit-btn:hover {
-            background-color: #0051a2;
-        }
-
-        #submit-btn:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-
-        #camera-guide-overlay {
+        .preview-guide {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 70%;
+            width: 80%;
             height: 60%;
-            border: 3px dashed rgba(255, 255, 255, 0.8);
-            z-index: 15;
-            pointer-events: none;
+            border: 2px dashed rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
             display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
             align-items: center;
+            justify-content: center;
         }
 
-        .guide-label {
-            color: white;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 4px 8px;
-            border-radius: 4px;
-            margin-bottom: -30px;
-            font-size: 14px;
-            white-space: nowrap;
+        #submit-btn {
+            margin-top: 10px;
         }
 
-        #brightness-warning {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255, 0, 0, 0.8);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 4px;
-            font-weight: bold;
-            z-index: 15;
-            display: none;
-            white-space: nowrap;
-        }
-
-        #status {
-            margin-top: 1rem;
-            font-weight: 500;
-        }
-
-        .success {
-            color: green;
-        }
-
-        .error {
-            color: red;
+        #submit-btn:disabled {
+            background-color: #CBD5E1;
+            box-shadow: none;
+            cursor: not-allowed;
         }
 
         .instruction-card {
-            background-color: #f0f7ff;
-            border-left: 4px solid #0070f3;
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 4px;
+            background-color: var(--primary-light);
+            border-left: 4px solid var(--primary);
+            padding: 1.25rem;
+            margin-bottom: 2rem;
+            border-radius: 8px;
             text-align: left;
             font-size: 14px;
-            line-height: 1.5;
+            color: #1E40AF;
         }
 
         .instruction-card h3 {
-            margin-top: 0;
-            color: #0051a2;
-            font-size: 16px;
-            margin-bottom: 10px;
+            margin: 0 0 0.75rem 0;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .instruction-card ul {
             margin: 0;
-            padding-left: 20px;
+            padding-left: 1.25rem;
         }
 
         .instruction-card li {
-            margin-bottom: 8px;
+            margin-bottom: 0.5rem;
         }
 
-        /* Language Switcher */
-        .lang-switcher {
-            display: flex;
-            justify-content: flex-end;
-            margin-bottom: 10px;
-            gap: 10px;
-        }
-
-        .lang-btn {
-            background-color: transparent;
-            border: 1px solid #ccc;
-            padding: 4px 12px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.2s;
-        }
-
-        .lang-btn.active {
-            background-color: #0070f3;
-            color: white;
-            border-color: #0070f3;
-        }
-
-        /* Progress Tracker Styles */
         .progress-container {
-            margin-bottom: 1.5rem;
-            text-align: left;
-            padding: 15px;
-            background: #fff;
-            border: 1px solid #e1e4e8;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+            background: white;
+            padding: 1.25rem;
+            border-radius: 12px;
+            border: 1px solid #E2E8F0;
         }
 
         .progress-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 0.75rem;
         }
 
         .progress-title {
-            font-weight: bold;
-            color: #1a1a1a;
-            font-size: 14px;
+            font-weight: 700;
+            font-size: 0.875rem;
         }
 
         .progress-badge {
-            background: #0070f3;
+            background: var(--primary);
             color: white;
             padding: 4px 10px;
-            border-radius: 12px;
+            border-radius: 20px;
             font-size: 12px;
-            font-weight: bold;
+            font-weight: 700;
         }
 
         .progress-bar-bg {
-            background-color: #e1e4e8;
-            border-radius: 6px;
-            height: 12px;
+            background-color: #F1F5F9;
+            border-radius: 10px;
+            height: 10px;
             width: 100%;
             overflow: hidden;
         }
 
         .progress-bar-fill {
-            background: linear-gradient(90deg, #0070f3, #00c6ff);
+            background: linear-gradient(90deg, var(--primary), #60A5FA);
             height: 100%;
             width: 0%;
-            border-radius: 6px;
+            border-radius: 10px;
+            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Navigation Bar Styles */
         .navbar {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            background-color: white;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 1rem 1.5rem;
+            z-index: 1000;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 20px;
-            z-index: 1000;
             box-sizing: border-box;
-            /* Ensure padding doesn't widen the bar past 100% */
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
         }
 
         .nav-brand {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #0070f3;
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: var(--primary);
             text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
         .nav-links {
             display: flex;
-            gap: 20px;
-            align-items: center;
+            gap: 8px;
         }
 
         .nav-link {
             text-decoration: none;
-            color: #1a1a1a;
-            font-weight: 500;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.875rem;
             padding: 8px 12px;
-            border-radius: 6px;
-            transition: background-color 0.2s, color 0.2s;
-        }
-
-        .nav-link:hover {
-            background-color: #f0f7ff;
-            color: #0070f3;
-        }
-
-        .nav-link.active {
-            color: #0070f3;
-            background-color: #e6f0fa;
-        }
-
-        /* Adjust container margin so it isn't hidden under the fixed navbar */
-        .container {
-            margin-top: 80px;
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            max-width: 400px;
-            width: 100%;
-        }
-
-        /* RCD Test Section Styles */
-        .rcd-section {
-            background-color: #f8f9fa;
-            border: 1px solid #e1e4e8;
             border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary);
+            background-color: var(--primary-light);
+        }
+
+        .rcd-section {
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
             text-align: left;
         }
 
         .rcd-toggle {
             display: flex;
             align-items: center;
+            gap: 12px;
             cursor: pointer;
-            font-weight: 500;
+            font-weight: 600;
+            font-size: 0.9375rem;
         }
 
-        .rcd-toggle input[type="checkbox"] {
-            margin-right: 10px;
-            transform: scale(1.2);
+        .rcd-toggle input {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--primary);
         }
 
-        .rcd-options {
+        .country-select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #E2E8F0;
+            font-size: 16px;
+            background-color: #fff;
+            margin-bottom: 1.5rem;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748B'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+        }
+
+        #status {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 12px;
             display: none;
-            margin-top: 15px;
-            padding-left: 24px;
+            font-weight: 600;
+            animation: slideIn 0.3s ease;
         }
 
-        .rcd-option {
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
+        @keyframes slideIn {
+            from { transform: translateY(10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
 
-        .rcd-option input[type="radio"] {
-            margin-right: 8px;
+        .status-success { background: #ECFDF5; color: #065F46; display: block !important; }
+        .status-error { background: #FEF2F2; color: #991B1B; display: block !important; }
+        .status-info { background: #EFF6FF; color: #1E40AF; display: block !important; }
+
+        .hidden-input {
+            display: none;
         }
     </style>
 </head>
@@ -382,7 +343,12 @@
 <body>
     <!-- Top Navigation Bar -->
     <nav class="navbar">
-        <a href="/" class="nav-brand" data-i18n="nav_brand">⚡ BreakerAudit</a>
+        <a href="/" class="nav-brand" data-i18n="nav_brand">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 2px;">
+                <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            BreakerAudit
+        </a>
         <div class="nav-links">
             <a href="/" class="nav-link active" data-i18n="nav_home">Home</a>
             <a href="javascript:void(0)" class="nav-link" id="nav-check-score" onclick="toggleScorePortal()"
@@ -474,32 +440,37 @@
 
             <form id="uploadForm">
                 <div id="upload-options"
-                    style="display: flex; gap: 10px; margin-bottom: 20px; justify-content: center;">
-                    <button type="button" class="btn" id="start-camera-btn" style="flex: 1;" data-i18n="use_camera">📸
-                        Use
-                        Camera</button>
+                    style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+                    <button type="button" class="btn btn-primary" id="start-camera-btn" data-i18n="use_camera">
+                        <span>📸</span> <span data-i18n="use_camera_text">Take a Photo</span>
+                    </button>
+                    
+                    <button type="button" class="btn btn-outline" id="browse-file-btn">
+                        <span>📁</span> <span data-i18n="upload_file">Upload from Gallery</span>
+                    </button>
 
-                    <div class="upload-btn-wrapper" style="margin-bottom: 0; flex: 1; display: flex;">
-                        <button type="button" class="btn" style="width: 100%;" data-i18n="upload_file">📁 Upload
-                            File</button>
-                        <input type="file" name="file" id="fileInput" accept="image/*"
-                            style="width: 100%; height: 100%; cursor: pointer; right: 0; bottom: 0;">
+                    <input type="file" id="cameraInput" accept="image/*" capture="environment" class="hidden-input">
+                    <input type="file" id="fileInput" accept="image/*" class="hidden-input">
+                </div>
+
+                <!-- Preview UI replaced the camera-container -->
+                <div id="camera-preview-container">
+                    <img id="preview-img" src="" alt="Captured breaker board">
+                    <div class="preview-overlay"></div>
+                    <div class="preview-guide">
+                        <div style="color: white; background: rgba(0,0,0,0.6); padding: 5px 12px; border-radius: 20px; font-size: 12px; margin-top: auto; margin-bottom: 20px;">
+                            Align breakers inside this box
+                        </div>
                     </div>
                 </div>
 
-                <!-- Camera UI -->
-                <div id="camera-container">
-                    <video id="video-feed" autoplay playsinline muted></video>
-                    <canvas id="overlay-canvas"></canvas>
-                    <div id="camera-guide-overlay">
-                        <div class="guide-label">Center breakers here and get closer</div>
-                    </div>
-                    <div id="brightness-warning">⚠️ Lighting is too dark</div>
-                    <div id="capture-btn"></div>
+                <div id="preview-actions" style="display: none; gap: 10px; margin-bottom: 20px;">
+                    <button type="button" class="btn btn-outline" id="retake-btn" style="flex: 1;">
+                        <span data-i18n="retake_btn">🔄 Retake</span>
+                    </button>
                 </div>
-                <canvas id="hidden-canvas" style="display: none;"></canvas>
 
-                <p id="fileName" style="margin-bottom: 1rem; margin-top: -10px;" data-i18n="no_file">No file chosen</p>
+                <p id="fileName" style="margin-bottom: 1.5rem; font-size: 0.875rem; color: var(--text-muted); display: none;" data-i18n="no_file">No file chosen</p>
 
                 <div style="margin-bottom: 1.5rem; text-align: left;">
                     <label for="countrySelect" style="display: block; margin-bottom: 0.5rem; font-weight: 500;"
@@ -738,27 +709,46 @@
 
     <script>
         const fileInput = document.getElementById('fileInput');
+        const cameraInput = document.getElementById('cameraInput');
         const fileNameDisplay = document.getElementById('fileName');
         const form = document.getElementById('uploadForm');
         const statusDiv = document.getElementById('status');
         const submitBtn = document.getElementById('submit-btn');
         const countrySelect = document.getElementById('countrySelect');
 
-        const cameraContainer = document.getElementById('camera-container');
-        const video = document.getElementById('video-feed');
-        const overlayCanvas = document.getElementById('overlay-canvas');
-        const overlayCtx = overlayCanvas.getContext('2d');
-        const hiddenCanvas = document.getElementById('hidden-canvas');
-        const hiddenCtx = hiddenCanvas.getContext('2d');
-        const captureBtn = document.getElementById('capture-btn');
+        const previewContainer = document.getElementById('camera-preview-container');
+        const previewImg = document.getElementById('preview-img');
+        const previewActions = document.getElementById('preview-actions');
+        const retakeBtn = document.getElementById('retake-btn');
         const startCameraBtn = document.getElementById('start-camera-btn');
+        const browseFileBtn = document.getElementById('browse-file-btn');
+        const uploadOptions = document.getElementById('upload-options');
         const pageTitle = document.getElementById('page-title');
         const batchFileInput = document.getElementById('batchFileInput');
 
-        let capturedBlob = null;
-        let animationFrameId = null;
-        let isCameraActive = false;
+        let selectedFile = null;
         let currentLang = 'en';
+
+        // Add missing translations for new preview flow
+        const previewTranslations = {
+            en: {
+                use_camera_text: "Take a Photo",
+                retake_btn: "🔄 Retake",
+                confirm_btn: "✅ Use This Photo",
+                preview_title: "Confirm Your Photo"
+            },
+            es: {
+                use_camera_text: "Tomar una Foto",
+                retake_btn: "🔄 Repetir",
+                confirm_btn: "✅ Usar esta Foto",
+                preview_title: "Confirmar su Foto"
+            }
+        };
+
+        // Merge translations
+        for (let lang in previewTranslations) {
+            Object.assign(translations[lang], previewTranslations[lang]);
+        }
 
         const translations = {
             en: {
@@ -1040,135 +1030,68 @@
             batchFileInput.value = "";
         });
 
-        async function initCamera() {
-            if (isCameraActive) return;
-            try {
-                let stream;
-                try {
-                    // Try to get the rear (environment) camera first (ideal for mobile)
-                    stream = await navigator.mediaDevices.getUserMedia({
-                        video: { facingMode: { exact: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }
-                    });
-                } catch (e) {
-                    // If exact rear camera fails (like on desktop/laptops), fallback to any available camera
-                    stream = await navigator.mediaDevices.getUserMedia({
-                        video: { width: { ideal: 1920 }, height: { ideal: 1080 } }
-                    });
-                }
-
-                video.srcObject = stream;
-                cameraContainer.style.display = 'block';
-                isCameraActive = true;
-
-                // Clear any previously selected file
-                fileInput.value = "";
-                fileNameDisplay.textContent = translations[currentLang].no_file;
-
-                video.onloadedmetadata = () => {
-                    overlayCanvas.width = video.clientWidth;
-                    overlayCanvas.height = video.clientHeight;
-                    hiddenCanvas.width = video.videoWidth;
-                    hiddenCanvas.height = video.videoHeight;
-                    analyzeFrame();
-                };
-            } catch (err) {
-                console.error("Camera access failed", err);
-                alert(translations[currentLang].err_cam_access);
-            }
+        function handleFileSelection(file) {
+            if (!file) return;
+            selectedFile = file;
+            
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                previewContainer.style.display = 'block';
+                previewActions.style.display = 'flex';
+                uploadOptions.style.display = 'none';
+                fileNameDisplay.style.display = 'block';
+                fileNameDisplay.textContent = file.name;
+                
+                // Scroll to preview
+                previewContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            };
+            reader.readAsDataURL(file);
         }
 
         startCameraBtn.addEventListener('click', () => {
-            initCamera();
+            cameraInput.click();
         });
 
-        function analyzeFrame() {
-            if (!isCameraActive) return;
-
-            hiddenCtx.drawImage(video, 0, 0, hiddenCanvas.width, hiddenCanvas.height);
-
-            const pw = 100;
-            const ph = 100;
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = pw;
-            tempCanvas.height = ph;
-            const tempCtx = tempCanvas.getContext('2d');
-            tempCtx.drawImage(hiddenCanvas, 0, 0, pw, ph);
-
-            const imageData = tempCtx.getImageData(0, 0, pw, ph);
-            const data = imageData.data;
-            let totalBrightness = 0;
-
-            for (let i = 0; i < data.length; i += 4) {
-                totalBrightness += (0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
-            }
-            const avgBrightness = totalBrightness / (pw * ph);
-
-            const warningElement = document.getElementById('brightness-warning');
-            if (avgBrightness < 40) {
-                warningElement.style.display = 'block';
-            } else {
-                warningElement.style.display = 'none';
-            }
-
-            overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-            animationFrameId = requestAnimationFrame(analyzeFrame);
-        }
-
-        captureBtn.addEventListener('click', () => {
-            if (!isCameraActive) return;
-
-            cancelAnimationFrame(animationFrameId);
-            isCameraActive = false;
-            video.pause();
-
-            overlayCtx.fillStyle = "white";
-            overlayCtx.fillRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-            setTimeout(() => {
-                overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-                overlayCtx.fillStyle = "#00ff00";
-                overlayCtx.font = "bold 40px Arial";
-                overlayCtx.textAlign = "center";
-                overlayCtx.fillText("✅ Success!", overlayCanvas.width / 2, overlayCanvas.height / 2);
-            }, 150);
-
-            hiddenCanvas.toBlob((blob) => {
-                capturedBlob = blob;
-            }, 'image/jpeg', 0.9);
+        browseFileBtn.addEventListener('click', () => {
+            fileInput.click();
         });
 
-        fileInput.addEventListener('change', function () {
+        cameraInput.addEventListener('change', function() {
             if (this.files && this.files.length > 0) {
-                fileNameDisplay.textContent = this.files[0].name;
-                capturedBlob = null; // Reset captured image if user selects a file instead
-                if (isCameraActive) {
-                    cancelAnimationFrame(animationFrameId);
-                    isCameraActive = false;
-                    video.pause();
-                    if (video.srcObject) {
-                        video.srcObject.getTracks().forEach(track => track.stop());
-                    }
-                    cameraContainer.style.display = 'none';
-                }
-            } else {
-                fileNameDisplay.textContent = translations[currentLang].no_file;
+                handleFileSelection(this.files[0]);
             }
+        });
+
+        fileInput.addEventListener('change', function() {
+            if (this.files && this.files.length > 0) {
+                handleFileSelection(this.files[0]);
+            }
+        });
+
+        retakeBtn.addEventListener('click', () => {
+            selectedFile = null;
+            previewContainer.style.display = 'none';
+            previewActions.style.display = 'none';
+            uploadOptions.style.display = 'flex';
+            fileNameDisplay.style.display = 'none';
+            // Clear inputs so change event fires again for same file if needed
+            cameraInput.value = "";
+            fileInput.value = "";
         });
 
         form.addEventListener('submit', async function (e) {
             e.preventDefault();
 
-            let fileToUpload = null;
-            if (capturedBlob) {
-                fileToUpload = new File([capturedBlob], "captured.jpg", { type: "image/jpeg" });
-            } else if (fileInput.files && fileInput.files.length > 0) {
-                fileToUpload = fileInput.files[0];
-            }
-
-            if (!fileToUpload) {
+            if (!selectedFile) {
                 statusDiv.textContent = translations[currentLang].status_no_file;
-                statusDiv.className = "error";
+                statusDiv.className = "status-error";
+                statusDiv.style.display = "block";
                 return;
             }
+
+            const fileToUpload = selectedFile;
 
             const formData = new FormData();
             formData.append('file', fileToUpload);
@@ -1187,7 +1110,8 @@
 
             submitBtn.disabled = true;
             statusDiv.textContent = translations[currentLang].status_uploading;
-            statusDiv.className = "";
+            statusDiv.className = "status-info";
+            statusDiv.style.display = "block";
 
             try {
                 const response = await fetch('/upload/', {
@@ -1199,17 +1123,30 @@
                     const result = await response.json();
 
                     // Show success with tracking ID
-                    statusDiv.innerHTML = `<strong>${translations[currentLang].status_success} ${result.filename}</strong>
-                                           <div style="margin-top: 10px; padding: 15px; background: #e6f0fa; border-radius: 8px; border: 1px dashed #0070f3; text-align: center;">
-                                               <div style="font-size: 0.95rem; color: #333; margin-bottom: 8px;">Your Tracking ID:</div>
-                                               <div style="display: flex; justify-content: center; align-items: center; gap: 10px;">
-                                                   <span id="tracking-code" style="font-size: 1.5rem; font-weight: bold; color: #0070f3; letter-spacing: 2px;">${result.tracking_id}</span>
-                                                   <button type="button" onclick="copyTrackingId('${result.tracking_id}')" style="padding: 6px 12px; cursor: pointer; border-radius: 6px; border: 1px solid #0070f3; background: #fff; color: #0070f3; font-weight: bold; font-size: 14px; transition: all 0.2s;">Copy</button>
-                                               </div>
-                                           </div>`;
-                    statusDiv.className = "success";
+                    statusDiv.innerHTML = `
+                        <div style="text-align: center; animation: slideIn 0.4s ease-out;">
+                            <div style="font-size: 32px; margin-bottom: 12px;">🎉</div>
+                            <strong style="font-size: 1.1rem; display: block; margin-bottom: 4px;">${translations[currentLang].status_success}</strong>
+                            <p style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 20px;">${result.filename}</p>
+                            
+                            <div style="background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); border: 1px solid var(--primary-light);">
+                                <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 8px; font-weight: 700;">Your Tracking ID</div>
+                                <div style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
+                                    <span id="tracking-code" style="font-size: 2rem; font-weight: 800; color: var(--primary); letter-spacing: 2px; font-family: monospace;">${result.tracking_id}</span>
+                                    <button type="button" class="btn btn-outline" onclick="copyTrackingId('${result.tracking_id}')" style="width: auto; padding: 6px 16px; font-size: 14px;">
+                                        Copy ID
+                                    </button>
+                                </div>
+                            </div>
+                        </div>`;
+                    statusDiv.className = "status-success";
                     form.reset();
-                    fileNameDisplay.textContent = translations[currentLang].no_file;
+                    // Reset custom UI
+                    selectedFile = null;
+                    previewContainer.style.display = 'none';
+                    previewActions.style.display = 'none';
+                    uploadOptions.style.display = 'flex';
+                    fileNameDisplay.style.display = 'none';
 
                     // Persist tracking ID locally for easier checking later
                     if (result.tracking_id) {
@@ -1221,12 +1158,12 @@
                 } else {
                     const errorText = await response.text();
                     statusDiv.textContent = `${translations[currentLang].status_error} ${errorText}`;
-                    statusDiv.className = "error";
+                    statusDiv.className = "status-error";
                 }
             } catch (error) {
                 console.error('Error:', error);
                 statusDiv.textContent = translations[currentLang].status_err_upload;
-                statusDiv.className = "error";
+                statusDiv.className = "status-error";
             } finally {
                 submitBtn.disabled = false;
             }
