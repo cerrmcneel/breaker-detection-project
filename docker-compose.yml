@@ -6,7 +6,7 @@ services:
     container_name: breaker-app
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "8085:8000"
     volumes:
       - /mnt/nas/breaker_data/project_breaker/raw_uploads:/app/data
     environment:
@@ -19,4 +19,4 @@ services:
     restart: unless-stopped
     command: tunnel run
     environment:
-      - TUNNEL_TOKEN=eyJhIjoiMjgyNjc1NzA5YjcyMThlYTZmNWI5MTU0NmJiMmRiOWIiLCJ0IjoiNzQyMWE3MjAtMDBlMC00M2MzLWFkODQtODc4YzUyNzIzYTYzIiwicyI6Ik5EazVZVEZrT1RJdE0yTmpaUzAwTURBeExUa3pNREF0TURWaVptTTNZalE1WlRrMyJ9
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
