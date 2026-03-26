@@ -24,3 +24,10 @@ model/*.onnx
 .vscode/
 .idea/
 *.log
+
+# --- Tableau Temp Files ---
+*.twbr
+~*
+
+# --- Project Outputs ---
+result.txt

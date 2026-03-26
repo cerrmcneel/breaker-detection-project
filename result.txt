@@ -1,2 +1,0 @@
-Match exactly 3 unique files? False
-Files remaining: ['img1_copy.jpg', 'img2.jpg', 'img3.jpg']

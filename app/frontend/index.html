@@ -745,11 +745,6 @@
             }
         };
 
-        // Merge translations
-        for (let lang in previewTranslations) {
-            Object.assign(translations[lang], previewTranslations[lang]);
-        }
-
         const translations = {
             en: {
                 photo_by: "Photo by",
@@ -848,6 +843,11 @@
                 score_not_found: "ID de seguimiento no encontrado. Verifique el código e intente de nuevo."
             }
         };
+
+        // Merge translations
+        for (let lang in previewTranslations) {
+            Object.assign(translations[lang], previewTranslations[lang]);
+        }
 
         function setLanguage(lang) {
             currentLang = lang;
