@@ -206,6 +206,11 @@
             </svg>
             BreakerAudit
         </a>
+        <div class="nav-links">
+            <a href="/" class="nav-link" id="nav-home">Home</a>
+            <a href="/blog.html" class="nav-link active" id="nav-blog">Blog</a>
+        </div>
+    </nav>
 
     <!-- Language Switcher -->
     <div class="lang-switcher">
@@ -339,13 +344,16 @@
             document.getElementById(`btn-${lang}`).classList.add('active');
 
             // Update Navbar translations
+            const navHome = document.getElementById('nav-home');
+            const navBlog = document.getElementById('nav-blog');
+            
             if (lang === 'es') {
-                document.getElementById('nav-home').textContent = "Inicio";
-                document.getElementById('nav-blog').textContent = "Blog";
+                if (navHome) navHome.textContent = "Inicio";
+                if (navBlog) navBlog.textContent = "Blog";
                 document.title = "El Corazón Silencioso de su Hogar - BreakerAudit";
             } else {
-                document.getElementById('nav-home').textContent = "Home";
-                document.getElementById('nav-blog').textContent = "Blog";
+                if (navHome) navHome.textContent = "Home";
+                if (navBlog) navBlog.textContent = "Blog";
                 document.title = "The Silent Heart of Your Home - BreakerAudit";
             }
 
