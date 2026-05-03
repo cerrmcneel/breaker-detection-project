@@ -28,7 +28,7 @@
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--bg);
             background-image: radial-gradient(at 0% 0%, rgba(0, 102, 255, 0.05) 0px, transparent 50%),
-                              radial-gradient(at 100% 100%, rgba(0, 102, 255, 0.05) 0px, transparent 50%);
+                radial-gradient(at 100% 100%, rgba(0, 102, 255, 0.05) 0px, transparent 50%);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -108,7 +108,7 @@
             display: none;
             background: #000;
             aspect-ratio: 3/4;
-            box-shadow: inset 0 0 40px rgba(0,0,0,0.5);
+            box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.5);
         }
 
         #preview-img {
@@ -126,7 +126,7 @@
             pointer-events: none;
             border: 2px solid rgba(255, 255, 255, 0.3);
             box-sizing: border-box;
-            background-image: 
+            background-image:
                 linear-gradient(to right, white 1px, transparent 1px),
                 linear-gradient(to bottom, white 1px, transparent 1px);
             background-size: 33.33% 33.33%;
@@ -272,7 +272,8 @@
             transition: all 0.2s;
         }
 
-        .nav-link:hover, .nav-link.active {
+        .nav-link:hover,
+        .nav-link.active {
             color: var(--primary);
             background-color: var(--primary-light);
         }
@@ -326,13 +327,34 @@
         }
 
         @keyframes slideIn {
-            from { transform: translateY(10px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+            from {
+                transform: translateY(10px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
 
-        .status-success { background: #ECFDF5; color: #065F46; display: block !important; }
-        .status-error { background: #FEF2F2; color: #991B1B; display: block !important; }
-        .status-info { background: #EFF6FF; color: #1E40AF; display: block !important; }
+        .status-success {
+            background: #ECFDF5;
+            color: #065F46;
+            display: block !important;
+        }
+
+        .status-error {
+            background: #FEF2F2;
+            color: #991B1B;
+            display: block !important;
+        }
+
+        .status-info {
+            background: #EFF6FF;
+            color: #1E40AF;
+            display: block !important;
+        }
 
         .hidden-input {
             display: none;
@@ -344,8 +366,10 @@
     <!-- Top Navigation Bar -->
     <nav class="navbar">
         <a href="/" class="nav-brand" data-i18n="nav_brand">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 2px;">
-                <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+                style="margin-right: 2px;">
+                <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" />
             </svg>
             BreakerAudit
         </a>
@@ -430,8 +454,8 @@
             <!-- Progress Tracker -->
             <div class="progress-container">
                 <div class="progress-header">
-                    <span class="progress-title" data-i18n="goal">Goal: 100 Photos by Wednesday</span>
-                    <span class="progress-badge" id="progress-text">0 / 100</span>
+                    <span class="progress-title" data-i18n="goal">Goal: 300 Photos</span>
+                    <span class="progress-badge" id="progress-text">0 / 300</span>
                 </div>
                 <div class="progress-bar-bg">
                     <div class="progress-bar-fill" id="progress-bar"></div>
@@ -439,12 +463,11 @@
             </div>
 
             <form id="uploadForm">
-                <div id="upload-options"
-                    style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+                <div id="upload-options" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
                     <button type="button" class="btn btn-primary" id="start-camera-btn" data-i18n="use_camera">
                         <span>📸</span> <span data-i18n="use_camera_text">Take a Photo</span>
                     </button>
-                    
+
                     <button type="button" class="btn btn-outline" id="browse-file-btn">
                         <span>📁</span> <span data-i18n="upload_file">Upload from Gallery</span>
                     </button>
@@ -458,7 +481,8 @@
                     <img id="preview-img" src="" alt="Captured breaker board">
                     <div class="preview-overlay"></div>
                     <div class="preview-guide">
-                        <div style="color: white; background: rgba(0,0,0,0.6); padding: 5px 12px; border-radius: 20px; font-size: 12px; margin-top: auto; margin-bottom: 20px;">
+                        <div
+                            style="color: white; background: rgba(0,0,0,0.6); padding: 5px 12px; border-radius: 20px; font-size: 12px; margin-top: auto; margin-bottom: 20px;">
                             Align breakers inside this box
                         </div>
                     </div>
@@ -470,12 +494,15 @@
                     </button>
                 </div>
 
-                <p id="fileName" style="margin-bottom: 1.5rem; font-size: 0.875rem; color: var(--text-muted); display: none;" data-i18n="no_file">No file chosen</p>
+                <p id="fileName"
+                    style="margin-bottom: 1.5rem; font-size: 0.875rem; color: var(--text-muted); display: none;"
+                    data-i18n="no_file">No file chosen</p>
 
                 <div style="margin-bottom: 1.5rem; text-align: left;">
                     <label for="countrySelect" style="display: block; margin-bottom: 0.5rem; font-weight: 500;"
                         data-i18n="select_country">Select Country:</label>
-                    <input type="text" id="countrySelect" name="country" list="countryList" required autocomplete="off" placeholder="Type or select a country..."
+                    <input type="text" id="countrySelect" name="country" list="countryList" required autocomplete="off"
+                        placeholder="Type or select a country..."
                         style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; background-color: #fff;">
                     <datalist id="countryList">
                         <option value="Afghanistan">
@@ -760,7 +787,7 @@
                 tip_3: "<strong>💡 Lighting:</strong> Ensure the area isn't too dark; use your flash if needed.",
                 tip_4: "<strong>📦 Full View:</strong> Make sure the entire panel fits inside the guided box.",
                 tip_5: "<strong>🔘 RCD Test:</strong> For best results test press the button on the RCD.",
-                goal: "Goal: 100 Photos by Wednesday",
+                goal: "Goal: 300 Photos",
                 use_camera: "📸 Use Camera",
                 upload_file: "📁 Upload File",
                 no_file: "No file chosen",
@@ -808,7 +835,7 @@
                 tip_3: "<strong>💡 Iluminación:</strong> Asegúrese de que el área no esté muy oscura; use el flash si es necesario.",
                 tip_4: "<strong>📦 Vista Completa:</strong> Asegúrese de que todo el panel quepa dentro del cuadro de guía.",
                 tip_5: "<strong>🔘 Prueba RCD:</strong> Para obtener mejores resultados, presione el botón de prueba en el RCD.",
-                goal: "Meta: 100 Fotos para el Miércoles",
+                goal: "Meta: 300 Fotos",
                 use_camera: "📸 Usar Cámara",
                 upload_file: "📁 Subir Archivo",
                 no_file: "Ningún archivo elegido",
@@ -897,7 +924,7 @@
             }
         }
 
-        const GOAL_TARGET = 100;
+        const GOAL_TARGET = 300;
 
         async function fetchCount() {
             try {
@@ -1033,17 +1060,17 @@
         function handleFileSelection(file) {
             if (!file) return;
             selectedFile = file;
-            
+
             // Show preview
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = function (e) {
                 previewImg.src = e.target.result;
                 previewContainer.style.display = 'block';
                 previewActions.style.display = 'flex';
                 uploadOptions.style.display = 'none';
                 fileNameDisplay.style.display = 'block';
                 fileNameDisplay.textContent = file.name;
-                
+
                 // Scroll to preview
                 previewContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
             };
@@ -1058,13 +1085,13 @@
             fileInput.click();
         });
 
-        cameraInput.addEventListener('change', function() {
+        cameraInput.addEventListener('change', function () {
             if (this.files && this.files.length > 0) {
                 handleFileSelection(this.files[0]);
             }
         });
 
-        fileInput.addEventListener('change', function() {
+        fileInput.addEventListener('change', function () {
             if (this.files && this.files.length > 0) {
                 handleFileSelection(this.files[0]);
             }
