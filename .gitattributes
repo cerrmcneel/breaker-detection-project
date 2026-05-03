@@ -1,0 +1,5 @@
+# Mark Jupyter Notebooks as documentation so they don't skew language statistics
+*.ipynb linguist-documentation=true
+
+# Mark the analysis folder as documentation
+analysis/* linguist-documentation=true
