@@ -36,3 +36,12 @@ Low Cognitive Load: As the developer, you only need to know how to "start" and "
 Ease of Testing: We can test the entire "Detection" feature by simply asserting that startDetection() produces a valid stream and stopDetection() releases it.
 
 TDD Compatibility: By having a stable interface, we can write our tests first and let the AI refactor the messy implementation underneath without breaking the app.
+
+☸️ 4. Hybrid MLOps Strategy
+We don't just build models; we build the pipes that run them.
+
+Infrastructure as Code (IaC): The deployment is as important as the detection. We prioritize Kubernetes orchestration to ensure the model is resilient and scalable.
+
+Hardware-Aware Inference: By leveraging a local GTX 3060 via GPU passthrough, we prioritize performance over the cost-constraints of cloud free-tiers.
+
+Secure Edge Access: Using Cloudflare Tunnels ensures that our high-performance local "brain" is safely accessible to field devices globally.

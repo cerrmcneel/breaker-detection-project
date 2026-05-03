@@ -24,15 +24,27 @@ The primary goal of PanelSafe is to provide a seamless way for users to upload i
 - **Hidden Batch Upload:** Admin-only, password-protected batch upload utility to mass-ingest existing breaker datasets smoothly.
 - **Live Progress Tracking:** Dynamic goal-oriented visual badges matching current database ingest sizes against target milestones in real time.
 
-##  The Tech Stack
-The infrastructure is built to be resilient, secure, and "home-lab" hosted:
+## 🏗️ Hybrid MLOps Infrastructure
+PanelSafe leverages a sophisticated "Home-Lab Hybrid" architecture to provide high-performance AI inference without the cost of cloud GPUs.
 
-- **Frontend:** HTML5/CSS3/JS utilizing internal Web APIs (`getUserMedia`) for native browser integration.
-- **Backend:** FastAPI (Python) handling asynchronous image processing, file hashing, and metadata logging.
-- **Virtualization:** Hosted on Proxmox VE (VM 101).
-- **Containerization:** Fully Dockerized with Docker Compose.
-- **Storage:** Direct mount to a TrueNAS core via NFS/SMB for long-term data persistence.
-- **Networking:** Secured via Cloudflare Tunnels (`panelsafe.cv`), providing end-to-end encryption without opening home router ports.
+```mermaid
+graph TD
+    Client[📱 Field Device / Browser] -->|HTTPS / WSS| CF[☁️ Cloudflare Tunnel]
+    CF -->|Secure Proxy| PVE[🛡️ Proxmox VE]
+    PVE -->|Orchestration| K8s[☸️ Kubernetes Cluster]
+    K8s -->|GPU Passthrough| RTX[🎮 NVIDIA GTX 3060]
+    RTX -->|CUDA Acceleration| YOLO[🚀 YOLO Inference Service]
+    YOLO -->|Results| Client
+```
+
+### The Tech Stack
+*   **AI/ML:** YOLOv10-Nano for real-time object detection and classification.
+*   **Inference Engine:** FastAPI-based inference server optimized for NVIDIA CUDA.
+*   **Orchestration:** **Kubernetes (K3s/K8s)** managing container lifecycle and scaling.
+*   **Hardware Acceleration:** **NVIDIA GTX 3060** utilizing PCIe passthrough via Proxmox.
+*   **Networking:** **Cloudflare Tunnels** providing secure, end-to-end encrypted public access to the local cluster without exposing home router ports.
+*   **Storage:** Distributed storage via **TrueNAS Core** (NFS/SMB) for massive image dataset persistence.
+
 
 ##  Project Structure
 ```plaintext
@@ -80,4 +92,4 @@ We are currently in the active data collection phase.
 - **Live Portal:** [https://panelsafe.cv](https://panelsafe.cv)
 
 ## 👨‍💻 About the Developer
-With a professional background as an Electrician and ESL teacher, I am transitioning into Data Science to build tools that solve real-world problems in the electrical industry. This project combines my domain knowledge of circuit circuitry with full-stack engineering and machine learning.
+With a professional background as an **Electrician** and **ESL teacher**, I am transitioning into **Data Science** and **MLOps** to build tools that solve real-world problems in the electrical industry. This project demonstrates a full-stack engineering approach: from hardware-level GPU orchestration to high-level computer vision modeling.
