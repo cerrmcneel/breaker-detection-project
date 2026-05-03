@@ -2,6 +2,14 @@
 
 PanelSafe is a computer vision data ingestion and analysis platform designed to automate the auditing of residential and industrial electrical panels. Developed during an intensive bootcamp, this project bridges the gap between traditional electrical expertise and modern AI-driven safety inspections.
 
+## Project Evolution & Portfolio Milestones
+This repository has evolved through distinct professional phases, reflecting my growth from Data Analysis to Machine Learning Engineering:
+
+*   **[v1.0: Data Analysis Phase](https://github.com/cerrmcneel/breaker-detection-project/releases/tag/v1.0-data-analysis)**: Focus on EDA, data cleaning, and initial algorithmic logic. (Frozen for portfolio review).
+*   **[Current: Machine Learning & Edge Phase]**: Implementation of YOLOv10 for real-time breaker detection and synthetic dataset generation.
+
+---
+
 ## Project Vision
 The primary goal of PanelSafe is to provide a seamless way for users to upload images of circuit breakers from the field. This data is currently being used to train a custom YOLO (You Only Look Once) model to identify:
 
