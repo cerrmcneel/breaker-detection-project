@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yolo-inference
+  namespace: default
+  labels:
+    app: yolo-inference
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yolo-inference
+  template:
+    metadata:
+      labels:
+        app: yolo-inference
+    spec:
+      runtimeClassName: nvidia
+      nodeSelector:
+        kubernetes.io/hostname: datainmind
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: yolo-inference
+        image: ultralytics/ultralytics:latest
+        command:
+        - python
+        - -c
+        - |
+          from ultralytics import YOLO
+          import time
+          model = YOLO("yolo26n.pt")
+          print(f"YOLO26-Nano loaded on: {next(model.model.parameters()).device}")
+          print("Inference server ready. Waiting for requests...")
+          while True:
+            time.sleep(60)
+        resources:
+          limits:
+            nvidia.com/gpu: 1
+          requests:
+            nvidia.com/gpu: 1
+        env:
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: all
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: compute,utility
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yolo-inference-svc
+  namespace: default
+spec:
+  selector:
+    app: yolo-inference
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080
+  type: ClusterIP

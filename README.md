@@ -25,7 +25,7 @@ The primary goal of PanelSafe is to provide a seamless way for users to upload i
 - **Live Progress Tracking:** Dynamic goal-oriented visual badges matching current database ingest sizes against target milestones in real time.
 
 ## 🏗️ Hybrid MLOps Infrastructure
-PanelSafe leverages a sophisticated "Home-Lab Hybrid" architecture to provide high-performance AI inference without the cost of cloud GPUs.
+PanelSafe leverages "Home-Lab Hybrid" architecture to provide high-performance AI inference without the cost of cloud GPUs.
 
 ```mermaid
 graph TD
@@ -85,11 +85,9 @@ docker-compose up -d --build
 ```
 
 ## 📈 Current Milestone: Data Collection
-We are currently in the active data collection phase.
+We are currently in the active data scaling phase.
 
-- **Target:** 300+ unique electrical panel images.
-- **Deadline:** Wednesday, March 4th.
 - **Live Portal:** [https://panelsafe.cv](https://panelsafe.cv)
 
 ## 👨‍💻 About the Developer
-With a professional background as an **Electrician** and **ESL teacher**, I am transitioning into **Data Science** and **MLOps** to build tools that solve real-world problems in the electrical industry. This project demonstrates a full-stack engineering approach: from hardware-level GPU orchestration to high-level computer vision modeling.
+With a professional background as an **Electrician** and **ESL teacher**, I am transitioning into **Data Science** and **MLOps** to build tools that solve real-world problems in the electrical industry. This project demonstrates a full-stack engineering approach: from hardware-level GPU orchestration to high-level computer vision modeling.

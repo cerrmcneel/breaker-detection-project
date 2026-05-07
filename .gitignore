@@ -31,3 +31,11 @@ model/*.onnx
 
 # --- Project Outputs ---
 result.txt
+
+# --- Media & Bloat ---
+*.mp4
+*.avi
+*.mov
+
+# --- Caches ---
+.pytest_cache/

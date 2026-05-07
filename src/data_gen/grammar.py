@@ -1,4 +1,7 @@
 
+import random
+
+
 class Breaker:
     def __init__(self, cls, width):
         self.cls = cls
@@ -27,3 +30,131 @@ class Panel:
     def get_rail_y_center(self, rail_index):
         half_height = self.rail_height / 2
         return (rail_index * self.rail_height) + half_height
+
+
+class PanelFactory:
+    """
+    Generates procedurally randomized Panel objects following Spanish REBT grammar.
+
+    Valid Spanish panel structure (per REBT):
+        Rail 0:  [MAINBREAKER or OVERSURGE] → [RCD or RCD_SI] → [MCBs...]
+        Rail 1+: [RCD or RCD_SI] → [MCBs...]
+
+    Chaos behaviors model real-world non-compliant installs:
+        - missing_mainbreaker : No IGA — installer relied on meter breaker (common)
+        - missing_rcd         : No diferencial on a rail (rare, dangerous)
+        - use_oversurge       : IGA replaced by IGA+DPS (modern REBT-recommended)
+        - use_rcd_si          : Superinmunizado instead of standard RCD (growing trend)
+        - wide_mcb            : 2-module MCBs mixed into layout
+        - add_other           : Timer/contactor present on rail
+
+    Parameters
+    ----------
+    chaos_factor : float [0.0–1.0]
+        Scales all chaos probabilities. 0.0 = perfectly valid panel.
+        1.0 = full base probabilities apply to every decision point.
+    rail_height : int
+        Pixel height of each rail slot (passed through to Panel).
+    """
+
+    # Weighted rail counts reflecting Spanish residential reality:
+    #   1 rail → small flat  |  2 rails → most households
+    #   3 rails → larger/electrified home  |  4 rails → garage/business
+    RAIL_COUNTS   = [1, 2, 3, 4]
+    RAIL_WEIGHTS  = [0.15, 0.55, 0.20, 0.10]
+
+    # Per-behavior base probabilities at chaos_factor=1.0
+    CHAOS_PROBS = {
+        "missing_mainbreaker": 0.20,  # common — meter has breaker, skipped
+        "missing_rcd":         0.05,  # rare but dangerous
+        "use_oversurge":       0.15,  # newer REBT-compliant installs
+        "use_rcd_si":          0.30,  # growing recommendation
+        "wide_mcb":            0.25,  # 2-module MCB mixed in
+        "add_other":           0.10,  # timer/contactor present
+    }
+
+    # MAINBREAKER module widths: older panels larger, modern ones slimmer
+    MAINBREAKER_WIDTHS  = [1, 2, 3, 4]
+    MAINBREAKER_WEIGHTS = [0.10, 0.60, 0.20, 0.10]
+
+    def __init__(self, chaos_factor=0.0, rail_height=200):
+        self.chaos_factor = chaos_factor
+        self.rail_height  = rail_height
+
+    # ── Core generator ────────────────────────────────────────────────────────
+    def generate(self):
+        """
+        Generate one randomized Panel.
+
+        Returns
+        -------
+        Panel
+            A Panel with rails filled according to REBT grammar ±chaos.
+        """
+        rail_count = random.choices(self.RAIL_COUNTS, weights=self.RAIL_WEIGHTS)[0]
+        panel = Panel(rails_count=rail_count, rail_height=self.rail_height)
+
+        for idx, rail in enumerate(panel.rails):
+            if idx == 0:
+                self._fill_main_rail(rail)
+            else:
+                self._fill_secondary_rail(rail)
+
+        return panel
+
+    # ── Rail fillers ──────────────────────────────────────────────────────────
+    def _fill_main_rail(self, rail):
+        """Rail 0: [MAINBREAKER/OVERSURGE?] → [RCD?] → MCBs"""
+        if not self._chaos("missing_mainbreaker"):
+            if self._chaos("use_oversurge"):
+                w = random.choices([2, 3, 4], weights=[0.4, 0.4, 0.2])[0]
+                rail.add_component(Breaker(cls="OVERSURGE", width=w))
+            else:
+                w = random.choices(
+                    self.MAINBREAKER_WIDTHS, weights=self.MAINBREAKER_WEIGHTS
+                )[0]
+                rail.add_component(Breaker(cls="MAINBREAKER", width=w))
+
+        if not self._chaos("missing_rcd"):
+            rcd = "RCD_SI" if self._chaos("use_rcd_si") else "RCD"
+            rail.add_component(Breaker(cls=rcd, width=2))
+
+        self._fill_mcbs(rail)
+
+    def _fill_secondary_rail(self, rail):
+        """Rail 1+: [RCD?] → MCBs"""
+        if not self._chaos("missing_rcd"):
+            rcd = "RCD_SI" if self._chaos("use_rcd_si") else "RCD"
+            rail.add_component(Breaker(cls=rcd, width=2))
+
+        self._fill_mcbs(rail)
+
+    def _fill_mcbs(self, rail):
+        """Fill remaining module space with MCBs (and occasional OTHER devices)."""
+        while True:
+            remaining = rail.max_modules - rail.current_width()
+            if remaining <= 0:
+                break
+
+            # Occasional OTHER device (timer/contactor)
+            if self._chaos("add_other") and remaining >= 1:
+                w = min(random.choice([1, 2]), remaining)
+                if not rail.add_component(Breaker(cls="OTHER", width=w)):
+                    break
+                continue
+
+            # MCB — 1 or 2 modules
+            w = 2 if (self._chaos("wide_mcb") and remaining >= 2) else 1
+            if not rail.add_component(Breaker(cls="MCB", width=w)):
+                break
+
+    # ── Chaos helper ──────────────────────────────────────────────────────────
+    def _chaos(self, behavior):
+        """
+        Return True if this chaos behavior triggers this call.
+
+        Effective probability = base_prob × chaos_factor.
+        At chaos_factor=0.0, always returns False (valid panel).
+        """
+        prob = self.CHAOS_PROBS.get(behavior, 0.0) * self.chaos_factor
+        return random.random() < prob
