@@ -16,7 +16,7 @@ When activated, do not generate code. Instead:
    - Use the phrase: "**[FEATURE CREEP WARNING]**: This looks like it might exceed our two-week sprint. Is this essential for the Wednesday deadline?"
 
 ## 4. Constraint: The "Basement" Reality
-Every grill must verify that the proposed logic remains functional in a **zero-connectivity basement environment**. If a plan relies on an external API or live server call without an offline fallback, flag it immediately.
+Every grill must verify that the **final production inference** remains functional in a **zero-connectivity basement environment**. Development, training, and data annotation phases are exempt and may freely utilize cloud resources. If a plan relies on an external API or live server call for *field predictions* without an offline fallback, flag it immediately.
 
 ## 5. Final Alignment & Variable Artifact
 Once aligned:

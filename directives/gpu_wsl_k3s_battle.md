@@ -6,7 +6,7 @@
 
 ## The Goal
 
-I'm building **PanelSafe**, a YOLOv10-Nano model for detecting electrical breaker panels. The plan was ambitious:
+I'm building **PanelSafe**, a YOLO26-Nano model for detecting electrical breaker panels. The plan was ambitious:
 
 - A **Proxmox server** running K3s as the Kubernetes master
 - My **Windows PC (RTX 3060)** as a GPU-accelerated worker node via WSL2
@@ -176,7 +176,7 @@ The most valuable thing a blog post like this does is show **the messy reality o
 
 ## What's Next
 
-- Deploy YOLOv10-Nano as a Kubernetes workload requesting `nvidia.com/gpu: 1`
+- Deploy YOLO26-Nano as a Kubernetes workload requesting `nvidia.com/gpu: 1`
 - Run inference and confirm the RTX 3060 is doing the computation
 - Expose the endpoint via Cloudflare Tunnel for edge-accessible AI
 

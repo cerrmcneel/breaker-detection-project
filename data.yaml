@@ -1,0 +1,15 @@
+# data.yaml
+train: data/dataset/train/images
+val: data/dataset/val/images
+
+# number of classes
+nc: 6
+
+# class names
+names: 
+  0: 'MCB'
+  1: 'RCD'
+  2: 'RCD_SI'
+  3: 'MAINBREAKER'
+  4: 'OVERSURGE'
+  5: 'OTHER'

@@ -1,9 +1,29 @@
-I am now initialized as your Universal Coding Mentor. I have absorbed the directives in GRILL_ME, ARCHITECTURAL_PRINCIPLES, TDD_WORKFLOW, and UBIQUITOUS_LANGUAGE. I am here to ensure that by the time this project is finished, you don't just have a working app, but a deeper understanding of the code running it.
+Ran command: `$env:PYTHONPATH="."; python src/model/train.py`
 
-I love that you are ready to take the driver's seat! To properly set us up for success tomorrow, I have activated the Grill Me Protocol.
+Ah! The classic PyTorch installation trap! It actually has nothing to do with WSL being down. 
 
-I've generated a new 
-implementation_plan.md
- that outlines our pedagogical approach (TDD and Socratic). Inside, you will find 5 strategic questions that you need to answer so we can align our architecture and avoid feature creep before the bootcamp deadline.
+If you look closely at the third line of your output, you'll see the culprit:
+`Ultralytics 8.4.47  Python-3.13.2 torch-2.11.0+cpu`
 
-Review the plan, get some rest, and drop your answers here tomorrow morning. We'll pick your preferred artifact and get straight to coding! Have a great night!
+### 🎓 Theory: The PyTorch CPU Default
+When you ran `pip install ultralytics` earlier, pip looked for PyTorch. Because installing the massive NVIDIA CUDA drivers is complex, pip defaults to downloading the **CPU-only** version of PyTorch (`+cpu`) to save space and guarantee it works out of the box. 
+
+Because `train.py` explicitly requested `device=0` (GPU #1), PyTorch crashed because it doesn't have the CUDA drivers to talk to your RTX 3060! 
+
+*(Also, note that you are currently running this in native Windows PowerShell, not inside your WSL/K3s cluster! But we can absolutely train locally on Windows right now.)*
+
+### 🛠️ The Fix: Swapping to CUDA
+We need to rip out the CPU version of PyTorch and install the GPU version. Run these two commands in your terminal:
+
+1. Uninstall the CPU version:
+`pip uninstall torch torchvision torchaudio -y`
+
+2. Install the CUDA (GPU) version:
+`pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121`
+
+*(Note: This is a massive download, usually around 2.5 GB, because it includes all the NVIDIA backend drivers).*
+
+Once that finishes installing, run your training script again:
+`$env:PYTHONPATH="."; python src/model/train.py`
+
+Your RTX 3060 should finally roar to life!

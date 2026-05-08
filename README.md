@@ -6,7 +6,7 @@ PanelSafe is a computer vision data ingestion and analysis platform designed to 
 This repository has evolved through distinct professional phases, reflecting my growth from Data Analysis to Machine Learning Engineering:
 
 *   **[v1.0: Data Analysis Phase](https://github.com/cerrmcneel/breaker-detection-project/releases/tag/v1.0-data-analysis)**: Focus on EDA, data cleaning, and initial algorithmic logic. (Frozen for portfolio review).
-*   **[Current: Machine Learning & Edge Phase]**: Implementation of YOLOv10 for real-time breaker detection and synthetic dataset generation.
+*   **[Current: Machine Learning & Edge Phase]**: Implementation of YOLO26 for real-time breaker detection and synthetic dataset generation.
 
 ---
 
@@ -38,7 +38,7 @@ graph TD
 ```
 
 ### The Tech Stack
-*   **AI/ML:** YOLOv10-Nano for real-time object detection and classification.
+*   **AI/ML:** YOLO26-Nano for real-time object detection and classification.
 *   **Inference Engine:** FastAPI-based inference server optimized for NVIDIA CUDA.
 *   **Orchestration:** **Kubernetes (K3s/K8s)** managing container lifecycle and scaling.
 *   **Hardware Acceleration:** **NVIDIA GTX 3060** utilizing PCIe passthrough via Proxmox.
