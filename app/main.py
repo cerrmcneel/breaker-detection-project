@@ -14,6 +14,11 @@ from dotenv import load_dotenv
 import argparse
 import random
 import string
+import cv2
+import numpy as np
+from ultralytics import YOLO
+from src.model.heuristics import SpatialHeuristicEngine
+from src.model.ocr_reader import OCRReader
 
 # Load environment variables
 load_dotenv()
@@ -26,7 +31,31 @@ seen_hashes = set()
 # Lock to prevent race conditions when multiple identical images upload at the exact same millisecond
 upload_lock = asyncio.Lock()
 
-app = FastAPI(title="Breaker Detection Data Collection Beta")
+app = FastAPI(title="PanelSafe: Breaker Detection & Analysis")
+
+from sahi import AutoDetectionModel
+from sahi.predict import get_sliced_prediction
+
+# Initialize Pipeline Components
+MODEL_PATH = "models/best.pt"
+if os.path.exists(MODEL_PATH):
+    try:
+        sahi_model = AutoDetectionModel.from_pretrained(
+            model_type='ultralytics',
+            model_path=MODEL_PATH,
+            confidence_threshold=0.15,
+            device='cuda:0'
+        )
+        logger.info(f"Loaded SAHI model from {MODEL_PATH}")
+    except Exception as e:
+        logger.error(f"Failed to load SAHI model: {e}")
+        sahi_model = None
+else:
+    logger.warning(f"Weights not found at {MODEL_PATH}. Prediction endpoint will be degraded.")
+    sahi_model = None
+
+heuristic_engine = SpatialHeuristicEngine()
+ocr_reader = OCRReader()
 
 def generate_tracking_id():
     """Generate a random 5-character alphanumeric code."""
@@ -101,6 +130,78 @@ def log_metadata(original_filename: str, saved_filename: str, country: str, file
     
     with open(LOG_FILE, "w") as f:
         json.dump(entries, f, indent=4)
+
+@app.post("/predict/")
+async def predict_panel(file: UploadFile = File(...)):
+    """
+    Two-Stage Inference Pipeline:
+    1. YOLOv8 detects generic components (MCB, RCD).
+    2. Spatial Heuristics reclassify components (Mainbreaker logic).
+    3. OCR extracts amperages from cropped boxes.
+    """
+    if not sahi_model:
+        raise HTTPException(status_code=500, detail="Inference model not loaded on server.")
+
+    # Save temporary file for processing
+    temp_filename = f"temp_{uuid.uuid4()}_{file.filename}"
+    temp_path = os.path.join(UPLOAD_DIR, temp_filename)
+    
+    try:
+        contents = await file.read()
+        with open(temp_path, "wb") as f:
+            f.write(contents)
+
+        # 1. Run SAHI Inference (Slicing Aided Hyper Inference)
+        result = get_sliced_prediction(
+            temp_path,
+            sahi_model,
+            slice_height=640,
+            slice_width=640,
+            overlap_height_ratio=0.2,
+            overlap_width_ratio=0.2,
+            # NMS Tuning: 'IOS' (Intersection over Smaller) aggressively removes 
+            # partial boxes that got sliced. Lower threshold = more aggressive deletion.
+            postprocess_type="NMS",
+            postprocess_match_metric="IOS", 
+            postprocess_match_threshold=0.05
+        )
+        
+        predictions = []
+        for obj in result.object_prediction_list:
+            predictions.append({
+                "box": [obj.bbox.minx, obj.bbox.miny, obj.bbox.maxx, obj.bbox.maxy],
+                "class": obj.category.name,
+                "conf": round(obj.score.value, 3),
+                "ocr_text": ""
+            })
+
+        # 2. Apply Spatial Heuristics (REBT Domain Knowledge)
+        refined_predictions = heuristic_engine.apply_logic(predictions, temp_path)
+
+        # 3. Apply OCR to each detected breaker
+        for pred in refined_predictions:
+            # We only run OCR on MCBs and RCDs to save time
+            if pred["class"] in ["MCB", "MAINBREAKER", "RCD", "RCD_SI"]:
+                ocr_result = ocr_reader.read_bounding_box(temp_path, pred["box"])
+                pred["ocr_text"] = ocr_result
+
+        # Cleanup temp file
+        os.remove(temp_path)
+
+        return {
+            "status": "success",
+            "panel_layout": refined_predictions,
+            "summary": {
+                "total_components": len(refined_predictions),
+                "mainbreaker_found": any(p["class"] == "MAINBREAKER" for p in refined_predictions)
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"Prediction Error: {e}")
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/upload/")
 async def upload_image(
@@ -241,6 +342,34 @@ async def verify_admin(req: AdminVerifyRequest):
         return {"verified": True}
     else:
         raise HTTPException(status_code=401, detail="Incorrect password.")
+
+@app.post("/active-learning/save")
+async def save_active_learning(file: UploadFile = File(...), annotations: str = Form(...)):
+    import time
+    try:
+        active_learning_dir = "data/active_learning"
+        os.makedirs(active_learning_dir, exist_ok=True)
+        
+        timestamp = int(time.time())
+        # Clean filename
+        safe_filename = "".join(c for c in file.filename if c.isalnum() or c in "._-")
+        base_name = f"correction_{timestamp}_{safe_filename}"
+        img_path = os.path.join(active_learning_dir, base_name)
+        
+        # Save Image
+        contents = await file.read()
+        with open(img_path, "wb") as f:
+            f.write(contents)
+            
+        # Save JSON
+        json_path = os.path.join(active_learning_dir, f"{os.path.splitext(base_name)[0]}.json")
+        with open(json_path, "w") as f:
+            f.write(annotations)
+            
+        return {"status": "success", "message": "Saved to active learning pool."}
+    except Exception as e:
+        logger.error(f"Active Learning Save Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Mount frontend directory for static files
 # Create app/frontend if it doesn't exist to avoid startup errors

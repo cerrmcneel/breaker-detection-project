@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PanelSafe | Human-in-the-Loop Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --primary: #00f2fe;
+            --secondary: #4facfe;
+            --bg: #0a0c10;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #ffffff;
+            --text-dim: #a0a0a0;
+            --accent: #ff4b2b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            width: 100vw;
+            margin: 0;
+            display: flex;
+            flex-direction: row;
+            overflow: hidden;
+        }
+
+        /* --- SIDEBAR (LEFT) --- */
+        .sidebar {
+            width: 30vw;
+            max-width: 600px;
+            min-width: 450px;
+            height: 100vh;
+            background: #0a0c10;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 2rem;
+            z-index: 10;
+            box-shadow: 5px 0 20px rgba(0,0,0,0.8);
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .actions {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .upload-section {
+            padding-bottom: 2rem;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .upload-zone {
+            border: 2px dashed var(--secondary);
+            border-radius: 16px;
+            padding: 2.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(79, 172, 254, 0.05);
+        }
+
+        .upload-zone:hover {
+            border-color: var(--primary);
+            background: rgba(0, 242, 254, 0.1);
+        }
+
+        /* --- SCROLLABLE COMPONENT LIST --- */
+        .scroll-area {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .scroll-area::-webkit-scrollbar { width: 6px; }
+        .scroll-area::-webkit-scrollbar-track { background: transparent; }
+        .scroll-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+        .scroll-area::-webkit-scrollbar-thumb:hover { background: var(--secondary); }
+
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-dim);
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .component-card {
+            background: #111418;
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .component-card:hover {
+            border-color: var(--secondary);
+            background: #1a1d23;
+        }
+
+        .component-card.active {
+            border-color: var(--primary);
+            background: #1a1d23;
+            box-shadow: 0 5px 25px rgba(0, 242, 254, 0.25);
+        }
+
+        .card-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .icon-btn:hover { color: var(--primary); background: rgba(255, 255, 255, 0.1); }
+        .icon-btn.delete:hover { color: var(--accent); }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .badge {
+            font-size: 1rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            text-transform: uppercase;
+            font-weight: 800;
+        }
+
+        .badge-mcb { background: #4a90e2; }
+        .badge-rcd { background: #e67e22; }
+        .badge-main { background: #f1c40f; color: #000; }
+
+        .inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        input, select {
+            background: #000;
+            border: 2px solid var(--border);
+            color: #fff;
+            padding: 1rem;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 1.2rem;
+            font-weight: 600;
+            width: 100%;
+        }
+
+        input:focus, select:focus { border-color: var(--primary); outline: none; }
+        select { color: var(--primary); }
+
+        .btn {
+            padding: 1.2rem 2rem;
+            border-radius: 12px;
+            border: none;
+            font-weight: 800;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            flex: 1;
+        }
+
+        .btn-primary { background: linear-gradient(45deg, var(--primary), var(--secondary)); color: #000; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 242, 254, 0.4); }
+        .btn-secondary { background: rgba(255,255,255,0.1); color: #fff; }
+        .btn-secondary:hover { background: rgba(255,255,255,0.2); }
+
+        /* --- VIEWPORT (RIGHT) --- */
+        .viewport {
+            flex: 1;
+            height: 100vh;
+            background: #000;
+            position: relative;
+            overflow: hidden;
+            display: block; /* Removed flex centering to fix canvas offset */
+            cursor: grab;
+        }
+
+        .viewport:active { cursor: grabbing; }
+
+        #panel-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform-origin: 0 0;
+            box-shadow: 0 0 50px rgba(0,0,0,1);
+            transition: transform 0.1s ease-out;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(10, 12, 16, 0.8);
+            backdrop-filter: blur(5px);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #file-input { display: none; }
+
+        .empty-state {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: rgba(255,255,255,0.15);
+            pointer-events: none;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        .empty-state p {
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .confidence-badge {
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-weight: 700;
+            margin-left: auto;
+        }
+
+        .conf-high { background: rgba(46, 204, 113, 0.2); color: #2ecc71; }
+        .conf-med  { background: rgba(241, 196, 15, 0.2); color: #f1c40f; }
+        .conf-low  { background: rgba(231, 76, 60, 0.2); color: #e74c3c; }
+    </style>
+</head>
+<body>
+    
+    <!-- LEFT SIDEBAR -->
+    <div class="sidebar">
+        <div class="logo">
+            <i data-lucide="shield-check"></i>
+            PanelSafe Analysis
+        </div>
+        
+        <div class="actions">
+            <button class="btn btn-secondary" id="clear-btn">
+                <i data-lucide="trash-2"></i> Clear
+            </button>
+            <button class="btn btn-secondary" id="add-comp-btn">
+                <i data-lucide="plus-square"></i> Add Box
+            </button>
+            <button class="btn btn-primary" id="export-btn">
+                <i data-lucide="database"></i> Send to Vault
+            </button>
+        </div>
+
+        <div class="upload-section">
+            <div class="upload-zone" id="drop-zone">
+                <i data-lucide="upload-cloud" style="width: 32px; height: 32px; margin-bottom: 0.5rem; color: var(--secondary);"></i>
+                <p style="font-size: 0.9rem; font-weight: 600;">Click or Drop Image</p>
+                <input type="file" id="file-input" accept="image/*">
+            </div>
+        </div>
+
+        <!-- SCROLLABLE LIST -->
+        <div id="results-panel" style="display: none;" class="scroll-area">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2>Detections</h2>
+                <span id="comp-count" style="font-size: 1rem; color: var(--primary); font-weight: 800; background: rgba(0,242,254,0.1); padding: 4px 12px; border-radius: 20px;">0 FOUND</span>
+            </div>
+            <div class="component-list" id="component-list">
+                <!-- Cards injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT VIEWPORT -->
+    <div class="viewport" id="viewport-container">
+        <div class="loading-overlay" id="loading">
+            <div class="spinner"></div>
+            <p>Analyzing Panel with AI...</p>
+        </div>
+        <canvas id="panel-canvas"></canvas>
+        <div class="empty-state" id="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <p>Drop a panel image to begin analysis</p>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const canvas = document.getElementById('panel-canvas');
+        const ctx = canvas.getContext('2d');
+        const loading = document.getElementById('loading');
+        const resultsPanel = document.getElementById('results-panel');
+        const componentList = document.getElementById('component-list');
+        const compCount = document.getElementById('comp-count');
+        const viewport = document.querySelector('.viewport');
+
+        let activeComponentIndex = -1;
+        let draggingHandle = null;
+        let isDrawingMode = false;
+        let drawingStart = null;
+        let tempBox = null;
+        let originalImage = null;
+        let components = [];
+        let scale = 1;
+        let offsetX = 0;
+        let offsetY = 0;
+        let isDragging = false;
+        let lastMouseX, lastMouseY;
+
+        // PAN & ZOOM LOGIC
+        viewport.onwheel = (e) => {
+            e.preventDefault();
+            const zoomSpeed = 0.1;
+            const direction = e.deltaY > 0 ? -1 : 1;
+            const zoomFactor = 1 + direction * zoomSpeed;
+            
+            const mouseX = e.clientX - viewport.offsetLeft;
+            const mouseY = e.clientY - viewport.offsetTop;
+
+            const newScale = scale * zoomFactor;
+            if (newScale < 0.1 || newScale > 10) return;
+
+            offsetX = mouseX - (mouseX - offsetX) * zoomFactor;
+            offsetY = mouseY - (mouseY - offsetY) * zoomFactor;
+            scale = newScale;
+            
+            drawPanel(activeComponentIndex);
+        };
+
+        viewport.onmousedown = (e) => {
+            const rect = viewport.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const canvasMouseX = (mouseX - offsetX) / scale;
+            const canvasMouseY = (mouseY - offsetY) / scale;
+
+            if (isDrawingMode) {
+                drawingStart = { x: canvasMouseX, y: canvasMouseY };
+                return;
+            }
+
+            if (activeComponentIndex !== -1) {
+                const comp = components[activeComponentIndex];
+                const [x1, y1, x2, y2] = comp.box;
+                const hitRadius = 25 / scale;
+                
+                if (Math.abs(canvasMouseX - x1) < hitRadius && Math.abs(canvasMouseY - y1) < hitRadius) draggingHandle = 'tl';
+                else if (Math.abs(canvasMouseX - x2) < hitRadius && Math.abs(canvasMouseY - y1) < hitRadius) draggingHandle = 'tr';
+                else if (Math.abs(canvasMouseX - x1) < hitRadius && Math.abs(canvasMouseY - y2) < hitRadius) draggingHandle = 'bl';
+                else if (Math.abs(canvasMouseX - x2) < hitRadius && Math.abs(canvasMouseY - y2) < hitRadius) draggingHandle = 'br';
+            }
+
+            if (draggingHandle) return;
+
+            isDragging = true;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+        };
+
+        window.onmousemove = (e) => {
+            const rect = viewport.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const canvasMouseX = (mouseX - offsetX) / scale;
+            const canvasMouseY = (mouseY - offsetY) / scale;
+
+            if (drawingStart) {
+                tempBox = [
+                    Math.min(drawingStart.x, canvasMouseX),
+                    Math.min(drawingStart.y, canvasMouseY),
+                    Math.max(drawingStart.x, canvasMouseX),
+                    Math.max(drawingStart.y, canvasMouseY)
+                ];
+                drawPanel(activeComponentIndex);
+                return;
+            }
+
+            if (draggingHandle && activeComponentIndex !== -1) {
+                const rect = viewport.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+                const canvasMouseX = (mouseX - offsetX) / scale;
+                const canvasMouseY = (mouseY - offsetY) / scale;
+                
+                const comp = components[activeComponentIndex];
+                if (draggingHandle === 'tl') { comp.box[0] = canvasMouseX; comp.box[1] = canvasMouseY; }
+                else if (draggingHandle === 'tr') { comp.box[2] = canvasMouseX; comp.box[1] = canvasMouseY; }
+                else if (draggingHandle === 'bl') { comp.box[0] = canvasMouseX; comp.box[3] = canvasMouseY; }
+                else if (draggingHandle === 'br') { comp.box[2] = canvasMouseX; comp.box[3] = canvasMouseY; }
+                
+                // Enforce valid box
+                if (comp.box[2] < comp.box[0] + 10) comp.box[2] = comp.box[0] + 10;
+                if (comp.box[3] < comp.box[1] + 10) comp.box[3] = comp.box[1] + 10;
+                
+                drawPanel(activeComponentIndex);
+                return;
+            }
+
+            if (!isDragging) return;
+            const dx = e.clientX - lastMouseX;
+            const dy = e.clientY - lastMouseY;
+            offsetX += dx;
+            offsetY += dy;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+            drawPanel(activeComponentIndex);
+        };
+
+        window.onmouseup = () => {
+            if (drawingStart && tempBox) {
+                const newComp = {
+                    class: "MCB",
+                    box: tempBox,
+                    ocr_text: "",
+                    confidence: 1.0
+                };
+                components.push(newComp);
+                drawingStart = null;
+                tempBox = null;
+                isDrawingMode = false;
+                document.getElementById('add-comp-btn').classList.remove('btn-primary');
+                document.getElementById('add-comp-btn').classList.add('btn-secondary');
+                viewport.style.cursor = 'grab';
+                saveToLocalStorage();
+                populateSidebar();
+                zoomToComponent(components.length - 1);
+            }
+            drawingStart = null;
+            isDragging = false;
+            if (draggingHandle) {
+                draggingHandle = null;
+                saveToLocalStorage();
+            }
+        };
+
+        async function handleFile(file) {
+            if (!file) return;
+            
+            const draftKey = `panelsafe_draft_${file.name}_${file.size}`;
+            const existingDraft = localStorage.getItem(draftKey);
+            
+            if (existingDraft && confirm("We found a saved draft for this image. Would you like to resume?")) {
+                components = JSON.parse(existingDraft);
+                renderAnalysis(file, components);
+                return;
+            }
+
+            loading.style.display = 'flex';
+            const formData = new FormData();
+            formData.append('file', file);
+            try {
+                const response = await fetch('/predict/', { method: 'POST', body: formData });
+                const data = await response.json();
+                if (data.status === 'success' && data.panel_layout.length > 0) {
+                    // Map backend 'conf' key to frontend 'confidence'
+                    components = data.panel_layout.map(c => ({
+                        ...c,
+                        confidence: c.conf || c.confidence || 0
+                    }));
+                    renderAnalysis(file, components);
+                } else if (data.status === 'success' && data.panel_layout.length === 0) {
+                    loading.style.display = 'none';
+                    const emptyEl = document.getElementById('empty-state');
+                    emptyEl.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:80px;height:80px;opacity:0.3;margin-bottom:1rem;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                        </svg>
+                        <p style="color:rgba(255,255,255,0.4)">No components detected in this image.</p>
+                        <p style="font-size:0.9rem;color:rgba(255,255,255,0.2);margin-top:0.5rem">Try a clearer photo with the panel cover open.</p>
+                    `;
+                    return;
+                }
+            } catch (err) { alert("Error analyzing panel: " + err.message); }
+            finally { loading.style.display = 'none'; }
+        }
+
+        function renderAnalysis(file, data) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                originalImage = new Image();
+                originalImage.onload = () => {
+                    canvas.width = originalImage.width;
+                    canvas.height = originalImage.height;
+                    scale = Math.min(viewport.clientWidth / canvas.width, viewport.clientHeight / canvas.height);
+                    offsetX = (viewport.clientWidth - canvas.width * scale) / 2;
+                    offsetY = (viewport.clientHeight - canvas.height * scale) / 2;
+                    drawPanel();
+                    populateSidebar();
+                    resultsPanel.style.display = 'flex';
+                    resultsPanel.style.flexDirection = 'column';
+                    document.getElementById('empty-state').style.display = 'none';
+                };
+                originalImage.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function drawPanel(activeIndex = -1) {
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            canvas.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+            ctx.drawImage(originalImage, 0, 0);
+
+            components.forEach((comp, index) => {
+                const [x1, y1, x2, y2] = comp.box;
+                const isActive = index === activeIndex;
+
+                ctx.strokeStyle = isActive ? '#00f2fe' : 'rgba(0, 242, 254, 0.4)';
+                ctx.lineWidth = isActive ? 8 / scale : 4 / scale;
+                ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+
+                if (isActive) {
+                    ctx.fillStyle = 'rgba(0, 242, 254, 0.2)';
+                    ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
+                    
+                    // Draw Drag Handles
+                    ctx.fillStyle = '#ff4b2b';
+                    const hs = 20 / scale; // handle size
+                    ctx.fillRect(x1 - hs/2, y1 - hs/2, hs, hs);
+                    ctx.fillRect(x2 - hs/2, y1 - hs/2, hs, hs);
+                    ctx.fillRect(x1 - hs/2, y2 - hs/2, hs, hs);
+                    ctx.fillRect(x2 - hs/2, y2 - hs/2, hs, hs);
+                }
+            });
+
+            if (tempBox) {
+                ctx.setLineDash([10/scale, 10/scale]);
+                ctx.strokeStyle = '#00f2fe';
+                ctx.lineWidth = 4 / scale;
+                ctx.strokeRect(tempBox[0], tempBox[1], tempBox[2] - tempBox[0], tempBox[3] - tempBox[1]);
+                ctx.setLineDash([]);
+            }
+        }
+
+        function zoomToComponent(index) {
+            activeComponentIndex = index;
+            const comp = components[index];
+            const [x1, y1, x2, y2] = comp.box;
+            const w = x2 - x1;
+            const h = y2 - y1;
+
+            const targetScale = Math.min(viewport.clientWidth / w, viewport.clientHeight / h) * 0.4;
+            scale = Math.max(0.5, Math.min(targetScale, 2));
+
+            offsetX = viewport.clientWidth / 2 - (x1 + w / 2) * scale;
+            offsetY = viewport.clientHeight / 2 - (y1 + h / 2) * scale;
+
+            drawPanel(index);
+        }
+
+        function populateSidebar() {
+            componentList.innerHTML = '';
+            compCount.innerText = `${components.length} FOUND`;
+            components.forEach((comp, index) => {
+                const card = document.createElement('div');
+                card.className = 'component-card';
+                if (index === activeComponentIndex) card.classList.add('active');
+                
+                let inputsHtml = '';
+                if (['RCD', 'RCD_SI'].includes(comp.class)) {
+                    inputsHtml = `
+                        <select onchange="updateComp(${index}, 'sensitivity', this.value)">
+                            <option value="30mA" ${comp.sensitivity === '30mA' ? 'selected' : ''}>30mA</option>
+                            <option value="300mA" ${comp.sensitivity === '300mA' ? 'selected' : ''}>300mA</option>
+                        </select>
+                        <input type="number" placeholder="Amps" value="${comp.amperage || ''}" oninput="updateComp(${index}, 'amperage', this.value)" style="grid-column: span 2;">
+                    `;
+                } else {
+                    inputsHtml = `
+                        <input type="text" placeholder="Value (e.g. C16)" value="${comp.ocr_text || ''}" oninput="updateComp(${index}, 'ocr_text', this.value)">
+                    `;
+                }
+
+                card.innerHTML = `
+                    <div class="card-actions">
+                        <button class="icon-btn" onclick="mergeComponents(event, ${index})"><i data-lucide="merge"></i></button>
+                        <button class="icon-btn delete" onclick="deleteComponent(event, ${index})"><i data-lucide="trash-2"></i></button>
+                    </div>
+                    <div class="card-header">
+                        <span class="badge badge-${comp.class.toLowerCase().replace('_', '')}">${comp.class}</span>
+                        <span style="font-size: 1.1rem; color: var(--text-dim); font-weight: 800;">#${index+1}</span>
+                        ${(() => {
+                            const conf = Math.round((comp.confidence || 0) * 100);
+                            const cls = conf >= 80 ? 'conf-high' : conf >= 50 ? 'conf-med' : 'conf-low';
+                            return `<span class="confidence-badge ${cls}">${conf}%</span>`;
+                        })()}
+                    </div>
+                    <div class="inputs">
+                        <select onchange="updateComp(${index}, 'class', this.value)">
+                            <option value="MCB" ${comp.class === 'MCB' ? 'selected' : ''}>MCB</option>
+                            <option value="MAINBREAKER" ${comp.class === 'MAINBREAKER' ? 'selected' : ''}>IGA</option>
+                            <option value="RCD" ${comp.class === 'RCD' ? 'selected' : ''}>RCD</option>
+                            <option value="RCD_SI" ${comp.class === 'RCD_SI' ? 'selected' : ''}>RCD SI</option>
+                            <option value="OVERSURGE" ${comp.class === 'OVERSURGE' ? 'selected' : ''}>Oversurge</option>
+                            <option value="OTHER" ${comp.class === 'OTHER' ? 'selected' : ''}>Other</option>
+                        </select>
+                        ${inputsHtml}
+                    </div>
+                `;
+                card.onclick = () => {
+                    document.querySelectorAll('.component-card').forEach(c => c.classList.remove('active'));
+                    card.classList.add('active');
+                    zoomToComponent(index);
+                };
+                componentList.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        window.deleteComponent = (e, index) => {
+            if (e) e.stopPropagation();
+            components.splice(index, 1);
+            if (activeComponentIndex === index) activeComponentIndex = -1;
+            saveToLocalStorage();
+            drawPanel(activeComponentIndex);
+            populateSidebar();
+        };
+
+        window.mergeComponents = (e, index) => {
+            if (e) e.stopPropagation();
+            if (index >= components.length - 1) return;
+            const c1 = components[index];
+            const c2 = components[index + 1];
+            components[index] = { ...c1, box: [Math.min(c1.box[0], c2.box[0]), Math.min(c1.box[1], c2.box[1]), Math.max(c1.box[2], c2.box[2]), Math.max(c1.box[3], c2.box[3])], ocr_text: (c1.ocr_text + " " + c2.ocr_text).trim() };
+            components.splice(index + 1, 1);
+            saveToLocalStorage();
+            drawPanel(activeComponentIndex);
+            populateSidebar();
+        };
+
+        window.updateComp = (index, field, value) => {
+            components[index][field] = value;
+            saveToLocalStorage();
+            if (field === 'class') {
+                populateSidebar(); // Rerender dynamic inputs
+            }
+            drawPanel(activeComponentIndex);
+        };
+
+        function saveToLocalStorage() {
+            if (!originalImage || !components.length) return;
+            const file = fileInput.files[0];
+            if (file) {
+                const draftKey = `panelsafe_draft_${file.name}_${file.size}`;
+                localStorage.setItem(draftKey, JSON.stringify(components));
+            }
+        }
+
+        document.getElementById('add-comp-btn').onclick = () => {
+            isDrawingMode = !isDrawingMode;
+            const btn = document.getElementById('add-comp-btn');
+            if (isDrawingMode) {
+                btn.classList.remove('btn-secondary');
+                btn.classList.add('btn-primary');
+                viewport.style.cursor = 'crosshair';
+            } else {
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-secondary');
+                viewport.style.cursor = 'grab';
+            }
+        };
+
+        document.getElementById('clear-btn').onclick = () => {
+            if (confirm("This will delete your current draft. Continue?")) {
+                const file = fileInput.files[0];
+                if (file) {
+                    const draftKey = `panelsafe_draft_${file.name}_${file.size}`;
+                    localStorage.removeItem(draftKey);
+                }
+                location.reload();
+            }
+        };
+
+        document.getElementById('export-btn').onclick = async () => {
+            const file = fileInput.files[0];
+            if (!file || components.length === 0) return alert("Upload an image and add components first.");
+            
+            const btn = document.getElementById('export-btn');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i data-lucide="loader"></i> Saving...';
+            lucide.createIcons();
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('annotations', JSON.stringify(components, null, 4));
+            
+            try {
+                const response = await fetch('/active-learning/save', { method: 'POST', body: formData });
+                if (response.ok) {
+                    btn.innerHTML = '<i data-lucide="check-circle"></i> Vaulted!';
+                    btn.style.background = 'rgba(46, 204, 113, 0.2)'; // conf-high colors
+                    btn.style.color = '#2ecc71';
+                    lucide.createIcons();
+                    setTimeout(() => { 
+                        btn.innerHTML = originalHtml; 
+                        btn.style.background = '';
+                        btn.style.color = '';
+                        lucide.createIcons(); 
+                    }, 2500);
+                } else {
+                    alert("Failed to save to server.");
+                    btn.innerHTML = originalHtml;
+                    lucide.createIcons();
+                }
+            } catch (err) {
+                alert("Error: " + err);
+                btn.innerHTML = originalHtml;
+                lucide.createIcons();
+            }
+        };
+
+        dropZone.onclick = () => fileInput.click();
+        fileInput.onchange = (e) => handleFile(e.target.files[0]);
+        dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.borderColor = '#00f2fe'; };
+        dropZone.ondragleave = () => { dropZone.style.borderColor = 'rgba(79, 172, 254, 0.05)'; };
+        dropZone.ondrop = (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'rgba(79, 172, 254, 0.05)';
+            handleFile(e.dataTransfer.files[0]);
+        };
+    </script>
+</body>
+</html>

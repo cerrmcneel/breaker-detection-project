@@ -10,12 +10,15 @@ This repository has evolved through distinct professional phases, reflecting my 
 
 ---
 
-## Project Vision
-The primary goal of PanelSafe is to provide a seamless way for users to upload images of circuit breakers from the field. This data is currently being used to train a custom YOLO (You Only Look Once) model to identify:
+## Project Vision & Phase 3 Trajectory
+PanelSafe is evolving from a standalone detection model into a two-tier Cloud/Edge platform:
 
-- **Breaker Types:** (MCBs, RCCBs, RCBOs).
-- **Safety Compliance:** Identification of missing labels or outdated components.
-- **Regional Variations:** Specifically targeting the Spanish market (REBT regulations).
+1. **For Consumers (Safety Score):** A free tool that generates a safety score based on panel photos, putting users in contact with certified local electricians. This crowdsources real-world images to continuously improve the model.
+2. **For Professionals (Human-in-the-Loop API):** An API that accelerates paperwork by automatically generating an *esquema unifilar* (single-line electrical diagram) using standard engineering symbols, with an electrician validating the AI's output.
+
+### Technical Evolution (Constraints)
+*   **Connectivity:** The initial "zero-connectivity basement" constraint has been officially dropped. To achieve maximum accuracy and support cloud-based OCR APIs (EasyOCR/PaddleOCR) for reading circuit diagrams, the system operates under a "Push Once Connected" asynchronous logic.
+*   **Detection Strategy:** Shifting from pure YOLO visual detection to a **Two-Stage Architecture** combining YOLO Object Detection with a Python Spatial Heuristic Engine to contextualize breaker relationships (e.g., Mainbreaker isolation logic).
 
 ##  Features
 - **Guided Viewfinder:** Real-time client-side analysis of image brightness, blurriness, and crop variance to guide users into taking the perfect dataset image.

@@ -181,3 +181,12 @@ The most valuable thing a blog post like this does is show **the messy reality o
 - Expose the endpoint via Cloudflare Tunnel for edge-accessible AI
 
 The cluster is alive. The GPU is ready. The model is next.
+
+---
+
+## Technical Insights
+
+### The "Island" Object Problem vs. Dense Arrays
+Most foundation models like YOLO are trained on datasets (like COCO) where objects are isolated "islands" within a broader context (e.g., a person standing in a field, a dog on a couch). 
+Breaker boards present a fundamentally different and harder domain: they are dense arrays of highly similar, tightly packed objects of varying classes (MCB next to RCD next to OVERSURGE). The objects don't exist as islands; their boundaries bleed into one another.
+This makes synthetic data generation techniques like Poisson Image Editing (Seamless Cloning) significantly more difficult, as the overlapping gradients of tightly packed objects can cause severe texture distortion when blending into the background.

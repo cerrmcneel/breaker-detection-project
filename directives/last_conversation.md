@@ -1,29 +1,12 @@
-Ran command: `$env:PYTHONPATH="."; python src/model/train.py`
+Ran command: `python -m src.data_gen.generate_dataset --count 2500 --balanced`
 
-Ah! The classic PyTorch installation trap! It actually has nothing to do with WSL being down. 
+The script automatically splits the generated dataset into a training set and a validation set so that the YOLO model can test its performance on "unseen" images during training.
 
-If you look closely at the third line of your output, you'll see the culprit:
-`Ultralytics 8.4.47  Python-3.13.2 torch-2.11.0+cpu`
+If you look closely at the console output you just pasted:
+`Generating 2500 images (2125 train, 375 val)...`
 
-### 🎓 Theory: The PyTorch CPU Default
-When you ran `pip install ultralytics` earlier, pip looked for PyTorch. Because installing the massive NVIDIA CUDA drivers is complex, pip defaults to downloading the **CPU-only** version of PyTorch (`+cpu`) to save space and guarantee it works out of the box. 
+The script has a default validation split of `15%`. 
+- **2125 images** (85%) went into the `data/dataset/train/images` folder to be used for training.
+- **375 images** (15%) went into the `data/dataset/val/images` folder to be used for validation.
 
-Because `train.py` explicitly requested `device=0` (GPU #1), PyTorch crashed because it doesn't have the CUDA drivers to talk to your RTX 3060! 
-
-*(Also, note that you are currently running this in native Windows PowerShell, not inside your WSL/K3s cluster! But we can absolutely train locally on Windows right now.)*
-
-### 🛠️ The Fix: Swapping to CUDA
-We need to rip out the CPU version of PyTorch and install the GPU version. Run these two commands in your terminal:
-
-1. Uninstall the CPU version:
-`pip uninstall torch torchvision torchaudio -y`
-
-2. Install the CUDA (GPU) version:
-`pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121`
-
-*(Note: This is a massive download, usually around 2.5 GB, because it includes all the NVIDIA backend drivers).*
-
-Once that finishes installing, run your training script again:
-`$env:PYTHONPATH="."; python src/model/train.py`
-
-Your RTX 3060 should finally roar to life!
+All 2,500 images were generated successfully, they are just divided between those two folders! You are good to launch `python -m src.model.train`.

@@ -106,7 +106,7 @@ class Compositor:
     # ------------------------------------------------------------------
     # 2. IMPURE — image compositor (requires cv2 + a loaded SeedLibrary)
     # ------------------------------------------------------------------
-    def compose(self, panel):
+    def compose(self, panel, augment=True):
         """
         Generate a synthetic panel image by pasting seed crops.
 
@@ -114,6 +114,9 @@ class Compositor:
         ----------
         panel : Panel
             Grammar object that defines the layout.
+        augment : bool
+            If True, apply random per-seed augmentations (brightness,
+            rotation, noise) to increase training diversity.
 
         Returns
         -------
@@ -141,10 +144,19 @@ class Compositor:
 
         for ann in annotations:
             cls_name = id_to_cls[ann["class_id"]]
-            seed = self.seed_library.get_random_seed(cls_name)
+            
+            # Reverse engineer the module width (e.g. 1, 2, 4) from the pixel width
+            module_width = max(1, round(ann["w"] / self.module_width_px))
+            
+            # Ask the library for a seed of exactly this width (e.g. MCB_2)
+            seed = self.seed_library.get_random_seed(cls_name, width=module_width)
 
-            # Resize seed crop to the exact bounding box size
-            seed_resized = cv2.resize(seed, (ann["w"], ann["h"]))
+            # Aspect-ratio-preserving resize with letterbox padding
+            seed_resized = self._aspect_resize_and_pad(seed, ann["w"], ann["h"])
+
+            # Optional per-seed augmentation for training diversity
+            if augment:
+                seed_resized = self._augment_seed(seed_resized)
 
             # Paste onto canvas — numpy slice is [y:y+h, x:x+w]
             canvas[
@@ -153,3 +165,106 @@ class Compositor:
             ] = seed_resized
 
         return canvas, annotations
+
+    # ------------------------------------------------------------------
+    # 3. Helpers — resize and augmentation
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _aspect_resize_and_pad(seed, target_w, target_h, pad_color=(30, 30, 30)):
+        """
+        Resize *seed* to fit inside (target_w, target_h) while preserving
+        its original aspect ratio, then center it on a padded background.
+
+        Parameters
+        ----------
+        seed : np.ndarray
+            Source image (BGR, HWC).
+        target_w : int
+            Target width in pixels.
+        target_h : int
+            Target height in pixels.
+        pad_color : tuple
+            BGR color for the letterbox padding.  Dark gray (30,30,30)
+            simulates a DIN-rail enclosure background.
+
+        Returns
+        -------
+        np.ndarray
+            Image of exactly (target_h, target_w, 3).
+        """
+        import cv2
+        import numpy as np
+
+        src_h, src_w = seed.shape[:2]
+
+        # Scale factor: fit within target while preserving AR
+        scale = min(target_w / src_w, target_h / src_h)
+        new_w = max(1, int(src_w * scale))
+        new_h = max(1, int(src_h * scale))
+
+        # Choose interpolation method based on scaling direction
+        interp = cv2.INTER_AREA if scale < 1.0 else cv2.INTER_LANCZOS4
+        resized = cv2.resize(seed, (new_w, new_h), interpolation=interp)
+
+        # Create padded canvas and center the resized seed
+        canvas = np.full((target_h, target_w, 3), pad_color, dtype=np.uint8)
+        x_offset = (target_w - new_w) // 2
+        y_offset = (target_h - new_h) // 2
+        canvas[y_offset:y_offset + new_h, x_offset:x_offset + new_w] = resized
+
+        return canvas
+
+    @staticmethod
+    def _augment_seed(img):
+        """
+        Apply random augmentations to a single seed image.
+
+        Each augmentation fires independently with 50% probability:
+          - Brightness shift  ±15%
+          - Slight rotation   ±3°
+          - Gaussian noise     σ=5
+
+        Parameters
+        ----------
+        img : np.ndarray
+            BGR image to augment (modified in-place where possible).
+
+        Returns
+        -------
+        np.ndarray
+            Augmented image, same shape as input.
+        """
+        import cv2
+        import numpy as np
+        import random
+
+        h, w = img.shape[:2]
+
+        # Brightness shift (±15%)
+        if random.random() < 0.5:
+            factor = 1.0 + random.uniform(-0.15, 0.15)
+            img = cv2.convertScaleAbs(img, alpha=factor, beta=0)
+
+        # CLAHE (Contrast Limited Adaptive Histogram Equalization)
+        # Forces gray-on-gray test buttons on RCDs to "pop" for the neural network
+        if random.random() < 0.5:
+            lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+            l_channel, a, b = cv2.split(lab)
+            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+            cl = clahe.apply(l_channel)
+            limg = cv2.merge((cl, a, b))
+            img = cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)
+
+        # Slight rotation (±3°) — simulates camera tilt
+        if random.random() < 0.5:
+            angle = random.uniform(-3.0, 3.0)
+            M = cv2.getRotationMatrix2D((w / 2, h / 2), angle, 1.0)
+            img = cv2.warpAffine(img, M, (w, h),
+                                 borderMode=cv2.BORDER_REPLICATE)
+
+        # Gaussian noise (σ=5) — simulates phone camera sensor noise
+        if random.random() < 0.5:
+            noise = np.random.normal(0, 5, img.shape).astype(np.int16)
+            img = np.clip(img.astype(np.int16) + noise, 0, 255).astype(np.uint8)
+
+        return img

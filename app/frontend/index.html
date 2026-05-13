@@ -302,6 +302,63 @@
             accent-color: var(--primary);
         }
 
+        .rcd-options {
+            display: none;
+            margin-top: 0.75rem;
+        }
+
+        .lang-switcher {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-bottom: 1rem;
+        }
+
+        .lang-btn {
+            padding: 6px 14px;
+            border-radius: 8px;
+            border: 1px solid #E2E8F0;
+            background: white;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+
+        .lang-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .tips-accordion {
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .tips-accordion .chevron {
+            transition: transform 0.3s ease;
+            font-size: 14px;
+        }
+
+        .tips-accordion.open .chevron {
+            transform: rotate(180deg);
+        }
+
+        .tips-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .tips-body.open {
+            max-height: 300px;
+        }
+
         .country-select {
             width: 100%;
             padding: 12px;
@@ -375,6 +432,7 @@
         </a>
         <div class="nav-links">
             <a href="/" class="nav-link active" data-i18n="nav_home">Home</a>
+            <a href="/analysis.html" class="nav-link" data-i18n="nav_analysis">Analysis</a>
             <a href="javascript:void(0)" class="nav-link" id="nav-check-score" onclick="toggleScorePortal()"
                 data-i18n="nav_check_score">Check Score</a>
             <a href="/blog.html" class="nav-link" data-i18n="nav_blog">Blog</a>
@@ -431,24 +489,19 @@
             </div>
 
             <div class="instruction-card">
-                <h3><span data-i18n="tips_title">Tips for a Perfect Photo 📸</span></h3>
-                <ul>
-                    <li data-i18n="tip_1"><strong>⚡ Cover Open:</strong> Please open the plastic cover so the switches
-                        are
-                        visible.</li>
-                    <li data-i18n="tip_2"><strong>📱 Straight On:</strong> Hold the phone parallel to the wall (avoid
-                        steep
-                        angles).</li>
-                    <li data-i18n="tip_3"><strong>💡 Lighting:</strong> Ensure the area isn't too dark; use your flash
-                        if
-                        needed.</li>
-                    <li data-i18n="tip_4"><strong>📦 Full View:</strong> Make sure the entire panel fits inside the
-                        guided
-                        box.</li>
-                    <li data-i18n="tip_5"><strong>🔘 RCD Test:</strong> For best results test press the button on the
-                        RCD.
-                    </li>
-                </ul>
+                <h3 class="tips-accordion" onclick="this.classList.toggle('open'); this.nextElementSibling.classList.toggle('open');">
+                    <span data-i18n="tips_title">Tips for a Perfect Photo 📸</span>
+                    <span class="chevron">▼</span>
+                </h3>
+                <div class="tips-body">
+                    <ul>
+                        <li data-i18n="tip_1"><strong>⚡ Cover Open:</strong> Please open the plastic cover so the switches are visible.</li>
+                        <li data-i18n="tip_2"><strong>📱 Straight On:</strong> Hold the phone parallel to the wall (avoid steep angles).</li>
+                        <li data-i18n="tip_3"><strong>💡 Lighting:</strong> Ensure the area isn't too dark; use your flash if needed.</li>
+                        <li data-i18n="tip_4"><strong>📦 Full View:</strong> Make sure the entire panel fits inside the guided box.</li>
+                        <li data-i18n="tip_5"><strong>🔘 RCD Test:</strong> For best results test press the button on the RCD.</li>
+                    </ul>
+                </div>
             </div>
 
             <!-- Progress Tracker -->
@@ -727,7 +780,7 @@
                     </div>
                 </div>
 
-                <button type="submit" id="submit-btn" data-i18n="upload_btn">Upload</button>
+                <button type="submit" class="btn btn-primary" id="submit-btn" data-i18n="upload_btn">Upload</button>
             </form>
 
             <div id="status"></div>

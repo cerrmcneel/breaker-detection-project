@@ -11,6 +11,11 @@ import pytest
 #       Requires cv2/numpy; tested separately when cv2 is available.
 #
 #  These tests cover calculate_layout only.
+#
+#  NOTE: calculate_layout centres the panel on the canvas.
+#    Horizontal: cursor_x = (img_width - total_rail_width) // 2
+#    Vertical:   start_y  = (img_height - total_height) // 2
+#  All expected coordinates below account for this centering.
 # ============================================================
 
 from src.data_gen.grammar import Panel, Rail, Breaker
@@ -32,13 +37,13 @@ def make_compositor():
 # -----------------------------------------------------------------
 # Test 1 — Single MCB on a single rail.
 #   MCB width=1 → pixel width = 1 * 40 = 40
-#   Rail 0 → y = 0, h = rail_height = 200
-#   No previous breakers → x = 0
+#   1 rail × 200px = 200px total height → start_y = (640-200)//2 = 220
+#   1 MCB × 40px  = 40px rail width     → cursor_x = (640-40)//2 = 300
 # -----------------------------------------------------------------
 def test_single_mcb_single_rail():
     """
-    One MCB on Rail 0 should produce exactly one annotation
-    at x=0, y=0, w=40, h=200.
+    One MCB on Rail 0 should produce exactly one annotation,
+    centred on the 640×640 canvas.
     """
     panel = Panel(rails_count=1, rail_height=200)
     panel.rails[0].add_component(Breaker(cls='MCB', width=1))
@@ -49,16 +54,17 @@ def test_single_mcb_single_rail():
     assert len(layout) == 1
     ann = layout[0]
     assert ann["class_id"] == Compositor.CLASS_MAP["MCB"]
-    assert ann["x"] == 0
-    assert ann["y"] == 0
+    assert ann["x"] == 300   # (640 - 40) // 2
+    assert ann["y"] == 220   # (640 - 200) // 2
     assert ann["w"] == 40
     assert ann["h"] == 200
 
 
 # -----------------------------------------------------------------
 # Test 2 — Two MCBs on the same rail: verify x-cursor advances.
-#   MCB 1: x=0,  w=40
-#   MCB 2: x=40, w=40  (cursor moved right by 40px)
+#   Total rail width = 2*40 = 80  → cursor_x starts at (640-80)//2 = 280
+#   MCB 1: x=280,  w=40
+#   MCB 2: x=320,  w=40  (cursor moved right by 40px)
 # -----------------------------------------------------------------
 def test_two_mcbs_x_cursor_advances():
     """
@@ -72,19 +78,20 @@ def test_two_mcbs_x_cursor_advances():
     layout = compositor.calculate_layout(panel)
 
     assert len(layout) == 2
-    assert layout[0]["x"] == 0
-    assert layout[1]["x"] == 40  # cursor advanced by 1 * module_width_px
+    assert layout[0]["x"] == 280  # (640 - 80) // 2
+    assert layout[1]["x"] == 320  # 280 + 40
 
 
 # -----------------------------------------------------------------
 # Test 3 — MainBreaker (width=4) followed by an MCB.
-#   MainBreaker: x=0,   w=4*40=160
-#   MCB:         x=160, w=40
+#   Total rail width = 4*40 + 1*40 = 200  → cursor_x starts at (640-200)//2 = 220
+#   MainBreaker: x=220,  w=160
+#   MCB:         x=380,  w=40
 # -----------------------------------------------------------------
 def test_mainbreaker_then_mcb_x_positions():
     """
     A MainBreaker occupies 4 module slots; the next component
-    must start at x=160 (4 * 40).
+    must start at x = start + 160 (4 * 40).
     """
     panel = Panel(rails_count=1, rail_height=200)
     panel.rails[0].add_component(Breaker(cls='MAINBREAKER', width=4))
@@ -94,22 +101,23 @@ def test_mainbreaker_then_mcb_x_positions():
     layout = compositor.calculate_layout(panel)
 
     assert len(layout) == 2
-    assert layout[0]["x"] == 0
-    assert layout[0]["w"] == 160  # 4 * 40
-    assert layout[1]["x"] == 160
+    assert layout[0]["x"] == 220   # (640 - 200) // 2
+    assert layout[0]["w"] == 160   # 4 * 40
+    assert layout[1]["x"] == 380   # 220 + 160
     assert layout[1]["w"] == 40
 
 
 # -----------------------------------------------------------------
-# Test 4 — Two rails: verify y-offset resets per rail.
-#   Rail 0 → y = 0
-#   Rail 1 → y = rail_height = 200
-#   x-cursor must reset to 0 for each new rail.
+# Test 4 — Two rails: verify y-offset and x-cursor reset.
+#   2 rails × 200px = 400px total height → start_y = (640-400)//2 = 120
+#   Rail 0 → y = 120
+#   Rail 1 → y = 120 + 200 = 320
+#   Each rail has 1 MCB (40px) → cursor_x = (640-40)//2 = 300
 # -----------------------------------------------------------------
 def test_two_rails_y_offsets():
     """
     Each rail starts at a different y. The x cursor must reset
-    to 0 at the start of each rail.
+    for each new rail.
     """
     panel = Panel(rails_count=2, rail_height=200)
     panel.rails[0].add_component(Breaker(cls='MCB', width=1))
@@ -119,10 +127,10 @@ def test_two_rails_y_offsets():
     layout = compositor.calculate_layout(panel)
 
     assert len(layout) == 2
-    assert layout[0]["y"] == 0    # Rail 0
-    assert layout[1]["y"] == 200  # Rail 1
-    assert layout[0]["x"] == 0   # x resets for each rail
-    assert layout[1]["x"] == 0
+    assert layout[0]["y"] == 120    # (640 - 400) // 2
+    assert layout[1]["y"] == 320    # 120 + 200
+    assert layout[0]["x"] == 300    # each rail centred independently
+    assert layout[1]["x"] == 300
 
 
 # -----------------------------------------------------------------
@@ -143,3 +151,4 @@ def test_class_id_mapping():
     assert layout[0]["class_id"] == Compositor.CLASS_MAP["MAINBREAKER"]
     assert layout[1]["class_id"] == Compositor.CLASS_MAP["MCB"]
     assert layout[0]["class_id"] != layout[1]["class_id"]
+

@@ -77,9 +77,18 @@ class PanelFactory:
     MAINBREAKER_WIDTHS  = [1, 2, 3, 4]
     MAINBREAKER_WEIGHTS = [0.10, 0.60, 0.20, 0.10]
 
-    def __init__(self, chaos_factor=0.0, rail_height=200):
+    def __init__(self, chaos_factor=0.0, rail_height=200, boost_minority=False):
         self.chaos_factor = chaos_factor
         self.rail_height  = rail_height
+
+        # When boost_minority is True, override probabilities to ensure
+        # underrepresented classes (OVERSURGE, RCD_SI, OTHER) appear more
+        # frequently in the generated dataset.
+        if boost_minority:
+            self.CHAOS_PROBS = dict(self.CHAOS_PROBS)  # instance copy
+            self.CHAOS_PROBS["use_oversurge"] = 0.40   # was 0.15
+            self.CHAOS_PROBS["use_rcd_si"]    = 0.50   # was 0.30
+            self.CHAOS_PROBS["add_other"]     = 0.25   # was 0.10
 
     # ── Core generator ────────────────────────────────────────────────────────
     def generate(self):

@@ -39,3 +39,7 @@ result.txt
 
 # --- Caches ---
 .pytest_cache/
+
+# --- YOLO Specific ---
+runs/
+models/
