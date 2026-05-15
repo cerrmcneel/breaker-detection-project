@@ -87,7 +87,7 @@ async def predict_panel(file: UploadFile = File(...)):
         logger.info(f"Forwarding image to K3s Cluster for GPU inference...")
         try:
             with open(temp_path, "rb") as f:
-                response = requests.post(INFERENCE_URL, files={"file": f}, timeout=15)
+                response = requests.post(INFERENCE_URL, files={"file": f}, timeout=45)
                 response.raise_for_status()
                 cluster_data = response.json()
                 raw_predictions = cluster_data.get("predictions", [])

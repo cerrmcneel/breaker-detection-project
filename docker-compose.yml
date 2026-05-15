@@ -1,21 +1,22 @@
+version: '3.8'
 
 services:
   web:
     build: .
     container_name: breaker-app
-    restart: unless-stopped
-    ports:
-      - "8085:8000"
-    volumes:
-      - /mnt/nas/breaker_data/project_breaker/raw_uploads:/app/data
+    network_mode: host
     environment:
-      - PYTHONUNBUFFERED=1
-      - UPLOAD_DIR=/app/data
+      - UPLOAD_DIR=data/images/raw_uploads
+      - INFERENCE_URL=http://192.168.1.147:8080/predict
+    volumes:
+      - ./data:/app/data
+      - ./app/frontend:/app/app/frontend
+    restart: always
 
-  tunnel:
+  cloudflared-tunnel:
     image: cloudflare/cloudflared:latest
     container_name: cloudflared-tunnel
-    restart: unless-stopped
-    command: tunnel run
+    restart: always
     environment:
-      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    command: tunnel --no-autoupdate run
