@@ -15,6 +15,7 @@ spec:
       labels:
         app: yolo-inference
     spec:
+      hostNetwork: true
       runtimeClassName: nvidia
       nodeSelector:
         kubernetes.io/hostname: datainmind
@@ -26,46 +27,56 @@ spec:
       - name: yolo-inference
         image: ultralytics/ultralytics:latest
         command:
-        - bash
+        - python3
         - -c
         - |
-          pip install fastapi uvicorn python-multipart
-          python -c '
           import torch
           from ultralytics import YOLO
-          from fastapi import FastAPI, File, UploadFile
-          import uvicorn
+          from http.server import BaseHTTPRequestHandler, HTTPServer
+          import json
           import cv2
           import numpy as np
+          import cgi
 
-          app = FastAPI()
-          # Load the production model from the mounted volume
+          print("Loading YOLO26-Nano onto GPU...")
           model = YOLO("/models/best.pt")
           model.to("cuda")
 
-          @app.post("/predict")
-          async def predict(file: UploadFile = File(...)):
-              contents = await file.read()
-              nparr = np.frombuffer(contents, np.uint8)
-              img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-              
-              # Run inference
-              results = model.predict(img, conf=0.25)
-              
-              predictions = []
-              for result in results:
-                  for box in result.boxes:
-                      predictions.append({
-                          "box": box.xyxy[0].tolist(),
-                          "class": result.names[int(box.cls[0])],
-                          "conf": float(box.conf[0])
-                      })
-              return {"status": "success", "predictions": predictions}
+          class InferenceHandler(BaseHTTPRequestHandler):
+              def do_POST(self):
+                  if self.path == "/predict":
+                      form = cgi.FieldStorage(
+                          fp=self.rfile,
+                          headers=self.headers,
+                          environ={'REQUEST_METHOD': 'POST'}
+                      )
+                      if "file" not in form:
+                          self.send_response(400)
+                          self.end_headers()
+                          return
+                          
+                      file_data = form["file"].file.read()
+                      nparr = np.frombuffer(file_data, np.uint8)
+                      img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                      
+                      results = model.predict(img, conf=0.25)
+                      predictions = []
+                      for r in results:
+                          for b in r.boxes:
+                              predictions.append({
+                                  "box": b.xyxy[0].tolist(),
+                                  "class": r.names[int(b.cls[0])],
+                                  "conf": float(b.conf[0])
+                              })
+                      
+                      self.send_response(200)
+                      self.send_header("Content-type", "application/json")
+                      self.end_headers()
+                      self.wfile.write(json.dumps({"status": "success", "predictions": predictions}).encode())
 
-          if __name__ == "__main__":
-              print("Inference Server Starting on GPU...")
-              uvicorn.run(app, host="0.0.0.0", port=8080)
-          '
+          print("Inference API is LIVE on port 8080 (Zero-Dependency Mode)")
+          server = HTTPServer(("0.0.0.0", 8080), InferenceHandler)
+          server.serve_forever()
         ports:
         - containerPort: 8080
         env:

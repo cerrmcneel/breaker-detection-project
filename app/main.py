@@ -28,8 +28,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # --- INFERENCE CONFIGURATION ---
-# The website now talks to the K3s cluster for AI predictions
-INFERENCE_URL = os.getenv("INFERENCE_URL", "http://192.168.1.152:30080/predict")
+# The website now talks directly to the Windows GPU worker via hostNetwork
+INFERENCE_URL = os.getenv("INFERENCE_URL", "http://192.168.1.147:8080/predict")
 
 seen_hashes = set()
 upload_lock = asyncio.Lock()
