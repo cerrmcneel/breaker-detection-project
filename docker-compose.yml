@@ -4,10 +4,13 @@ services:
   web:
     build: .
     container_name: breaker-app
-    network_mode: host
+    extra_hosts:
+      - "gpu-worker:192.168.1.147"
     environment:
       - UPLOAD_DIR=data/images/raw_uploads
-      - INFERENCE_URL=http://192.168.1.147:8080/predict
+      - INFERENCE_URL=http://gpu-worker:8080/predict
+    ports:
+      - "8085:8000"
     volumes:
       - ./data:/app/data
       - ./app/app/frontend:/app/app/frontend
@@ -16,7 +19,6 @@ services:
   cloudflared-tunnel:
     image: cloudflare/cloudflared:latest
     container_name: cloudflared-tunnel
-    network_mode: host
     restart: always
     environment:
       - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
