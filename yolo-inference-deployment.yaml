@@ -26,35 +26,78 @@ spec:
       - name: yolo-inference
         image: ultralytics/ultralytics:latest
         command:
-        - python
+        - bash
         - -c
         - |
+          pip install fastapi uvicorn python-multipart
+          python -c '
           import torch
           from ultralytics import YOLO
-          import time
-          print(f"PyTorch CUDA Available: {torch.cuda.is_available()}")
-          model = YOLO("yolo26n.pt")
+          from fastapi import FastAPI, File, UploadFile
+          import uvicorn
+          import cv2
+          import numpy as np
+
+          app = FastAPI()
+          # Load the production model from the mounted volume
+          model = YOLO("/models/best.pt")
           model.to("cuda")
-          print(f"YOLO26-Nano loaded on: {next(model.model.parameters()).device}")
-          print("Inference server ready. Waiting for requests...")
-          while True:
-            time.sleep(60)
+
+          @app.post("/predict")
+          async def predict(file: UploadFile = File(...)):
+              contents = await file.read()
+              nparr = np.frombuffer(contents, np.uint8)
+              img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+              
+              # Run inference
+              results = model.predict(img, conf=0.25)
+              
+              predictions = []
+              for result in results:
+                  for box in result.boxes:
+                      predictions.append({
+                          "box": box.xyxy[0].tolist(),
+                          "class": result.names[int(box.cls[0])],
+                          "conf": float(box.conf[0])
+                      })
+              return {"status": "success", "predictions": predictions}
+
+          if __name__ == "__main__":
+              print("Inference Server Starting on GPU...")
+              uvicorn.run(app, host="0.0.0.0", port=8080)
+          '
+        ports:
+        - containerPort: 8080
+        env:
+        - name: LD_LIBRARY_PATH
+          value: /usr/lib/wsl/lib
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: all
         resources:
           limits:
             nvidia.com/gpu: 1
-          requests:
-            nvidia.com/gpu: 1
-        env:
-        - name: NVIDIA_VISIBLE_DEVICES
-          value: all
-        - name: NVIDIA_DRIVER_CAPABILITIES
-          value: compute,utility
+        volumeMounts:
+        - name: wsl-libs
+          mountPath: /usr/lib/wsl/lib
+        - name: dxg
+          mountPath: /dev/dxg
+        - name: models
+          mountPath: /models
+      volumes:
+      - name: wsl-libs
+        hostPath:
+          path: /usr/lib/wsl/lib
+      - name: dxg
+        hostPath:
+          path: /dev/dxg
+      - name: models
+        hostPath:
+          path: /mnt/c/ironhack/labs/breaker-detection-project/models
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: yolo-inference-svc
-  namespace: default
 spec:
   selector:
     app: yolo-inference
@@ -62,4 +105,5 @@ spec:
   - protocol: TCP
     port: 8080
     targetPort: 8080
-  type: ClusterIP
+    nodePort: 30080
+  type: NodePort

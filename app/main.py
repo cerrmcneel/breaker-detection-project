@@ -5,6 +5,7 @@ import json
 import logging
 import hashlib
 import asyncio
+import requests
 from datetime import datetime
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from fastapi.responses import JSONResponse, HTMLResponse
@@ -16,7 +17,6 @@ import random
 import string
 import cv2
 import numpy as np
-from ultralytics import YOLO
 from src.model.heuristics import SpatialHeuristicEngine
 from src.model.ocr_reader import OCRReader
 
@@ -27,66 +27,23 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# --- INFERENCE CONFIGURATION ---
+# The website now talks to the K3s cluster for AI predictions
+INFERENCE_URL = os.getenv("INFERENCE_URL", "http://192.168.1.152:30080/predict")
+
 seen_hashes = set()
-# Lock to prevent race conditions when multiple identical images upload at the exact same millisecond
 upload_lock = asyncio.Lock()
 
 app = FastAPI(title="PanelSafe: Breaker Detection & Analysis")
 
-from sahi import AutoDetectionModel
-from sahi.predict import get_sliced_prediction
-
 # Initialize Pipeline Components
-MODEL_PATH = "models/best.pt"
-if os.path.exists(MODEL_PATH):
-    try:
-        sahi_model = AutoDetectionModel.from_pretrained(
-            model_type='ultralytics',
-            model_path=MODEL_PATH,
-            confidence_threshold=0.15,
-            device='cuda:0'
-        )
-        logger.info(f"Loaded SAHI model from {MODEL_PATH}")
-    except Exception as e:
-        logger.error(f"Failed to load SAHI model: {e}")
-        sahi_model = None
-else:
-    logger.warning(f"Weights not found at {MODEL_PATH}. Prediction endpoint will be degraded.")
-    sahi_model = None
-
 heuristic_engine = SpatialHeuristicEngine()
 ocr_reader = OCRReader()
 
-def generate_tracking_id():
-    """Generate a random 5-character alphanumeric code."""
-    chars = string.ascii_uppercase + string.digits
-    return "BKR-" + "".join(random.choices(chars, k=5))
-
-# Disable caching globally for the beta phase to ensure frontend updates immediately propagate
-@app.middleware("http")
-async def add_cache_control_header(request, call_next):
-    response = await call_next(request)
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
-    return response
-
-# Use UPLOAD_DIR from environment (Docker maps this to the NAS), fallback to local for dev
-UPLOAD_DIR = os.getenv("UPLOAD_DIR", "data/images/raw_uploads")
-# We keep the log file in the same base directory as the images
-LOG_FILE = os.path.join(os.path.dirname(UPLOAD_DIR), "upload_log.json")
-
-# Ensure upload directory exists
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-# Security Constants
-MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
-ALLOWED_MIME_TYPES = {"image/jpeg", "image/png", "image/gif"}
-ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif"}
-
 @app.on_event("startup")
 async def startup_event():
-    logger.info("Starting up: Scanning existing files for deduplication hashes...")
+    logger.info(f"PanelSafe Gateway ready. Connecting to K3s cluster at: {INFERENCE_URL}")
+    UPLOAD_DIR = os.getenv("UPLOAD_DIR", "data/images/raw_uploads")
     if not os.path.exists(UPLOAD_DIR):
         os.makedirs(UPLOAD_DIR, exist_ok=True)
         return
@@ -98,286 +55,131 @@ async def startup_event():
                 with open(file_path, "rb") as f:
                     file_hash = hashlib.sha256(f.read()).hexdigest()
                     seen_hashes.add(file_hash)
-            except Exception as e:
-                logger.error(f"Error reading {file_path} for hash: {e}")
-                
-    logger.info(f"Startup complete: Discovered {len(seen_hashes)} unique hashes on disk.")
+            except: pass
 
-# Helper function to log metadata
-def log_metadata(original_filename: str, saved_filename: str, country: str, file_hash: str = "", rcd_test_result: str = "Not Tested", tracking_id: str = ""):
-    entry = {
-        "timestamp": datetime.now().isoformat(),
-        "original_filename": original_filename,
-        "saved_filename": saved_filename,
-        "country": country,
-        "hash": file_hash,
-        "rcd_test_result": rcd_test_result,
-        "tracking_id": tracking_id,
-        "manual_score": None,
-        "manual_feedback": ""
-    }
-    
-    # Simple append to a JSON list in a file (not efficient for huge scale, but fine for beta)
-    entries = []
-    if os.path.exists(LOG_FILE):
-        try:
-            with open(LOG_FILE, "r") as f:
-                entries = json.load(f)
-        except json.JSONDecodeError:
-            entries = [] # Start fresh if corrupt
-            
-    entries.append(entry)
-    
-    with open(LOG_FILE, "w") as f:
-        json.dump(entries, f, indent=4)
+@app.middleware("http")
+async def add_cache_control_header(request, call_next):
+    response = await call_next(request)
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
+# Global Constants
+UPLOAD_DIR = os.getenv("UPLOAD_DIR", "data/images/raw_uploads")
+LOG_FILE = os.path.join(os.path.dirname(UPLOAD_DIR), "upload_log.json")
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+ALLOWED_MIME_TYPES = {"image/jpeg", "image/png", "image/gif"}
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif"}
 
 @app.post("/predict/")
 async def predict_panel(file: UploadFile = File(...)):
-    """
-    Two-Stage Inference Pipeline:
-    1. YOLOv8 detects generic components (MCB, RCD).
-    2. Spatial Heuristics reclassify components (Mainbreaker logic).
-    3. OCR extracts amperages from cropped boxes.
-    """
-    if not sahi_model:
-        raise HTTPException(status_code=500, detail="Inference model not loaded on server.")
-
-    # Save temporary file for processing
     temp_filename = f"temp_{uuid.uuid4()}_{file.filename}"
     temp_path = os.path.join(UPLOAD_DIR, temp_filename)
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
     
     try:
         contents = await file.read()
         with open(temp_path, "wb") as f:
             f.write(contents)
 
-        # 1. Run SAHI Inference (Slicing Aided Hyper Inference)
-        result = get_sliced_prediction(
-            temp_path,
-            sahi_model,
-            slice_height=640,
-            slice_width=640,
-            overlap_height_ratio=0.2,
-            overlap_width_ratio=0.2,
-            # NMS Tuning: 'IOS' (Intersection over Smaller) aggressively removes 
-            # partial boxes that got sliced. Lower threshold = more aggressive deletion.
-            postprocess_type="NMS",
-            postprocess_match_metric="IOS", 
-            postprocess_match_threshold=0.05
-        )
-        
-        predictions = []
-        for obj in result.object_prediction_list:
-            predictions.append({
-                "box": [obj.bbox.minx, obj.bbox.miny, obj.bbox.maxx, obj.bbox.maxy],
-                "class": obj.category.name,
-                "conf": round(obj.score.value, 3),
-                "ocr_text": ""
-            })
+        # 1. Offload Heavy Lifting to K3s GPU Cluster
+        logger.info(f"Forwarding image to K3s Cluster for GPU inference...")
+        try:
+            with open(temp_path, "rb") as f:
+                response = requests.post(INFERENCE_URL, files={"file": f}, timeout=15)
+                response.raise_for_status()
+                cluster_data = response.json()
+                raw_predictions = cluster_data.get("predictions", [])
+        except Exception as cluster_err:
+            logger.error(f"K3s Cluster Connection Failed: {cluster_err}")
+            raise HTTPException(status_code=503, detail=f"GPU Inference Cluster is unreachable at {INFERENCE_URL}")
 
-        # 2. Apply Spatial Heuristics (REBT Domain Knowledge)
-        refined_predictions = heuristic_engine.apply_logic(predictions, temp_path)
+        # 2. Apply Spatial Heuristics locally
+        refined_predictions = heuristic_engine.apply_logic(raw_predictions, temp_path)
 
-        # 3. Apply OCR to each detected breaker
+        # 3. Apply OCR locally
         for pred in refined_predictions:
-            # We only run OCR on MCBs and RCDs to save time
             if pred["class"] in ["MCB", "MAINBREAKER", "RCD", "RCD_SI"]:
                 ocr_result = ocr_reader.read_bounding_box(temp_path, pred["box"])
                 pred["ocr_text"] = ocr_result
 
-        # Cleanup temp file
         os.remove(temp_path)
-
         return {
             "status": "success",
             "panel_layout": refined_predictions,
             "summary": {
                 "total_components": len(refined_predictions),
-                "mainbreaker_found": any(p["class"] == "MAINBREAKER" for p in refined_predictions)
+                "inference_engine": "K3s-GPU-Cluster"
             }
         }
-
     except Exception as e:
         logger.error(f"Prediction Error: {e}")
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+        if os.path.exists(temp_path): os.remove(temp_path)
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/upload/")
-async def upload_image(
-    file: UploadFile = File(...),
-    country: str = Form(default="Unknown"),
-    rcd_test_result: str = Form(default="Not Tested")
-):
+async def upload_image(file: UploadFile = File(...), country: str = Form(default="Unknown"), rcd_test_result: str = Form(default="Not Tested")):
     try:
-        # 1. Input Validation for Country
-        country = str(country)[:50] # Enforce max length of 50 chars
-        if country != "Unknown" and not re.match(r"^[a-zA-Z\s\-]+$", country):
-            raise HTTPException(status_code=400, detail="Invalid country format.")
-
-        # 2. File Validation: MIME type
         if file.content_type not in ALLOWED_MIME_TYPES:
-            raise HTTPException(status_code=400, detail="Invalid file type. Only JPEG, PNG, and GIF are allowed.")
+            raise HTTPException(status_code=400, detail="Invalid file type.")
+        
+        file_bytes = await file.read()
+        if len(file_bytes) > MAX_FILE_SIZE:
+            raise HTTPException(status_code=413, detail="File too large.")
+            
+        file_hash = hashlib.sha256(file_bytes).hexdigest()
+        if file_hash in seen_hashes:
+            return {"status": "success", "duplicate": True, "filename": "DUPLICATE", "tracking_id": "ALREADY-UPLOADED"}
 
-        # 3. File Validation: Extension
-        file_extension = os.path.splitext(file.filename)[1].lower()
-        if not file_extension or file_extension not in ALLOWED_EXTENSIONS:
-            raise HTTPException(status_code=400, detail="Invalid file extension. Only .jpg, .jpeg, .png, and .gif are allowed.")
-            
-        # Generate unique filename with country prefix
-        safe_country = "".join(c for c in country if c.isalnum() or c.isspace() or c == "-").strip().upper()
-        if not safe_country:
-            safe_country = "UNKNOWN"
-            
-        unique_filename = f"{safe_country}_{uuid.uuid4()}{file_extension}"
+        unique_filename = f"{country.upper()}_{uuid.uuid4()}{os.path.splitext(file.filename)[1].lower()}"
         file_path = os.path.join(UPLOAD_DIR, unique_filename)
         
-        # 4. Save the file with streaming and size limit to prevent memory exhaustion
-        file_size = 0
-        file_hash_obj = hashlib.sha256()
-        
-        # Read the file to get the hash but DO NOT save it yet
-        # Store in memory temporarily since these are <10MB images
-        file_bytes = await file.read()
-        file_size = len(file_bytes)
-        
-        if file_size > MAX_FILE_SIZE:
-             raise HTTPException(status_code=413, detail="File too large. Maximum size is 10MB.")
-             
-        file_hash_obj.update(file_bytes)
-        file_hash = file_hash_obj.hexdigest()
-        
-        # Concurrency safety lock
-        async with upload_lock:
-            # Deduplication check FIRST before writing anything to disk
-            if file_hash in seen_hashes:
-                logger.info(f"Discarded duplicate {file.filename} (hash: {file_hash})")
-                return JSONResponse(content={"message": "Duplicate discarded", "filename": file.filename, "duplicate": True}, status_code=200)
-    
-            seen_hashes.add(file_hash)
+        with open(file_path, "wb") as f:
+            f.write(file_bytes)
             
-            # Generate tracking ID
-            tracking_id = generate_tracking_id()
-
-            # Now safe to write the file
-            with open(file_path, "wb") as f:
-                f.write(file_bytes)
-    
-            # Log metadata
-            log_metadata(file.filename, unique_filename, country, file_hash, rcd_test_result, tracking_id)
+        tracking_id = "BKR-" + "".join(random.choices(string.ascii_uppercase + string.digits, k=5))
+        seen_hashes.add(file_hash)
+        
+        # Log metadata
+        entry = {"timestamp": datetime.now().isoformat(), "original_filename": file.filename, "saved_filename": unique_filename, "country": country, "hash": file_hash, "rcd_test_result": rcd_test_result, "tracking_id": tracking_id}
+        entries = []
+        if os.path.exists(LOG_FILE):
+            with open(LOG_FILE, "r") as f: entries = json.load(f)
+        entries.append(entry)
+        with open(LOG_FILE, "w") as f: json.dump(entries, f, indent=4)
             
-            logger.info(f"Saved {file.filename} as {unique_filename} with tracking ID {tracking_id}")
-            
-            return JSONResponse(
-                content={
-                    "message": "Upload successful", 
-                    "filename": unique_filename, 
-                    "duplicate": False,
-                    "tracking_id": tracking_id
-                }, 
-                status_code=200
-            )
-
-    except HTTPException:
-        raise
+        return {"status": "success", "filename": unique_filename, "tracking_id": tracking_id}
     except Exception as e:
-        logger.error(f"Error uploading file: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/count/")
-async def get_upload_count():
-    try:
-        # Filter out anything that isn't a file (like subdirectories if any exist)
-        count = len([f for f in os.listdir(UPLOAD_DIR) if os.path.isfile(os.path.join(UPLOAD_DIR, f))])
-        return {"count": count}
-    except Exception as e:
-        logger.error(f"Error getting file count: {e}")
-        raise HTTPException(status_code=500, detail="Could not retrieve file count.")
+async def get_count():
+    return {"count": len(seen_hashes)}
 
 @app.get("/score/{tracking_id}")
 async def get_score(tracking_id: str):
-    """Retrieve the manual safety score for a given tracking ID."""
-    if not os.path.exists(LOG_FILE):
-        raise HTTPException(status_code=404, detail="Log file not found.")
-        
-    try:
-        with open(LOG_FILE, "r") as f:
-            entries = json.load(f)
-            
-        # Search backwards since newer entries are appended
-        for entry in reversed(entries):
-            if entry.get("tracking_id") == tracking_id:
-                if entry.get("manual_score") is not None:
-                    return {
-                        "status": "scored",
-                        "score": entry.get("manual_score"),
-                        "feedback": entry.get("manual_feedback", "")
-                    }
-                else:
-                    return {"status": "pending"}
-                    
-        raise HTTPException(status_code=404, detail="Tracking ID not found.")
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=500, detail="Error reading log data.")
-    except Exception as e:
-        logger.error(f"Error checking score for {tracking_id}: {e}")
-        raise HTTPException(status_code=500, detail="An error occurred while checking the score.")
-
-from pydantic import BaseModel
-
-class AdminVerifyRequest(BaseModel):
-    password: str
-
-@app.post("/verify-admin/")
-async def verify_admin(req: AdminVerifyRequest):
-    admin_password = os.getenv("ADMIN_PASSWORD")
-    if not admin_password:
-        # Failsafe if env var isn't configured
-        raise HTTPException(status_code=500, detail="Admin password not configured on server.")
-        
-    if not req.password:
-        raise HTTPException(status_code=400, detail="Password is required.")
-        
-    if req.password == admin_password:
-        return {"verified": True}
-    else:
-        raise HTTPException(status_code=401, detail="Incorrect password.")
+    if not os.path.exists(LOG_FILE): raise HTTPException(status_code=404)
+    with open(LOG_FILE, "r") as f: entries = json.load(f)
+    for entry in reversed(entries):
+        if entry.get("tracking_id") == tracking_id:
+            if entry.get("manual_score") is not None:
+                return {"status": "scored", "score": entry["manual_score"], "feedback": entry.get("manual_feedback", "")}
+            return {"status": "pending"}
+    raise HTTPException(status_code=404)
 
 @app.post("/active-learning/save")
 async def save_active_learning(file: UploadFile = File(...), annotations: str = Form(...)):
-    import time
     try:
         active_learning_dir = "data/active_learning"
         os.makedirs(active_learning_dir, exist_ok=True)
-        
-        timestamp = int(time.time())
-        # Clean filename
-        safe_filename = "".join(c for c in file.filename if c.isalnum() or c in "._-")
-        base_name = f"correction_{timestamp}_{safe_filename}"
-        img_path = os.path.join(active_learning_dir, base_name)
-        
-        # Save Image
-        contents = await file.read()
-        with open(img_path, "wb") as f:
-            f.write(contents)
-            
-        # Save JSON
-        json_path = os.path.join(active_learning_dir, f"{os.path.splitext(base_name)[0]}.json")
-        with open(json_path, "w") as f:
+        base_name = f"correction_{int(datetime.now().timestamp())}_{file.filename}"
+        with open(os.path.join(active_learning_dir, base_name), "wb") as f:
+            f.write(await file.read())
+        with open(os.path.join(active_learning_dir, f"{os.path.splitext(base_name)[0]}.json"), "w") as f:
             f.write(annotations)
-            
-        return {"status": "success", "message": "Saved to active learning pool."}
+        return {"status": "success"}
     except Exception as e:
-        logger.error(f"Active Learning Save Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# Mount frontend directory for static files
-# Create app/frontend if it doesn't exist to avoid startup errors
-FRONTEND_PATH = os.path.join("app", "frontend")
-os.makedirs(os.path.join("app", "frontend"), exist_ok=True)
 app.mount("/", StaticFiles(directory=os.path.join("app", "frontend"), html=True), name="frontend")
-
-if __name__ == "__main__":
-    import uvicorn
-    # Use 0.0.0.0 to allow access from local network
-    uvicorn.run(app, host="0.0.0.0", port=8000)
