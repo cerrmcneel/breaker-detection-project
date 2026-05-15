@@ -10,12 +10,13 @@ services:
       - INFERENCE_URL=http://192.168.1.147:8080/predict
     volumes:
       - ./data:/app/data
-      - ./app/frontend:/app/app/frontend
+      - ./app/app/frontend:/app/app/frontend
     restart: always
 
   cloudflared-tunnel:
     image: cloudflare/cloudflared:latest
     container_name: cloudflared-tunnel
+    network_mode: host
     restart: always
     environment:
       - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
