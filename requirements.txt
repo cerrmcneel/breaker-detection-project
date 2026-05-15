@@ -5,3 +5,6 @@ python-dotenv
 pytest
 opencv-python
 numpy
+ultralytics
+sahi
+torch --index-url https://download.pytorch.org/whl/cpu
