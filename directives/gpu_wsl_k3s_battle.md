@@ -174,15 +174,48 @@ The most valuable thing a blog post like this does is show **the messy reality o
 
 ---
 
-## What's Next
+---
 
-- Deploy YOLO26-Nano as a Kubernetes workload requesting `nvidia.com/gpu: 1`
-- Run inference and confirm the RTX 3060 is doing the computation
-- Expose the endpoint via Cloudflare Tunnel for edge-accessible AI
+## Phase 3: The Application Layer (Bridging AI and Reality)
 
-The cluster is alive. The GPU is ready. The model is next.
+Once the GPU was online, the real challenge began: making the AI actually *useful* for an electrician. A raw YOLO detection is just a bunch of boxes; an electrician needs a **diagram**.
+
+### The "Human-in-the-Loop" (HITL) Solution
+AI isn't perfect, especially in the messy, high-shadow environment of an industrial panel. Instead of fighting for 100% model accuracy (which is impossible), we built a **Human-in-the-Loop Workspace**:
+
+- **Unified Pipeline:** A FastAPI backend that orchestrates YOLOv8 (detection), Tesseract (OCR), and a custom **Spatial Heuristic Engine** (electrical logic).
+- **Interactive Canvas:** A custom-built web editor that allows the user to:
+    - **Pan & Zoom:** Navigate 4000px+ high-res board photos smoothly.
+    - **Edit Boxes:** Drag-and-drop handles to manually resize AI detections.
+    - **Add Missed Breakers:** A "Manual Draw" tool to capture items the AI missed.
+    - **RCD Specific Schema:** Logic that swaps inputs dynamically for RCD sensitivity (30mA/300mA) vs. MCB ratings.
+
+### Solving the "Scaling Paradox"
+We hit a major roadblock where high-resolution images caused the browser's CSS to collapse, making the UI microscopic. We solved this by abandoning standard Flexbox scaling for a hybrid **Absolute/Flex row** layout, ensuring the sidebar remains legible regardless of the image resolution.
+
+### The Vision & Logic Pipeline (Fighting Noise)
+Raw OCR on grainy plastic engravings is a nightmare. We built a multi-stage vision pipeline to extract data where standard tools failed:
+- **Pre-processing:** Implemented **Lanczos Interpolation** (upscaling) and **Otsu’s Binarization** to isolate black text from grey plastic backgrounds.
+- **Regex Cleaning:** Created a backend logic layer that scrubs OCR noise. It identifies specific electrical patterns like `C16`, `C32`, or the `SI` marker for RCDs, ignoring the surrounding visual artifacts.
+- **Heuristic Engine:** Built a spatial logic engine that "heals" detection errors, such as merging fragmented bounding boxes for multi-module devices like Oversurge protectors.
+
+### The Data Flywheel (Active Learning)
+This isn't just a UI—it's a **labeling factory**. Every manual correction the user makes is saved to `localStorage` and can be exported as "Gold Standard" training data. This closes the MLOps loop, allowing us to retrain the model on the very errors it made yesterday.
 
 ---
+
+## What's Next
+
+- `[x]` Deploy YOLO26-Nano inference pipeline.
+- `[x]` Build interactive HITL verification workspace.
+- `[ ]` **Phase 4: Diagram Generation:** Implement the engine to transform corrected JSON schemas into a professional **Esquema Unifilar** (PDF/SVG).
+- `[ ]` **MLOps Automation:** Build a one-click pipeline to move exported HITL data into the YOLO training folder.
+- `[ ]` Expose the endpoint via Cloudflare Tunnel for edge-accessible AI.
+
+The infrastructure is alive. The UI is functional. The diagram is the final boss.
+
+---
+
 
 ## Technical Insights
 

@@ -87,8 +87,8 @@ ADMIN_PASSWORD=your_secure_password
 docker-compose up -d --build
 ```
 
-## 📈 Current Milestone: Data Collection
-We are currently in the active data scaling phase.
+## 📈 Current Milestone: Production Ready (Phase 3)
+We have successfully transitioned to the production inference phase. The system is now powered by a YOLO26-Nano model trained for 100 epochs, achieving a **0.974 mAP50**.
 
 - **Live Portal:** [https://panelsafe.cv](https://panelsafe.cv)
 

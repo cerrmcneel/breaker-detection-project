@@ -29,9 +29,12 @@ spec:
         - python
         - -c
         - |
+          import torch
           from ultralytics import YOLO
           import time
+          print(f"PyTorch CUDA Available: {torch.cuda.is_available()}")
           model = YOLO("yolo26n.pt")
+          model.to("cuda")
           print(f"YOLO26-Nano loaded on: {next(model.model.parameters()).device}")
           print("Inference server ready. Waiting for requests...")
           while True:
