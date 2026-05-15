@@ -1,7 +1,6 @@
 fastapi
 uvicorn
 python-multipart
-cloudflared
 python-dotenv
 pytest
 opencv-python
