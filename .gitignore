@@ -43,3 +43,7 @@ result.txt
 # --- YOLO Specific ---
 runs/
 models/
+
+# --- Presentation & Context (Local only) ---
+directives/presentation_summary.md
+directives/storytelling_context.md
