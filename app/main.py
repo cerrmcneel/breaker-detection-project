@@ -28,7 +28,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # --- INFERENCE CONFIGURATION ---
-# The website now talks directly to the Windows GPU worker via the 'gpu-worker' host alias
+# The website now talks directly to the Windows GPU worker via the 'gpu-worker' Tailscale alias
 INFERENCE_URL = os.getenv("INFERENCE_URL", "http://gpu-worker:8088/predict")
 
 seen_hashes = set()

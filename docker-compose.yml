@@ -5,7 +5,7 @@ services:
     build: .
     container_name: breaker-app
     extra_hosts:
-      - "gpu-worker:192.168.1.147"
+      - "gpu-worker:100.102.124.29"
     environment:
       - UPLOAD_DIR=data/images/raw_uploads
       - INFERENCE_URL=http://gpu-worker:8088/predict
