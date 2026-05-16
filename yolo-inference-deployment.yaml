@@ -36,35 +36,38 @@ spec:
           import json
           import cv2
           import numpy as np
-          import cgi
           import time
 
-          print("--- PanelSafe Inference Engine v2.2 (Port 8088) ---")
+          print("--- PanelSafe Inference Engine v2.3 (Pulse Check) ---")
           model = YOLO("/models/best.pt")
           model.to("cuda")
 
           class InferenceHandler(BaseHTTPRequestHandler):
+              def do_GET(self):
+                  self.send_response(200)
+                  self.send_header("Content-type", "text/plain")
+                  self.end_headers()
+                  self.wfile.write(b"AI SERVER IS ALIVE AND TENSE")
+
               def do_POST(self):
                   if self.path == "/predict":
                       print(f"Request received from {self.client_address}")
                       try:
-                          # Faster multipart parsing
-                          ctype, pdict = cgi.parse_header(self.headers['content-type'])
-                          if ctype == 'multipart/form-data':
-                              pdict['boundary'] = bytes(pdict['boundary'], "utf-8")
-                              fields = cgi.parse_multipart(self.rfile, pdict)
-                              file_data = fields.get('file')[0]
-                          else:
-                              # Fallback to raw bytes if not multipart
-                              content_length = int(self.headers['Content-Length'])
-                              file_data = self.rfile.read(content_length)
+                          content_length = int(self.headers['Content-Length'])
+                          file_data = self.rfile.read(content_length)
                           
+                          # Extract image from multipart if needed
+                          if b"boundary=" in self.headers.get('Content-Type', '').encode():
+                              # Quick split for multipart
+                              parts = file_data.split(b"\r\n\r\n")
+                              if len(parts) > 1:
+                                  file_data = parts[1].split(b"\r\n--")[0]
+
                           print(f"Bytes received: {len(file_data)}")
                           nparr = np.frombuffer(file_data, np.uint8)
                           img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
                           
                           if img is not None:
-                              # Resize to max 1280 for presentation speed
                               h, w = img.shape[:2]
                               if max(h, w) > 1280:
                                   scale = 1280 / max(h, w)
