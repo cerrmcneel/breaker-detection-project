@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 # --- INFERENCE CONFIGURATION ---
 # The website now talks directly to the Windows GPU worker via the 'gpu-worker' host alias
-INFERENCE_URL = os.getenv("INFERENCE_URL", "http://gpu-worker:8080/predict")
+INFERENCE_URL = os.getenv("INFERENCE_URL", "http://gpu-worker:8088/predict")
 
 seen_hashes = set()
 upload_lock = asyncio.Lock()

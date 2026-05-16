@@ -32,53 +32,73 @@ spec:
         - |
           import torch
           from ultralytics import YOLO
-          from http.server import BaseHTTPRequestHandler, HTTPServer
+          from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
           import json
           import cv2
           import numpy as np
           import cgi
+          import time
 
-          print("Loading YOLO26-Nano onto GPU...")
+          print("--- PanelSafe Inference Engine v2.2 (Port 8088) ---")
           model = YOLO("/models/best.pt")
           model.to("cuda")
 
           class InferenceHandler(BaseHTTPRequestHandler):
               def do_POST(self):
                   if self.path == "/predict":
-                      form = cgi.FieldStorage(
-                          fp=self.rfile,
-                          headers=self.headers,
-                          environ={'REQUEST_METHOD': 'POST'}
-                      )
-                      if "file" not in form:
-                          self.send_response(400)
-                          self.end_headers()
-                          return
+                      print(f"Request received from {self.client_address}")
+                      try:
+                          # Faster multipart parsing
+                          ctype, pdict = cgi.parse_header(self.headers['content-type'])
+                          if ctype == 'multipart/form-data':
+                              pdict['boundary'] = bytes(pdict['boundary'], "utf-8")
+                              fields = cgi.parse_multipart(self.rfile, pdict)
+                              file_data = fields.get('file')[0]
+                          else:
+                              # Fallback to raw bytes if not multipart
+                              content_length = int(self.headers['Content-Length'])
+                              file_data = self.rfile.read(content_length)
                           
-                      file_data = form["file"].file.read()
-                      nparr = np.frombuffer(file_data, np.uint8)
-                      img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                      
-                      results = model.predict(img, conf=0.25)
-                      predictions = []
-                      for r in results:
-                          for b in r.boxes:
-                              predictions.append({
-                                  "box": b.xyxy[0].tolist(),
-                                  "class": r.names[int(b.cls[0])],
-                                  "conf": float(b.conf[0])
-                              })
-                      
-                      self.send_response(200)
-                      self.send_header("Content-type", "application/json")
-                      self.end_headers()
-                      self.wfile.write(json.dumps({"status": "success", "predictions": predictions}).encode())
+                          print(f"Bytes received: {len(file_data)}")
+                          nparr = np.frombuffer(file_data, np.uint8)
+                          img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                          
+                          if img is not None:
+                              # Resize to max 1280 for presentation speed
+                              h, w = img.shape[:2]
+                              if max(h, w) > 1280:
+                                  scale = 1280 / max(h, w)
+                                  img = cv2.resize(img, None, fx=scale, fy=scale)
+                              
+                              results = model.predict(img, conf=0.25, device="cuda", verbose=False)
+                              predictions = []
+                              for r in results:
+                                  for b in r.boxes:
+                                      predictions.append({
+                                          "box": b.xyxy[0].tolist(),
+                                          "class": r.names[int(b.cls[0])],
+                                          "conf": float(b.conf[0])
+                                      })
+                              
+                              print(f"Success: Found {len(predictions)} objects")
+                              self.send_response(200)
+                              self.send_header("Content-type", "application/json")
+                              self.end_headers()
+                              self.wfile.write(json.dumps({"status": "success", "predictions": predictions}).encode())
+                          else:
+                              print("Error: Decode failed")
+                              self.send_response(400)
+                              self.end_headers()
+                      except Exception as e:
+                          print(f"Error: {e}")
+                          self.send_response(500)
+                          self.end_headers()
 
-          print("Inference API is LIVE on port 8080 (Zero-Dependency Mode)")
-          server = HTTPServer(("0.0.0.0", 8080), InferenceHandler)
+          print("API LIVE ON PORT 8088")
+          server = ThreadingHTTPServer(("0.0.0.0", 8088), InferenceHandler)
           server.serve_forever()
         ports:
-        - containerPort: 8080
+        - containerPort: 8088
         env:
         - name: LD_LIBRARY_PATH
           value: /usr/lib/wsl/lib
@@ -114,7 +134,7 @@ spec:
     app: yolo-inference
   ports:
   - protocol: TCP
-    port: 8080
-    targetPort: 8080
-    nodePort: 30080
+    port: 8088
+    targetPort: 8088
+    nodePort: 30088
   type: NodePort
