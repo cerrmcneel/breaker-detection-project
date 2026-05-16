@@ -112,9 +112,14 @@
         }
 
         .actions {
-            display: flex;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 1rem;
             margin-bottom: 2rem;
+        }
+
+        #export-btn {
+            grid-column: span 2;
         }
 
         .upload-section {
@@ -247,7 +252,7 @@
         select { color: var(--primary); }
 
         .btn {
-            padding: 1.2rem 2rem;
+            padding: 1rem 1.5rem;
             border-radius: 12px;
             border: none;
             font-weight: 800;
