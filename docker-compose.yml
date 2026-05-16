@@ -12,8 +12,8 @@ services:
     ports:
       - "8085:8000"
     volumes:
-      - ./data:/app/data
-      - ./app/app/frontend:/app/app/frontend
+      - ./data:/code/data
+      - ./app/frontend:/code/app/frontend
     restart: always
 
   cloudflared-tunnel:

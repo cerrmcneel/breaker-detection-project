@@ -36,24 +36,7 @@
             margin: 0;
             padding: 20px;
             color: var(--text);
-        }
 
-        .navbar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            padding: 1rem 1.5rem;
-            z-index: 1000;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-sizing: border-box;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-        }
 
         .nav-brand {
             font-weight: 800;
@@ -238,7 +221,7 @@
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 2px;">
                 <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            BreakerAudit
+            PanelSafe
         </a>
         <div class="nav-links">
             <a href="/" class="nav-link" data-i18n="nav_home">Home</a>
@@ -256,7 +239,7 @@
     <div class="blog-header">
         <h1 data-i18n="blog_h1">Project Updates</h1>
         <p class="blog-subtitle" data-i18n="blog_subtitle">The latest news, milestones, and technical deep-dives from
-            the Breaker Detection team.</p>
+            the PanelSafe team.</p>
     </div>
 
     <!-- Blog Grid Content -->
@@ -322,12 +305,13 @@
 
         const translations = {
             en: {
-                nav_brand: "⚡ BreakerAudit",
+                nav_brand: "⚡ PanelSafe",
                 nav_home: "Home",
+                nav_analysis: "Analysis",
                 nav_blog: "Blog",
-                blog_title: "BreakerAudit Blog",
+                blog_title: "PanelSafe Blog",
                 blog_h1: "Project Updates",
-                blog_subtitle: "The latest news, milestones, and technical deep-dives from the Breaker Detection team.",
+                blog_subtitle: "The latest news, milestones, and technical deep-dives from the PanelSafe team.",
                 read_more: "Read Article →",
 
                 // Article 1
@@ -349,12 +333,13 @@
                 date_march05: "Mar 05, 2026"
             },
             es: {
-                nav_brand: "⚡ BreakerAudit",
+                nav_brand: "⚡ PanelSafe",
                 nav_home: "Inicio",
+                nav_analysis: "Análisis",
                 nav_blog: "Blog",
-                blog_title: "Blog de BreakerAudit",
+                blog_title: "Blog de PanelSafe",
                 blog_h1: "Actualizaciones del Proyecto",
-                blog_subtitle: "Las últimas noticias, hitos y análisis técnicos del equipo de Breaker Detection.",
+                blog_subtitle: "Las últimas noticias, hitos y análisis técnicos del equipo de PanelSafe.",
                 read_more: "Leer Artículo →",
 
                 // Article 1
@@ -386,6 +371,21 @@
 
             // Update static translations
             document.querySelectorAll('[data-i18n]').forEach(element => {
+                const navHome = document.getElementById('nav-home');
+            const navAnalysis = document.getElementById('nav-analysis');
+            const navBlog = document.getElementById('nav-blog');
+            
+            if (lang === 'es') {
+                if (navHome) navHome.textContent = "Inicio";
+                if (navAnalysis) navAnalysis.textContent = "Análisis";
+                if (navBlog) navBlog.textContent = "Blog";
+                document.title = "El Corazón Silencioso de su Hogar - PanelSafe";
+            } else {
+                if (navHome) navHome.textContent = "Home";
+                if (navAnalysis) navAnalysis.textContent = "Analysis";
+                if (navBlog) navBlog.textContent = "Blog";
+                document.title = "The Silent Heart of Your Home - PanelSafe";
+            }
                 const key = element.getAttribute('data-i18n');
                 if (translations[lang][key]) {
                     if (element.tagName === "OPTION") {
