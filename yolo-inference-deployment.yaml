@@ -38,58 +38,62 @@ spec:
           import numpy as np
           import time
 
-          print("--- PanelSafe Inference Engine v2.3 (Pulse Check) ---")
+          print("--- PanelSafe Inference Engine v2.4 (Scaling Fixed) ---")
           model = YOLO("/models/best.pt")
           model.to("cuda")
 
           class InferenceHandler(BaseHTTPRequestHandler):
               def do_GET(self):
                   self.send_response(200)
-                  self.send_header("Content-type", "text/plain")
                   self.end_headers()
-                  self.wfile.write(b"AI SERVER IS ALIVE AND TENSE")
+                  self.wfile.write(b"AI SERVER IS ALIVE AND SCALING")
 
               def do_POST(self):
                   if self.path == "/predict":
-                      print(f"Request received from {self.client_address}")
                       try:
                           content_length = int(self.headers['Content-Length'])
                           file_data = self.rfile.read(content_length)
                           
-                          # Extract image from multipart if needed
                           if b"boundary=" in self.headers.get('Content-Type', '').encode():
-                              # Quick split for multipart
                               parts = file_data.split(b"\r\n\r\n")
                               if len(parts) > 1:
                                   file_data = parts[1].split(b"\r\n--")[0]
 
-                          print(f"Bytes received: {len(file_data)}")
                           nparr = np.frombuffer(file_data, np.uint8)
-                          img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                          img_orig = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
                           
-                          if img is not None:
-                              h, w = img.shape[:2]
-                              if max(h, w) > 1280:
-                                  scale = 1280 / max(h, w)
-                                  img = cv2.resize(img, None, fx=scale, fy=scale)
+                          if img_orig is not None:
+                              h_orig, w_orig = img_orig.shape[:2]
                               
-                              results = model.predict(img, conf=0.25, device="cuda", verbose=False)
+                              # Resize for inference speed
+                              if max(h_orig, w_orig) > 1280:
+                                  scale = 1280 / max(h_orig, w_orig)
+                                  img_inf = cv2.resize(img_orig, None, fx=scale, fy=scale)
+                              else:
+                                  scale = 1.0
+                                  img_inf = img_orig
+                              
+                              results = model.predict(img_inf, conf=0.20, device="cuda", verbose=False)
+                              
                               predictions = []
                               for r in results:
                                   for b in r.boxes:
+                                      # SCALE COORDINATES BACK TO ORIGINAL SIZE
+                                      box = b.xyxy[0].tolist()
+                                      scaled_box = [coord / scale for coord in box]
+                                      
                                       predictions.append({
-                                          "box": b.xyxy[0].tolist(),
+                                          "box": scaled_box,
                                           "class": r.names[int(b.cls[0])],
                                           "conf": float(b.conf[0])
                                       })
                               
-                              print(f"Success: Found {len(predictions)} objects")
+                              print(f"Detected {len(predictions)} objects. Scaling back by {1/scale:.2f}x")
                               self.send_response(200)
                               self.send_header("Content-type", "application/json")
                               self.end_headers()
                               self.wfile.write(json.dumps({"status": "success", "predictions": predictions}).encode())
                           else:
-                              print("Error: Decode failed")
                               self.send_response(400)
                               self.end_headers()
                       except Exception as e:
@@ -97,7 +101,6 @@ spec:
                           self.send_response(500)
                           self.end_headers()
 
-          print("API LIVE ON PORT 8088")
           server = ThreadingHTTPServer(("0.0.0.0", 8088), InferenceHandler)
           server.serve_forever()
         ports:

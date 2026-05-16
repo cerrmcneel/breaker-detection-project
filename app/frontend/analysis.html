@@ -4,25 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PanelSafe | Human-in-the-Loop Analysis</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
-            --primary: #00f2fe;
-            --secondary: #4facfe;
-            --bg: #0a0c10;
-            --card-bg: rgba(255, 255, 255, 0.05);
-            --border: rgba(255, 255, 255, 0.1);
-            --text: #ffffff;
-            --text-dim: #a0a0a0;
-            --accent: #ff4b2b;
+            --primary: #0066FF;
+            --secondary: #0051CC;
+            --bg: #F8FAFC;
+            --card-bg: #FFFFFF;
+            --border: #E2E8F0;
+            --text: #1E293B;
+            --text-dim: #64748B;
+            --accent: #EF4444;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: 'Outfit', sans-serif;
-            background: var(--bg);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            background-image: radial-gradient(at 0% 0%, rgba(0, 102, 255, 0.05) 0px, transparent 50%),
+                              radial-gradient(at 100% 100%, rgba(0, 102, 255, 0.05) 0px, transparent 50%);
             color: var(--text);
             height: 100vh;
             width: 100vw;
@@ -30,6 +32,56 @@
             display: flex;
             flex-direction: row;
             overflow: hidden;
+            padding-top: 64px; /* Space for navbar */
+        }
+
+        /* --- NAVBAR --- */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 1rem 1.5rem;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-brand {
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--text-dim);
+            font-weight: 600;
+            font-size: 0.875rem;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            color: var(--primary);
+            background-color: #E6F0FF;
         }
 
         /* --- SIDEBAR (LEFT) --- */
@@ -37,14 +89,14 @@
             width: 30vw;
             max-width: 600px;
             min-width: 450px;
-            height: 100vh;
-            background: #0a0c10;
+            height: calc(100vh - 64px);
+            background: var(--card-bg);
             border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
             padding: 2rem;
             z-index: 10;
-            box-shadow: 5px 0 20px rgba(0,0,0,0.8);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
         }
 
         .logo {
@@ -73,18 +125,18 @@
         }
 
         .upload-zone {
-            border: 2px dashed var(--secondary);
+            border: 2px dashed var(--primary);
             border-radius: 16px;
             padding: 2.5rem;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
-            background: rgba(79, 172, 254, 0.05);
+            background: rgba(0, 102, 255, 0.05);
         }
 
         .upload-zone:hover {
-            border-color: var(--primary);
-            background: rgba(0, 242, 254, 0.1);
+            border-color: var(--secondary);
+            background: rgba(0, 102, 255, 0.1);
         }
 
         /* --- SCROLLABLE COMPONENT LIST --- */
@@ -109,7 +161,7 @@
         }
 
         .component-card {
-            background: #111418;
+            background: var(--bg);
             border: 2px solid var(--border);
             border-radius: 16px;
             padding: 1.5rem;
@@ -122,14 +174,15 @@
         }
 
         .component-card:hover {
-            border-color: var(--secondary);
-            background: #1a1d23;
+            border-color: var(--primary);
+            background: #FFFFFF;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
 
         .component-card.active {
             border-color: var(--primary);
-            background: #1a1d23;
-            box-shadow: 0 5px 25px rgba(0, 242, 254, 0.25);
+            background: #FFFFFF;
+            box-shadow: 0 5px 15px rgba(0, 102, 255, 0.15);
         }
 
         .card-actions {
@@ -150,8 +203,8 @@
             transition: all 0.2s;
         }
 
-        .icon-btn:hover { color: var(--primary); background: rgba(255, 255, 255, 0.1); }
-        .icon-btn.delete:hover { color: var(--accent); }
+        .icon-btn:hover { color: var(--primary); background: #E6F0FF; }
+        .icon-btn.delete:hover { color: var(--accent); background: #FEE2E2; }
 
         .card-header {
             display: flex;
@@ -179,9 +232,9 @@
         }
 
         input, select {
-            background: #000;
+            background: #fff;
             border: 2px solid var(--border);
-            color: #fff;
+            color: var(--text);
             padding: 1rem;
             border-radius: 10px;
             font-family: inherit;
@@ -208,16 +261,16 @@
             flex: 1;
         }
 
-        .btn-primary { background: linear-gradient(45deg, var(--primary), var(--secondary)); color: #000; }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 242, 254, 0.4); }
-        .btn-secondary { background: rgba(255,255,255,0.1); color: #fff; }
-        .btn-secondary:hover { background: rgba(255,255,255,0.2); }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 102, 255, 0.3); background: var(--secondary); }
+        .btn-secondary { background: #E2E8F0; color: var(--text); }
+        .btn-secondary:hover { background: #CBD5E1; }
 
         /* --- VIEWPORT (RIGHT) --- */
         .viewport {
             flex: 1;
-            height: 100vh;
-            background: #000;
+            height: calc(100vh - 64px);
+            background: #1E293B; /* Slate-800 for contrast with images */
             position: relative;
             overflow: hidden;
             display: block; /* Removed flex centering to fix canvas offset */
@@ -238,7 +291,7 @@
         .loading-overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(10, 12, 16, 0.8);
+            background: rgba(30, 41, 59, 0.8);
             backdrop-filter: blur(5px);
             display: none;
             flex-direction: column;
@@ -298,6 +351,21 @@
 </head>
 <body>
     
+    <!-- Top Navigation Bar -->
+    <nav class="navbar">
+        <a href="/" class="nav-brand" data-i18n="nav_brand">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 2px;">
+                <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            PanelSafe
+        </a>
+        <div class="nav-links">
+            <a href="/" class="nav-link" data-i18n="nav_home">Home</a>
+            <a href="/analysis.html" class="nav-link active" data-i18n="nav_analysis">Analysis</a>
+            <a href="/blog.html" class="nav-link" data-i18n="nav_blog">Blog</a>
+        </div>
+    </nav>
+
     <!-- LEFT SIDEBAR -->
     <div class="sidebar">
         <div class="logo">
@@ -319,8 +387,8 @@
 
         <div class="upload-section">
             <div class="upload-zone" id="drop-zone">
-                <i data-lucide="upload-cloud" style="width: 32px; height: 32px; margin-bottom: 0.5rem; color: var(--secondary);"></i>
-                <p style="font-size: 0.9rem; font-weight: 600;">Click or Drop Image</p>
+                <i data-lucide="upload-cloud" style="width: 32px; height: 32px; margin-bottom: 0.5rem; color: var(--primary);"></i>
+                <p style="font-size: 0.9rem; font-weight: 600; color: var(--text);">Click or Drop Image</p>
                 <input type="file" id="file-input" accept="image/*">
             </div>
         </div>
@@ -329,7 +397,7 @@
         <div id="results-panel" style="display: none;" class="scroll-area">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                 <h2>Detections</h2>
-                <span id="comp-count" style="font-size: 1rem; color: var(--primary); font-weight: 800; background: rgba(0,242,254,0.1); padding: 4px 12px; border-radius: 20px;">0 FOUND</span>
+                <span id="comp-count" style="font-size: 1rem; color: var(--primary); font-weight: 800; background: #E6F0FF; padding: 4px 12px; border-radius: 20px;">0 FOUND</span>
             </div>
             <div class="component-list" id="component-list">
                 <!-- Cards injected here -->
@@ -577,12 +645,12 @@
                 const [x1, y1, x2, y2] = comp.box;
                 const isActive = index === activeIndex;
 
-                ctx.strokeStyle = isActive ? '#00f2fe' : 'rgba(0, 242, 254, 0.4)';
+                ctx.strokeStyle = isActive ? '#0066FF' : 'rgba(0, 102, 255, 0.4)';
                 ctx.lineWidth = isActive ? 8 / scale : 4 / scale;
                 ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
 
                 if (isActive) {
-                    ctx.fillStyle = 'rgba(0, 242, 254, 0.2)';
+                    ctx.fillStyle = 'rgba(0, 102, 255, 0.2)';
                     ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
                     
                     // Draw Drag Handles
@@ -597,7 +665,7 @@
 
             if (tempBox) {
                 ctx.setLineDash([10/scale, 10/scale]);
-                ctx.strokeStyle = '#00f2fe';
+                ctx.strokeStyle = '#0066FF';
                 ctx.lineWidth = 4 / scale;
                 ctx.strokeRect(tempBox[0], tempBox[1], tempBox[2] - tempBox[0], tempBox[3] - tempBox[1]);
                 ctx.setLineDash([]);
@@ -783,11 +851,11 @@
 
         dropZone.onclick = () => fileInput.click();
         fileInput.onchange = (e) => handleFile(e.target.files[0]);
-        dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.borderColor = '#00f2fe'; };
-        dropZone.ondragleave = () => { dropZone.style.borderColor = 'rgba(79, 172, 254, 0.05)'; };
+        dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.borderColor = '#0066FF'; };
+        dropZone.ondragleave = () => { dropZone.style.borderColor = 'rgba(0, 102, 255, 0.05)'; };
         dropZone.ondrop = (e) => {
             e.preventDefault();
-            dropZone.style.borderColor = 'rgba(79, 172, 254, 0.05)';
+            dropZone.style.borderColor = 'rgba(0, 102, 255, 0.05)';
             handleFile(e.dataTransfer.files[0]);
         };
     </script>
