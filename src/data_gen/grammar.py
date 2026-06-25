@@ -40,6 +40,11 @@ class PanelFactory:
         Rail 0:  [MAINBREAKER or OVERSURGE] → [RCD or RCD_SI] → [MCBs...]
         Rail 1+: [RCD or RCD_SI] → [MCBs...]
 
+    Real-world panels frequently have MULTIPLE RCD-protected groups on a single rail,
+    e.g.: [RCD] → [MCBs] → [RCD_SI] → [MCBs]
+    The `add_rcd_group` behavior models this common pattern so the HMM learns that
+    P(MCB → RCD) is non-trivially probable in field installations.
+
     Chaos behaviors model real-world non-compliant installs:
         - missing_mainbreaker : No IGA — installer relied on meter breaker (common)
         - missing_rcd         : No diferencial on a rail (rare, dangerous)
@@ -47,6 +52,7 @@ class PanelFactory:
         - use_rcd_si          : Superinmunizado instead of standard RCD (growing trend)
         - wide_mcb            : 2-module MCBs mixed into layout
         - add_other           : Timer/contactor present on rail
+        - add_rcd_group       : A second RCD group mid-rail (very common in real panels)
 
     Parameters
     ----------
@@ -71,6 +77,7 @@ class PanelFactory:
         "use_rcd_si":          0.30,  # growing recommendation
         "wide_mcb":            0.25,  # 2-module MCB mixed in
         "add_other":           0.10,  # timer/contactor present
+        "add_rcd_group":       0.45,  # second RCD group mid-rail (very common in field)
     }
 
     # MAINBREAKER module widths: older panels larger, modern ones slimmer
@@ -89,6 +96,7 @@ class PanelFactory:
             self.CHAOS_PROBS["use_oversurge"] = 0.40   # was 0.15
             self.CHAOS_PROBS["use_rcd_si"]    = 0.50   # was 0.30
             self.CHAOS_PROBS["add_other"]     = 0.25   # was 0.10
+            self.CHAOS_PROBS["add_rcd_group"] = 0.60   # was 0.45
 
     # ── Core generator ────────────────────────────────────────────────────────
     def generate(self):
@@ -113,7 +121,7 @@ class PanelFactory:
 
     # ── Rail fillers ──────────────────────────────────────────────────────────
     def _fill_main_rail(self, rail):
-        """Rail 0: [MAINBREAKER/OVERSURGE?] → [RCD?] → MCBs"""
+        """Rail 0: [MAINBREAKER/OVERSURGE?] → [RCD?] → MCBs (→ [RCD?] → MCBs)..."""
         if not self._chaos("missing_mainbreaker"):
             if self._chaos("use_oversurge"):
                 w = random.choices([2, 3, 4], weights=[0.4, 0.4, 0.2])[0]
@@ -124,22 +132,37 @@ class PanelFactory:
                 )[0]
                 rail.add_component(Breaker(cls="MAINBREAKER", width=w))
 
-        if not self._chaos("missing_rcd"):
+        has_initial_rcd = not self._chaos("missing_rcd")
+        if has_initial_rcd:
             rcd = "RCD_SI" if self._chaos("use_rcd_si") else "RCD"
             rail.add_component(Breaker(cls=rcd, width=2))
 
-        self._fill_mcbs(rail)
+        self._fill_mcbs(rail, has_initial_rcd=has_initial_rcd)
 
     def _fill_secondary_rail(self, rail):
-        """Rail 1+: [RCD?] → MCBs"""
-        if not self._chaos("missing_rcd"):
+        """Rail 1+: [RCD?] → MCBs (→ [RCD?] → MCBs)..."""
+        has_initial_rcd = not self._chaos("missing_rcd")
+        if has_initial_rcd:
             rcd = "RCD_SI" if self._chaos("use_rcd_si") else "RCD"
             rail.add_component(Breaker(cls=rcd, width=2))
 
-        self._fill_mcbs(rail)
+        self._fill_mcbs(rail, has_initial_rcd=has_initial_rcd)
 
-    def _fill_mcbs(self, rail):
-        """Fill remaining module space with MCBs (and occasional OTHER devices)."""
+    def _fill_mcbs(self, rail, has_initial_rcd=True):
+        """
+        Fill remaining module space with MCBs, occasional OTHER devices, and
+        optionally additional mid-rail RCD groups.
+
+        A second RCD group (e.g. [MCBs] → [RCD_SI] → [MCBs]) is injected once
+        per call when `add_rcd_group` chaos fires AND at least 2 MCBs have been
+        placed since the last RCD, AND enough space remains (RCD=2 + 1 MCB = 3).
+        This teaches the HMM that P(MCB → RCD) is non-trivially probable.
+        """
+        # Track MCBs placed since the last RCD so we don't inject an RCD immediately
+        # after another one — a minimum gap of 2 MCBs is required.
+        mcbs_since_last_rcd = 0 if has_initial_rcd else 2  # no initial RCD → already at gap
+        extra_rcd_placed = False  # only one extra group per rail to keep panels realistic
+
         while True:
             remaining = rail.max_modules - rail.current_width()
             if remaining <= 0:
@@ -152,10 +175,27 @@ class PanelFactory:
                     break
                 continue
 
+            # Mid-rail RCD group injection:
+            #   - Only once per rail (extra_rcd_placed guard)
+            #   - Requires ≥2 MCBs since last RCD (realistic gap)
+            #   - Requires room for RCD (2 modules) + at least 1 MCB (1 module)
+            if (
+                not extra_rcd_placed
+                and mcbs_since_last_rcd >= 2
+                and remaining >= 3
+                and self._chaos("add_rcd_group")
+            ):
+                rcd = "RCD_SI" if self._chaos("use_rcd_si") else "RCD"
+                if rail.add_component(Breaker(cls=rcd, width=2)):
+                    mcbs_since_last_rcd = 0
+                    extra_rcd_placed = True
+                    continue
+
             # MCB — 1 or 2 modules
             w = 2 if (self._chaos("wide_mcb") and remaining >= 2) else 1
             if not rail.add_component(Breaker(cls="MCB", width=w)):
                 break
+            mcbs_since_last_rcd += 1
 
     # ── Chaos helper ──────────────────────────────────────────────────────────
     def _chaos(self, behavior):
