@@ -19,16 +19,37 @@ class HMMCorrector:
 
         self.classes = ["MCB", "RCD", "RCD_SI", "MAINBREAKER", "OVERSURGE", "OTHER"]
 
-        # 2. Width Probability Distribution: P(width | state)
-        # Standard physical module sizes for Spanish DIN rails
+        # 2. Width Prior: P(width | state)
+        #
+        # IMPORTANT — two realities in tension here:
+        #
+        #   Physical reality (REBT domain knowledge):
+        #     MCBs are predominantly 2-module in modern Spanish panels.
+        #     RCDs/RCD_SI are always 2-module.
+        #     Comb OVERSURGE units are typically 3-4 modules.
+        #     Single-phase IGA (MAINBREAKER) is 2 modules (being phased out).
+        #
+        #   Computed reality (heuristics.py output):
+        #     The pixel→module conversion anchors on the 25th percentile of
+        #     all box widths on a rail. If most boxes ARE 2-module MCBs, the
+        #     anchor equals the MCB pixel width, so every MCB computes to
+        #     mod_width=1 and every RCD (wider) computes to mod_width=2.
+        #
+        # The values below are calibrated to the COMPUTED distribution, not
+        # the physical one. Any change here must be accompanied by a fix to
+        # the heuristic's anchor estimation in heuristics.py.
         self.width_priors = {
-            "MCB":         {1: 0.80, 2: 0.20},               # 1 or 2 modules
-            "RCD":         {2: 1.00},                        # Differential AC is always 2 mod
-            "RCD_SI":      {2: 1.00},                        # Differential SI is 2 mod
-            "MAINBREAKER": {2: 0.70, 3: 0.15, 4: 0.15},      # IGA: 2, 3, or 4 mod
-            "OVERSURGE":   {2: 0.50, 3: 0.30, 4: 0.20},      # Combi unit: 2 to 4 mod
-            "OTHER":       {1: 0.40, 2: 0.40, 3: 0.10, 4: 0.10} # Variable
+            "MCB":         {1: 0.80, 2: 0.20},                    # heuristic outputs 1 for most MCBs
+            "RCD":         {2: 1.00},                              # always computes to 2 (wider than MCBs)
+            "RCD_SI":      {2: 1.00},                              # same form factor as RCD
+            "MAINBREAKER": {2: 0.70, 3: 0.15, 4: 0.15},           # single-phase IGA still most common
+            "OVERSURGE":   {2: 0.50, 3: 0.30, 4: 0.20},           # physical: 3-4 mod; heuristic: unclear
+            "OTHER":       {1: 0.40, 2: 0.40, 3: 0.10, 4: 0.10}
         }
+        # Hard penalty for widths not in the dict. DO NOT raise without also
+        # fixing the heuristic — softening this (e.g. to 0.05) removes MCB/RCD
+        # discriminating power and drops classification by ~3pp.
+        self._width_fallback = 0.001
 
         # 3. YOLO Confusion Matrix: P(yolo_class | state)
         # Represents model error rates (visual similarity confusion).
@@ -60,8 +81,7 @@ class HMMCorrector:
         
         # B. Spatial probability (Module Width constraints)
         width_dist = self.width_priors.get(state, {})
-        # If the width is not standard for this state, penalize heavily
-        p_width = width_dist.get(width, 0.001)
+        p_width = width_dist.get(width, self._width_fallback)
 
         # C. Textual probability (OCR feedback)
         p_ocr = 1.0
