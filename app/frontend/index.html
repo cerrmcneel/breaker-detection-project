@@ -7,28 +7,31 @@
     <title>Breaker Data Collection</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #0066FF;
-            --primary-dark: #0051CC;
-            --primary-light: #E6F0FF;
-            --bg: #F8FAFC;
-            --card-bg: rgba(255, 255, 255, 0.9);
-            --text: #1E293B;
-            --text-muted: #64748B;
-            --success: #10B981;
-            --warning: #F59E0B;
-            --danger: #EF4444;
+            --primary: #9137af;
+            --primary-dark: #6c2583;
+            --primary-light: rgba(145, 55, 175, 0.15);
+            --secondary: #73c83c;
+            --secondary-dark: #56972d;
+            --secondary-light: rgba(115, 200, 60, 0.15);
+            --bg: #0b0a0d;
+            --card-bg: rgba(20, 18, 25, 0.95);
+            --text: #ffffff;
+            --text-muted: #a9a6b0;
+            --success: #73c83c;
+            --warning: #ffb800;
+            --danger: #ff4a4a;
             --radius: 16px;
-            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(145, 55, 175, 0.1);
         }
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--bg);
-            background-image: radial-gradient(at 0% 0%, rgba(0, 102, 255, 0.05) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(0, 102, 255, 0.05) 0px, transparent 50%);
+            background-image: radial-gradient(at 0% 0%, rgba(145, 55, 175, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(115, 200, 60, 0.1) 0px, transparent 50%);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -47,7 +50,7 @@
             padding: 2.5rem 2rem;
             border-radius: var(--radius);
             box-shadow: var(--shadow);
-            border: 1px solid rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(145, 55, 175, 0.2);
             text-align: center;
             max-width: 440px;
             width: 100%;
@@ -56,6 +59,7 @@
         }
 
         h1 {
+            font-family: 'Outfit', sans-serif;
             color: var(--text);
             font-weight: 800;
             letter-spacing: -0.025em;
@@ -81,22 +85,28 @@
         .btn-primary {
             background-color: var(--primary);
             color: white;
-            box-shadow: 0 4px 12px rgba(0, 102, 255, 0.3);
+            box-shadow: 0 4px 12px rgba(145, 55, 175, 0.3);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            box-shadow: 0 4px 20px rgba(145, 55, 175, 0.5);
         }
 
         .btn-primary:active {
             transform: scale(0.98);
-            background-color: var(--primary-dark);
         }
 
         .btn-outline {
-            background-color: white;
+            background-color: transparent;
             color: var(--text);
-            border: 1px solid #E2E8F0;
+            border: 1px solid rgba(145, 55, 175, 0.3);
         }
 
+        .btn-outline:hover,
         .btn-outline:active {
-            background-color: #F1F5F9;
+            background-color: var(--primary-light);
+            border-color: var(--primary);
         }
 
         #camera-preview-container {
@@ -160,12 +170,17 @@
         .instruction-card {
             background-color: var(--primary-light);
             border-left: 4px solid var(--primary);
+            border: 1px solid rgba(145, 55, 175, 0.25);
             padding: 1.25rem;
             margin-bottom: 2rem;
             border-radius: 8px;
             text-align: left;
             font-size: 14px;
-            color: #1E40AF;
+            color: #d8b4fe;
+        }
+
+        .instruction-card strong {
+            color: var(--text);
         }
 
         .instruction-card h3 {
@@ -174,6 +189,7 @@
             display: flex;
             align-items: center;
             gap: 6px;
+            color: var(--text);
         }
 
         .instruction-card ul {
@@ -187,10 +203,10 @@
 
         .progress-container {
             margin-bottom: 2rem;
-            background: white;
+            background: #141219;
             padding: 1.25rem;
             border-radius: 12px;
-            border: 1px solid #E2E8F0;
+            border: 1px solid rgba(145, 55, 175, 0.2);
         }
 
         .progress-header {
@@ -215,7 +231,7 @@
         }
 
         .progress-bar-bg {
-            background-color: #F1F5F9;
+            background-color: #1c1924;
             border-radius: 10px;
             height: 10px;
             width: 100%;
@@ -223,7 +239,7 @@
         }
 
         .progress-bar-fill {
-            background: linear-gradient(90deg, var(--primary), #60A5FA);
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
             height: 100%;
             width: 0%;
             border-radius: 10px;
@@ -235,7 +251,7 @@
             top: 0;
             left: 0;
             width: 100%;
-            background: rgba(255, 255, 255, 0.8);
+            background: rgba(11, 10, 13, 0.8);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             padding: 1rem 1.5rem;
@@ -244,7 +260,7 @@
             justify-content: space-between;
             align-items: center;
             box-sizing: border-box;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            border-bottom: 1px solid rgba(145, 55, 175, 0.15);
         }
 
         .nav-brand {
@@ -274,13 +290,13 @@
 
         .nav-link:hover,
         .nav-link.active {
-            color: var(--primary);
+            color: var(--secondary);
             background-color: var(--primary-light);
         }
 
         .rcd-section {
-            background: #F8FAFC;
-            border: 1px solid #E2E8F0;
+            background: rgba(20, 18, 25, 0.6);
+            border: 1px solid rgba(145, 55, 175, 0.2);
             border-radius: 12px;
             padding: 1rem;
             margin-bottom: 1.5rem;
@@ -317,12 +333,12 @@
         .lang-btn {
             padding: 6px 14px;
             border-radius: 8px;
-            border: 1px solid #E2E8F0;
-            background: white;
+            border: 1px solid rgba(145, 55, 175, 0.3);
+            background: transparent;
+            color: var(--text-muted);
             font-size: 13px;
             font-weight: 700;
             cursor: pointer;
-            color: var(--text-muted);
             transition: all 0.2s;
         }
 
@@ -422,7 +438,7 @@
 <body>
     <!-- Top Navigation Bar -->
     <nav class="navbar">
-        <a href="/" class="nav-brand" data-i18n="nav_brand">
+        <a href="/" class="nav-brand" id="page-title" data-i18n="nav_brand">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
                 style="margin-right: 2px;">
                 <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" stroke-width="2"
@@ -448,22 +464,22 @@
 
         <!-- Score Portal View (Hidden by default) -->
         <div id="score-portal-view" style="display: none; text-align: left;">
-            <h2 data-i18n="score_title" style="margin-top: 0; color: #1a1a1a; text-align: center;">Check Your Score</h2>
-            <p data-i18n="score_desc" style="text-align: center; color: #666; margin-bottom: 20px;">Enter your tracking
+            <h2 data-i18n="score_title" style="margin-top: 0; color: var(--text); text-align: center;">Check Your Score</h2>
+            <p data-i18n="score_desc" style="text-align: center; color: var(--text-muted); margin-bottom: 20px;">Enter your tracking
                 ID to see your manual safety score.</p>
 
             <form id="scoreForm">
                 <input type="text" id="trackingIdInput" placeholder="e.g., BKR-7X9" required
-                    style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; margin-bottom: 15px; box-sizing: border-box; text-transform: uppercase;">
-                <button type="submit" id="check-score-btn" class="btn"
-                    style="width: 100%; background-color: #0070f3; color: white; border: none;"
+                    style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(145, 55, 175, 0.3); background-color: #141219; color: var(--text); font-size: 16px; margin-bottom: 15px; box-sizing: border-box; text-transform: uppercase;">
+                <button type="submit" id="check-score-btn" class="btn btn-primary"
+                    style="width: 100%; border: none;"
                     data-i18n="check_score_btn">Check Status</button>
             </form>
             <div id="score-result"
-                style="margin-top: 20px; padding: 15px; border-radius: 8px; display: none; background-color: #f8f9fa; border: 1px solid #e1e4e8;">
+                style="margin-top: 20px; padding: 15px; border-radius: 8px; display: none; background-color: #1c1924; border: 1px solid rgba(145, 55, 175, 0.2);">
             </div>
             <button onclick="toggleUploadPortal()"
-                style="margin-top: 15px; background: none; border: none; color: #0070f3; cursor: pointer; width: 100%; text-decoration: underline; font-size: 14px;"
+                style="margin-top: 15px; background: none; border: none; color: var(--primary); cursor: pointer; width: 100%; text-decoration: underline; font-size: 14px;"
                 data-i18n="back_to_upload">Back to Upload</button>
         </div>
 
@@ -471,17 +487,17 @@
         <div id="upload-portal-view">
             <img src="/assets/mostafa-mahmoudi-47jO5Y8nsYo-unsplash.jpg" alt="Circuit Breakers Panel"
                 style="width: 100%; border-radius: 8px; margin-bottom: 0.5rem; object-fit: cover; max-height: 250px;">
-            <div style="font-size: 11px; color: #666; margin-bottom: 1.5rem; text-align: right;">
+            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 1.5rem; text-align: right;">
                 <span data-i18n="photo_by">Photo by</span> <a href="https://unsplash.com/@mostafa_mahmoudi24"
-                    target="_blank" style="color: #0070f3; text-decoration: none;">Mostafa Mahmoudi</a> <span
+                    target="_blank" style="color: var(--primary); text-decoration: none;">Mostafa Mahmoudi</a> <span
                     data-i18n="on_unsplash">on Unsplash</span>
             </div>
             <p data-i18n="phase">Phase 3: Production Ready</p>
 
             <!-- Hidden Batch Upload Input -->
             <div id="batch-upload-container"
-                style="display: none; margin-bottom: 15px; padding: 15px; border: 2px dashed #0070f3; border-radius: 8px; background-color: #f0f7ff;">
-                <p style="margin-top: 0; margin-bottom: 10px; font-weight: bold; color: #0070f3;">Admin Batch Upload
+                style="display: none; margin-bottom: 15px; padding: 15px; border: 2px dashed var(--primary); border-radius: 8px; background-color: var(--primary-light);">
+                <p style="margin-top: 0; margin-bottom: 10px; font-weight: bold; color: var(--primary);">Admin Batch Upload
                     Unlocked</p>
                 <input type="file" id="batchFileInput" multiple accept="image/*"
                     style="display: block; width: 100%; cursor: pointer;">
@@ -504,14 +520,9 @@
             </div>
 
             <!-- Progress Tracker -->
-            <div class="progress-container">
-                <div class="progress-header">
-                    <span class="progress-title" data-i18n="goal">Model Accuracy: 0.974 mAP</span>
-                    <span class="progress-badge" id="progress-text">0 / 300</span>
-                </div>
-                <div class="progress-bar-bg">
-                    <div class="progress-bar-fill" id="progress-bar"></div>
-                </div>
+            <div class="progress-container" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem;">
+                <span class="progress-title" data-i18n="goal" style="font-size: 1rem; color: var(--text);">Dataset Photos</span>
+                <span class="progress-badge" id="progress-text" style="font-size: 1.1rem; padding: 6px 14px; border-radius: 30px; background: linear-gradient(135deg, var(--primary), #3b82f6); min-width: 40px; text-align: center;">0</span>
             </div>
 
             <form id="uploadForm">
@@ -779,7 +790,26 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary" id="submit-btn" data-i18n="upload_btn">Upload</button>
+                <div class="consent-container" style="text-align: left; margin: 1.5rem 0; font-size: 14px; line-height: 1.5;">
+                    <div style="display: flex; align-items: flex-start; gap: 8px;">
+                        <input type="checkbox" id="consent-checkbox" style="margin-top: 3px; cursor: pointer;">
+                        <label for="consent-checkbox" style="cursor: pointer; color: var(--text-muted);" data-i18n="consent_checkbox_label">
+                            I consent to the collection of my electrical panel photo and country metadata for safety analysis and retraining under the <a href="#" id="privacy-policy-link" style="color: var(--primary); text-decoration: underline; font-weight: 500;">Privacy Policy</a>.
+                        </label>
+                    </div>
+                    
+                    <div id="privacy-policy-panel" style="display: none; margin-top: 10px; padding: 12px; background: #F1F5F9; border-radius: 8px; border-left: 3px solid var(--primary); font-size: 12px; color: var(--text-muted); line-height: 1.4; animation: slideIn 0.3s ease-out;">
+                        <div data-i18n="privacy_policy_content">
+                            <strong>Privacy & Consent Notice (GDPR/ePrivacy compliant):</strong><br>
+                            - <strong>Purpose:</strong> We process your uploaded panel image solely to estimate a safety score and retrain our breaker detection model.<br>
+                            - <strong>Cookies & Tracking:</strong> We do NOT set cookies or use tracking cookies.<br>
+                            - <strong>Hosting & Storage:</strong> Images and associated logs are securely stored in Spain/EU.<br>
+                            - <strong>Your Rights:</strong> You can request deletion of your uploaded image at any time by contacting us with your Tracking ID.
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="submit-btn" data-i18n="upload_btn" disabled>Upload</button>
             </form>
 
             <div id="status"></div>
@@ -839,7 +869,7 @@
                 tip_3: "<strong>💡 Lighting:</strong> Ensure the area isn't too dark; use your flash if needed.",
                 tip_4: "<strong>📦 Full View:</strong> Make sure the entire panel fits inside the guided box.",
                 tip_5: "<strong>🔘 RCD Test:</strong> For best results test press the button on the RCD.",
-                goal: "Model Accuracy: 0.974 mAP",
+                goal: "Dataset Photos",
                 use_camera: "📸 Use Camera",
                 upload_file: "📁 Upload File",
                 no_file: "No file chosen",
@@ -871,7 +901,13 @@
                 score_pending: "Your panel is currently under review by our experts. Please check back later.",
                 score_result_text: "Your Manual Safety Score:",
                 score_feedback: "Expert Feedback:",
-                score_not_found: "Tracking ID not found. Please verify the code and try again."
+                score_not_found: "Tracking ID not found. Please verify the code and try again.",
+                consent_checkbox_label: "I consent to the collection of my electrical panel photo and country metadata for safety analysis and retraining under the <a href='#' id='privacy-policy-link' style='color: var(--primary); text-decoration: underline; font-weight: 500;'>Privacy Policy</a>.",
+                privacy_policy_content: `<strong>Privacy & Consent Notice (GDPR/ePrivacy compliant):</strong><br>
+- <strong>Purpose:</strong> We process your uploaded panel image solely to estimate a safety score and retrain our breaker detection model.
+- <strong>Cookies & Tracking:</strong> We do NOT set cookies or use tracking cookies.
+- <strong>Hosting & Storage:</strong> Images and associated logs are securely stored in Spain/EU.
+- <strong>Your Rights:</strong> You can request deletion of your uploaded image at any time by contacting us with your Tracking ID.`
             },
             es: {
                 photo_by: "Foto de",
@@ -887,7 +923,7 @@
                 tip_3: "<strong>💡 Iluminación:</strong> Asegúrese de que el área no esté muy oscura; use el flash si es necesario.",
                 tip_4: "<strong>📦 Vista Completa:</strong> Asegúrese de que todo el panel quepa dentro del cuadro de guía.",
                 tip_5: "<strong>🔘 Prueba RCD:</strong> Para obtener mejores resultados, presione el botón de prueba en el RCD.",
-                goal: "Precisión: 0.974 mAP",
+                goal: "Fotos del Conjunto de Datos",
                 use_camera: "📸 Usar Cámara",
                 upload_file: "📁 Subir Archivo",
                 no_file: "Ningún archivo elegido",
@@ -919,7 +955,13 @@
                 score_pending: "Su panel está siendo revisado por nuestros expertos. Por favor, vuelva a intentarlo más tarde.",
                 score_result_text: "Su Puntuación de Seguridad Manual:",
                 score_feedback: "Comentarios del Experto:",
-                score_not_found: "ID de seguimiento no encontrado. Verifique el código e intente de nuevo."
+                score_not_found: "ID de seguimiento no encontrado. Verifique el código e intente de nuevo.",
+                consent_checkbox_label: "Consiento la recopilación de la foto de mi cuadro eléctrico y los metadatos del país para el análisis de seguridad y reentrenamiento bajo la <a href='#' id='privacy-policy-link' style='color: var(--primary); text-decoration: underline; font-weight: 500;'>Política de Privacidad</a>.",
+                privacy_policy_content: `<strong>Aviso de Privacidad y Consentimiento (Cumple GDPR/ePrivacy):</strong><br>
+- <strong>Finalidad:</strong> Procesamos la imagen de su cuadro eléctrico únicamente para estimar una puntuación de seguridad y reentrenar nuestro modelo de detección de interruptores.
+- <strong>Cookies:</strong> NO utilizamos cookies de seguimiento ni cookies de usuario.
+- <strong>Almacenamiento:</strong> Las imágenes y los registros asociados se almacenan de forma segura en España/UE.
+- <strong>Sus Derechos:</strong> Puede solicitar la eliminación de su imagen subida en cualquier momento contactándonos con su ID de Seguimiento.`
             }
         };
 
@@ -960,6 +1002,25 @@
         const savedLang = localStorage.getItem('breakerLang') || 'en';
         setLanguage(savedLang);
 
+        // GDPR Consent and Privacy Policy toggle logic
+        const consentCheckbox = document.getElementById('consent-checkbox');
+        consentCheckbox.addEventListener('change', function () {
+            submitBtn.disabled = !this.checked;
+        });
+
+        // Event delegation for privacy-policy-link to persist across language changes
+        document.addEventListener('click', function (e) {
+            if (e.target && e.target.id === 'privacy-policy-link') {
+                e.preventDefault();
+                const panel = document.getElementById('privacy-policy-panel');
+                if (panel.style.display === 'none' || !panel.style.display) {
+                    panel.style.display = 'block';
+                } else {
+                    panel.style.display = 'none';
+                }
+            }
+        });
+
         // Toggle visibility of RCD options
         function toggleRcdOptions() {
             const checkbox = document.getElementById('rcd-tested-checkbox');
@@ -976,8 +1037,6 @@
             }
         }
 
-        const GOAL_TARGET = 300;
-
         async function fetchCount() {
             try {
                 const response = await fetch('/count/');
@@ -992,47 +1051,37 @@
 
         function updateProgress(currentCount) {
             const progressText = document.getElementById('progress-text');
-            const progressBar = document.getElementById('progress-bar');
-
-            progressText.textContent = `${currentCount} / ${GOAL_TARGET}`;
-
-            // Calculate percentage, capped at 100%
-            const percentage = Math.min((currentCount / GOAL_TARGET) * 100, 100);
-            progressBar.style.width = `${percentage}%`;
-
-            // Turn green if goal is met
-            if (currentCount >= GOAL_TARGET) {
-                progressBar.style.background = 'linear-gradient(90deg, #28a745, #34ce57)';
-                progressText.style.background = '#28a745';
-            }
+            progressText.textContent = `${currentCount}`;
         }
 
         // Initialize progress on page load
         fetchCount();
 
         // Secret Batch Upload Trigger
-        pageTitle.addEventListener('dblclick', async () => {
-            const pwd = prompt("Enter admin password to unlock batch upload:");
-            if (pwd === null) return; // User cancelled
+        if (pageTitle) {
+            pageTitle.addEventListener('dblclick', async () => {
+                const pwd = prompt("Enter admin password to unlock batch upload:");
+                if (pwd === null) return; // User cancelled
 
-            try {
-                const response = await fetch('/verify-admin/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ password: pwd })
-                });
+                try {
+                    const response = await fetch('/verify-admin/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ password: pwd })
+                    });
 
-                if (response.ok) {
-                    document.getElementById('batch-upload-container').style.display = 'block';
-                    alert("Admin mode unlocked. You can now select files for batch upload below.");
-                } else {
-                    alert("Incorrect password.");
+                    if (response.ok) {
+                        document.getElementById('batch-upload-container').style.display = 'block';
+                        alert("Admin mode unlocked. You can now select files for batch upload below.");
+                    } else {
+                        alert("Incorrect password.");
+                    }
+                } catch (err) {
+                    console.error("Verification failed:", err);
+                    alert("Could not verify password.");
                 }
-            } catch (err) {
-                console.error("Verification failed:", err);
-                alert("Could not verify password.");
-            }
-        });
+            });
+        }
 
         batchFileInput.addEventListener('change', async function () {
             if (!this.files || this.files.length === 0) return;
@@ -1205,10 +1254,10 @@
                     statusDiv.innerHTML = `
                         <div style="text-align: center; animation: slideIn 0.4s ease-out;">
                             <div style="font-size: 32px; margin-bottom: 12px;">🎉</div>
-                            <strong style="font-size: 1.1rem; display: block; margin-bottom: 4px;">${translations[currentLang].status_success}</strong>
-                            <p style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 20px;">${result.filename}</p>
+                            <strong style="font-size: 1.1rem; display: block; margin-bottom: 4px; color: var(--text);">${translations[currentLang].status_success}</strong>
+                            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px;">${result.filename}</p>
                             
-                            <div style="background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); border: 1px solid var(--primary-light);">
+                            <div style="background: #141219; padding: 20px; border-radius: 16px; box-shadow: var(--shadow); border: 1px solid rgba(145, 55, 175, 0.3); margin-bottom: 15px;">
                                 <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 8px; font-weight: 700;">Your Tracking ID</div>
                                 <div style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
                                     <span id="tracking-code" style="font-size: 2rem; font-weight: 800; color: var(--primary); letter-spacing: 2px; font-family: monospace;">${result.tracking_id}</span>
@@ -1217,6 +1266,9 @@
                                     </button>
                                 </div>
                             </div>
+                            <button type="button" class="btn btn-primary" onclick="checkScoreImmediately('${result.tracking_id}')" style="width: 100%; margin-top: 10px;">
+                                📊 View Safety Report Now
+                            </button>
                         </div>`;
                     statusDiv.className = "status-success";
                     form.reset();
@@ -1244,7 +1296,7 @@
                 statusDiv.textContent = translations[currentLang].status_err_upload;
                 statusDiv.className = "status-error";
             } finally {
-                submitBtn.disabled = false;
+                submitBtn.disabled = !consentCheckbox.checked;
             }
         });
 
@@ -1272,6 +1324,13 @@
             }).catch(err => {
                 console.error("Failed to copy:", err);
             });
+        }
+
+        function checkScoreImmediately(id) {
+            document.getElementById('trackingIdInput').value = id;
+            toggleScorePortal();
+            // Dispatch submit event to trigger score form check immediately
+            document.getElementById('scoreForm').dispatchEvent(new Event('submit'));
         }
 
         document.getElementById('scoreForm').addEventListener('submit', async function (e) {
