@@ -312,7 +312,7 @@ async def upload_image(file: UploadFile = File(...), country: str = Form(default
         entries.append(entry)
         with open(LOG_FILE, "w") as f: json.dump(entries, f, indent=4)
             
-        return {"status": "success", "filename": unique_filename, "tracking_id": tracking_id}
+        return {"status": "success", "filename": unique_filename, "tracking_id": tracking_id, "score": auto_score, "feedback": auto_feedback}
     except Exception as e:
         logger.error(f"Upload error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -323,17 +323,6 @@ async def get_count():
     global seen_hashes
     seen_hashes = current_hashes
     return {"count": count}
-
-@app.get("/score/{tracking_id}")
-async def get_score(tracking_id: str):
-    if not os.path.exists(LOG_FILE): raise HTTPException(status_code=404)
-    with open(LOG_FILE, "r") as f: entries = json.load(f)
-    for entry in reversed(entries):
-        if entry.get("tracking_id") == tracking_id:
-            if entry.get("manual_score") is not None:
-                return {"status": "scored", "score": entry["manual_score"], "feedback": entry.get("manual_feedback", "")}
-            return {"status": "pending"}
-    raise HTTPException(status_code=404)
 
 @app.post("/active-learning/save")
 async def save_active_learning(file: UploadFile = File(...), annotations: str = Form(...)):

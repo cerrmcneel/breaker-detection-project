@@ -4,18 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PanelSafe | Human-in-the-Loop Analysis</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
-            --primary: #0066FF;
-            --secondary: #0051CC;
-            --bg: #F8FAFC;
-            --card-bg: #FFFFFF;
-            --border: #E2E8F0;
-            --text: #1E293B;
-            --text-dim: #64748B;
-            --accent: #EF4444;
+            --primary: #9137af;
+            --primary-dark: #6c2583;
+            --primary-light: rgba(145, 55, 175, 0.15);
+            --secondary: #73c83c;
+            --secondary-dark: #56972d;
+            --secondary-light: rgba(115, 200, 60, 0.15);
+            --bg: #0b0a0d;
+            --card-bg: #141219;
+            --border: rgba(145, 55, 175, 0.2);
+            --text: #ffffff;
+            --text-dim: #a9a6b0;
+            --accent: #ff4a4a;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -23,8 +27,8 @@
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--bg);
-            background-image: radial-gradient(at 0% 0%, rgba(0, 102, 255, 0.05) 0px, transparent 50%),
-                              radial-gradient(at 100% 100%, rgba(0, 102, 255, 0.05) 0px, transparent 50%);
+            background-image: radial-gradient(at 0% 0%, rgba(145, 55, 175, 0.15) 0px, transparent 50%),
+                              radial-gradient(at 100% 100%, rgba(115, 200, 60, 0.1) 0px, transparent 50%);
             color: var(--text);
             height: 100vh;
             width: 100vw;
@@ -41,7 +45,7 @@
             top: 0;
             left: 0;
             width: 100%;
-            background: rgba(255, 255, 255, 0.8);
+            background: rgba(11, 10, 13, 0.8);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             padding: 1rem 1.5rem;
@@ -50,7 +54,7 @@
             justify-content: space-between;
             align-items: center;
             box-sizing: border-box;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            border-bottom: 1px solid rgba(145, 55, 175, 0.15);
         }
 
         .nav-brand {
@@ -80,8 +84,8 @@
 
         .nav-link:hover,
         .nav-link.active {
-            color: var(--primary);
-            background-color: #E6F0FF;
+            color: var(--secondary);
+            background-color: var(--primary-light);
         }
 
         /* --- SIDEBAR (LEFT) --- */
@@ -96,7 +100,7 @@
             flex-direction: column;
             padding: 2rem;
             z-index: 10;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.3);
         }
 
         .logo {
@@ -136,12 +140,12 @@
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
-            background: rgba(0, 102, 255, 0.05);
+            background: rgba(145, 55, 175, 0.05);
         }
 
         .upload-zone:hover {
             border-color: var(--secondary);
-            background: rgba(0, 102, 255, 0.1);
+            background: rgba(145, 55, 175, 0.1);
         }
 
         /* --- SCROLLABLE COMPONENT LIST --- */
@@ -157,6 +161,7 @@
         .scroll-area::-webkit-scrollbar-thumb:hover { background: var(--secondary); }
 
         h2 {
+            font-family: 'Outfit', sans-serif;
             font-size: 1.5rem;
             font-weight: 700;
             color: var(--text-dim);
@@ -180,14 +185,14 @@
 
         .component-card:hover {
             border-color: var(--primary);
-            background: #FFFFFF;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            background: #1c1924;
+            box-shadow: 0 4px 12px rgba(145, 55, 175, 0.15);
         }
 
         .component-card.active {
             border-color: var(--primary);
-            background: #FFFFFF;
-            box-shadow: 0 5px 15px rgba(0, 102, 255, 0.15);
+            background: #1c1924;
+            box-shadow: 0 5px 15px rgba(145, 55, 175, 0.3);
         }
 
         .card-actions {
@@ -208,8 +213,8 @@
             transition: all 0.2s;
         }
 
-        .icon-btn:hover { color: var(--primary); background: #E6F0FF; }
-        .icon-btn.delete:hover { color: var(--accent); background: #FEE2E2; }
+        .icon-btn:hover { color: var(--primary); background: var(--primary-light); }
+        .icon-btn.delete:hover { color: var(--accent); background: rgba(255, 74, 74, 0.15); }
 
         .card-header {
             display: flex;
@@ -237,7 +242,7 @@
         }
 
         input, select {
-            background: #fff;
+            background: #141219;
             border: 2px solid var(--border);
             color: var(--text);
             padding: 1rem;
@@ -249,7 +254,7 @@
         }
 
         input:focus, select:focus { border-color: var(--primary); outline: none; }
-        select { color: var(--primary); }
+        select { color: var(--text); }
 
         .btn {
             padding: 1rem 1.5rem;
@@ -267,15 +272,15 @@
         }
 
         .btn-primary { background: var(--primary); color: #fff; }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 102, 255, 0.3); background: var(--secondary); }
-        .btn-secondary { background: #E2E8F0; color: var(--text); }
-        .btn-secondary:hover { background: #CBD5E1; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(145, 55, 175, 0.3); background: var(--primary-dark); }
+        .btn-secondary { background: rgba(20, 18, 25, 0.6); color: var(--text); border: 1px solid rgba(145, 55, 175, 0.2); }
+        .btn-secondary:hover { background: var(--primary-light); }
 
         /* --- VIEWPORT (RIGHT) --- */
         .viewport {
             flex: 1;
             height: calc(100vh - 64px);
-            background: #1E293B; /* Slate-800 for contrast with images */
+            background: #0b0a0d; /* Matching site background */
             position: relative;
             overflow: hidden;
             display: block; /* Removed flex centering to fix canvas offset */
