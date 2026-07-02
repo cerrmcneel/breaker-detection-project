@@ -140,7 +140,12 @@ ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif"}
 
 @app.post("/predict/")
 async def predict_panel(file: UploadFile = File(...)):
-    temp_filename = f"temp_{uuid.uuid4()}_{file.filename}"
+    # Build the temp name from a UUID + sanitized extension only; never trust the
+    # client-supplied filename (it can contain path separators -> traversal).
+    safe_ext = os.path.splitext(file.filename or "")[1].lower()
+    if safe_ext not in ALLOWED_EXTENSIONS:
+        safe_ext = ".jpg"
+    temp_filename = f"temp_{uuid.uuid4()}{safe_ext}"
     temp_path = os.path.join(UPLOAD_DIR, temp_filename)
     os.makedirs(UPLOAD_DIR, exist_ok=True)
     
@@ -198,10 +203,10 @@ def grade_panel_layout(predictions, rcd_test_result, country="Unknown"):
         feedback_en.append("✅ <strong>RCD Working:</strong> The test button tripped the RCD instantly. Great job maintaining your monthly safety checks!")
 
     # Count components
-    rcd_count = sum(1 for p in predictions if p.get("class_name") in ["RCD", "RCD_SI"])
-    mcb_count = sum(1 for p in predictions if p.get("class_name") == "MCB")
-    main_breaker_count = sum(1 for p in predictions if p.get("class_name") == "MAINBREAKER")
-    oversurge_count = sum(1 for p in predictions if p.get("class_name") == "OVERSURGE")
+    rcd_count = sum(1 for p in predictions if p.get("class") in ["RCD", "RCD_SI"])
+    mcb_count = sum(1 for p in predictions if p.get("class") == "MCB")
+    main_breaker_count = sum(1 for p in predictions if p.get("class") == "MAINBREAKER")
+    oversurge_count = sum(1 for p in predictions if p.get("class") == "OVERSURGE")
 
     # Presence checks
     if rcd_count == 0:
@@ -271,25 +276,38 @@ async def upload_image(file: UploadFile = File(...), country: str = Form(default
         if file_hash in seen_hashes:
             return {"status": "success", "duplicate": True, "filename": "DUPLICATE", "tracking_id": "ALREADY-UPLOADED"}
 
-        unique_filename = f"{country.upper()}_{uuid.uuid4()}{os.path.splitext(file.filename)[1].lower()}"
+        # Sanitize country before it becomes part of a filesystem path (traversal guard).
+        safe_country = re.sub(r"[^A-Za-z0-9_-]", "", country).upper() or "UNKNOWN"
+        safe_ext = os.path.splitext(file.filename or "")[1].lower()
+        if safe_ext not in ALLOWED_EXTENSIONS:
+            safe_ext = ".jpg"
+        unique_filename = f"{safe_country}_{uuid.uuid4()}{safe_ext}"
         file_path = os.path.join(UPLOAD_DIR, unique_filename)
-        
+
         with open(file_path, "wb") as f:
             f.write(file_bytes)
-            
+
         tracking_id = "BKR-" + "".join(random.choices(string.ascii_uppercase + string.digits, k=5))
-        seen_hashes.add(file_hash)
-        
-        # Try to run model inference
+
+        # Run model inference. Distinguish "inference failed" from "genuinely nothing
+        # detected" — a silent empty-on-error is exactly how a model outage masquerades
+        # as "no components found" with no signal to anyone (it hid a stale-model bug
+        # for days). Surface the failure instead of swallowing it.
         predictions = []
+        inference_ok = False
+        inference_detail = "ok"
         try:
             files = {"file": (file.filename, file_bytes, file.content_type)}
-            response = requests.post(INFERENCE_URL, files=files, timeout=5)
-            if response.status_code == 200:
-                cluster_data = response.json()
-                predictions = cluster_data.get("predictions", [])
+            # The full pipeline (YOLO + OCR + HMM) is far slower than raw YOLO; the old
+            # 5s ceiling caused silent timeouts. Give real headroom.
+            response = requests.post(INFERENCE_URL, files=files, timeout=30)
+            response.raise_for_status()
+            cluster_data = response.json()
+            predictions = cluster_data.get("predictions", [])
+            inference_ok = True
         except Exception as inf_err:
-            logger.warning(f"Failed to fetch automated predictions: {inf_err}")
+            inference_detail = str(inf_err)
+            logger.error(f"INFERENCE CALL FAILED ({INFERENCE_URL}): {inf_err}")
 
         # Grade the panel
         auto_score, auto_feedback = grade_panel_layout(predictions, rcd_test_result, country)
@@ -306,13 +324,17 @@ async def upload_image(file: UploadFile = File(...), country: str = Form(default
             "manual_score": auto_score,
             "manual_feedback": auto_feedback
         }
-        entries = []
-        if os.path.exists(LOG_FILE):
-            with open(LOG_FILE, "r") as f: entries = json.load(f)
-        entries.append(entry)
-        with open(LOG_FILE, "w") as f: json.dump(entries, f, indent=4)
-            
-        return {"status": "success", "filename": unique_filename, "tracking_id": tracking_id, "score": auto_score, "feedback": auto_feedback}
+        # Serialize the dedup-set mutation and the log read-modify-write so concurrent
+        # uploads cannot clobber upload_log.json or drop a seen-hash entry.
+        async with upload_lock:
+            seen_hashes.add(file_hash)
+            entries = []
+            if os.path.exists(LOG_FILE):
+                with open(LOG_FILE, "r") as f: entries = json.load(f)
+            entries.append(entry)
+            with open(LOG_FILE, "w") as f: json.dump(entries, f, indent=4)
+
+        return {"status": "success", "filename": unique_filename, "tracking_id": tracking_id, "score": auto_score, "feedback": auto_feedback, "inference_ok": inference_ok, "inference_detail": inference_detail}
     except Exception as e:
         logger.error(f"Upload error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -338,4 +360,5 @@ async def save_active_learning(file: UploadFile = File(...), annotations: str = 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+app.mount("/unifilar", StaticFiles(directory=os.path.join("panel-safe-unifilar", "dist"), html=True), name="unifilar")
 app.mount("/", StaticFiles(directory=os.path.join("app", "frontend"), html=True), name="frontend")
