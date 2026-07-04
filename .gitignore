@@ -49,3 +49,8 @@ directives/
 
 # --- Scratch / one-off diagnostic scripts ---
 scratch_*.py
+
+# --- Lead generation (business-sensitive: reveals target-customer list and
+# --- prospecting methodology to any copycat who reads the repo) ---
+leads.db
+scrape_leads.py
