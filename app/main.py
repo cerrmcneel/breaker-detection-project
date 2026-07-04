@@ -1,13 +1,14 @@
 import os
 import uuid
 import re
+import urllib.parse
 import json
 import logging
 import hashlib
 import asyncio
 import requests
 from datetime import datetime
-from fastapi import FastAPI, File, UploadFile, HTTPException, Form
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Request
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
@@ -347,16 +348,51 @@ async def get_count():
     return {"count": count}
 
 @app.post("/active-learning/save")
-async def save_active_learning(file: UploadFile = File(...), annotations: str = Form(...)):
+async def save_active_learning(request: Request, file: UploadFile = File(...), annotations: str = Form(...)):
     try:
+        # Lightweight same-origin check: this endpoint is anonymous/no-login by design
+        # (any visitor reviewing their own analysis can submit a correction), so this is
+        # NOT a real auth boundary -- Origin/Referer are attacker-controllable. It only
+        # raises the bar against casual cross-site/scripted abuse. Checked only when the
+        # header is present, so requests that legitimately omit it (e.g. through a proxy
+        # or tunnel that strips headers) aren't blocked.
+        request_host = request.headers.get("host")
+        origin_header = request.headers.get("origin") or request.headers.get("referer")
+        if origin_header and request_host:
+            origin_host = urllib.parse.urlparse(origin_header).netloc
+            if origin_host and origin_host != request_host:
+                raise HTTPException(status_code=403, detail="Cross-origin request blocked.")
+
+        # Same file-type/size validation already applied to /upload/.
+        if file.content_type not in ALLOWED_MIME_TYPES:
+            raise HTTPException(status_code=400, detail="Invalid file type.")
+
+        file_bytes = await file.read()
+        if len(file_bytes) > MAX_FILE_SIZE:
+            raise HTTPException(status_code=413, detail="File too large.")
+
+        # Build the on-disk name from a UUID + sanitized extension only; never trust
+        # the client-supplied filename (it can contain path separators -> traversal).
+        safe_ext = os.path.splitext(file.filename or "")[1].lower()
+        if safe_ext not in ALLOWED_EXTENSIONS:
+            safe_ext = ".jpg"
+
+        # Validate annotations is well-formed JSON before persisting it.
+        try:
+            parsed_annotations = json.loads(annotations)
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=400, detail="annotations must be valid JSON.")
+
         active_learning_dir = "data/active_learning"
         os.makedirs(active_learning_dir, exist_ok=True)
-        base_name = f"correction_{int(datetime.now().timestamp())}_{file.filename}"
-        with open(os.path.join(active_learning_dir, base_name), "wb") as f:
-            f.write(await file.read())
-        with open(os.path.join(active_learning_dir, f"{os.path.splitext(base_name)[0]}.json"), "w") as f:
-            f.write(annotations)
+        base_name = f"correction_{int(datetime.now().timestamp())}_{uuid.uuid4()}"
+        with open(os.path.join(active_learning_dir, f"{base_name}{safe_ext}"), "wb") as f:
+            f.write(file_bytes)
+        with open(os.path.join(active_learning_dir, f"{base_name}.json"), "w") as f:
+            json.dump(parsed_annotations, f)
         return {"status": "success"}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

@@ -38,8 +38,12 @@ VAL_LABELS_DIR        = pathlib.Path("data/dataset/val/labels")
 RAW_UPLOADS_DIR       = pathlib.Path("data/images/raw_uploads")  # supplementary source
 HMM_CONFIG_PATH       = pathlib.Path("src/model/hmm_config.json")
 YOLO_MODEL_PATH       = "models/best.pt"
-# Only use real-world images as primary source
-REAL_PREFIXES         = ("SPAIN_", "FRANCE_")
+# Only use real-world images as primary source. Exclude by the synthetic prefix
+# rather than allowlisting real-image prefixes -- an allowlist (previously
+# "SPAIN_"/"FRANCE_" only) silently drifts out of date every time a new real
+# naming convention is added (e.g. scraped_approved_*), exactly like the
+# classes.txt allowlist bug found earlier in this project.
+SYNTH_PREFIX          = "synth_panel_"
 
 # -- Helpers ------------------------------------------------------------------
 
@@ -164,9 +168,9 @@ def calibrate():
     val_files = [
         f for f in VAL_IMAGES_DIR.glob("*")
         if f.suffix.lower() in (".jpg", ".jpeg", ".png")
-        and f.name.startswith(REAL_PREFIXES)
+        and not f.name.startswith(SYNTH_PREFIX)
     ]
-    print(f"[Pass 1] Calibrating on {len(val_files)} real-world val images (SPAIN_/FRANCE_)...")
+    print(f"[Pass 1] Calibrating on {len(val_files)} real-world val images (all non-synthetic)...")
     n1 = run_inference_on_images(model, val_files, VAL_LABELS_DIR, counts)
     print(f"         {n1} matched pairs collected.")
 

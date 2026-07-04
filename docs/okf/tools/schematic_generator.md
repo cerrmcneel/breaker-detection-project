@@ -3,7 +3,7 @@ type: System Component
 title: Electrical Schematic Generator
 description: Translates model sequence predictions into standardized single-line electrical schematics (esquemas unifilares) and documents the serving/MLOps pipeline.
 tags: [schematic, CAD, SVG, mlops, fastapi, kubernetes]
-timestamp: 2026-06-27T00:00:00Z
+timestamp: 2026-07-04T00:00:00Z
 status: partially-implemented
 ---
 
@@ -18,12 +18,18 @@ The main value proposition of the PanelSafe final project is helping electrician
 ```mermaid
 graph TD
     A["Panel Photo"] --> B["YOLO + EasyOCR Detection"]
-    B --> C["HMM Viterbi Corrector"]
-    C --> D["Corrected Sequence (JSON)"]
+    B --> C["HMM Viterbi Corrector (disabled)"]
+    B --> D["Corrected Sequence (JSON)"]
+    C -.-> D
     D --> E["Deterministic SVG Renderer (React/Vite)"]
     F["REBT Grouping Rules"] --> E
     E --> G["Standardized Spanish Schematic (SVG)"]
 ```
+
+> **HMM correction is currently disabled** (`use_hmm: false`) — it measurably reduced
+> classification accuracy on the full real val set. See [hmm_decoder](/models/hmm_decoder.md)
+> for the ablation evidence and root-cause investigation. YOLO detections pass straight
+> through to the corrected-sequence JSON.
 
 ## Current Implementation
 
@@ -34,7 +40,7 @@ graph TD
 
 ### Inference Worker (`src/model/inference_server.py`)
 - A standalone **Python `http.server` (`ThreadingHTTPServer`)** exposing `POST /predict`. It is **not** FastAPI and currently has no rate-limiting or caching layer.
-- It runs the full `PanelSafePipeline`: YOLO26 detection → optional EfficientNet crop classifier (`classifier_mode`, currently `single_stage`) → EasyOCR text reads → HMM Viterbi correction.
+- It runs the full `PanelSafePipeline`: YOLO26 detection → optional EfficientNet crop classifier (`classifier_mode`, currently `single_stage`) → EasyOCR text reads → HMM Viterbi correction (`use_hmm`, currently **`false`** — see [hmm_decoder](/models/hmm_decoder.md) for why).
 
 ### Deployment (`yolo-inference-deployment.yaml`)
 - The worker is deployed on a local **K3s** cluster using the `ultralytics/ultralytics` image, pinned to the GPU node with `nvidia.com/gpu` passthrough.

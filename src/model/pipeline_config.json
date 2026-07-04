@@ -1,0 +1,8 @@
+{
+  "classifier_mode": "single_stage",
+  "yolo_model_path": "models/best.pt",
+  "crop_model_path": "models/crop_classifier.pth",
+  "use_hmm": false,
+  "use_button_detector": false,
+  "confidence_threshold": 0.20
+}

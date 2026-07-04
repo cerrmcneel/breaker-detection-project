@@ -8,9 +8,9 @@ Assembles a binary (button / no-button) dataset:
   button presence by their component class:
       positives (button):    RCD, RCD_SI
       negatives (no button): MCB, MAINBREAKER, OVERSURGE, OTHER
-- A REAL held-out test set is carved from the SPAIN_/FRANCE_ validation photos by cropping
-  their labeled MCB / RCD / RCD_SI boxes. Seeds -> train, real photo crops -> test, so the
-  detector is never evaluated on its own training data (the Gate A de-risk set).
+- A REAL held-out test set is carved from the real (non-synthetic) validation photos by
+  cropping their labeled MCB / RCD / RCD_SI boxes. Seeds -> train, real photo crops -> test,
+  so the detector is never evaluated on its own training data (the Gate A de-risk set).
 
 Outputs (under --out-dir, default data/button_dataset/):
     manifest_train.csv, manifest_val.csv      (reference seed crop paths, no copy)
@@ -36,6 +36,11 @@ CLASS_MAP = ["MCB", "RCD", "RCD_SI", "MAINBREAKER", "OVERSURGE", "OTHER"]
 # Real-test is carved only from the confusable axis the override actually touches.
 REAL_TEST_CLASSES = {"MCB", "RCD", "RCD_SI"}
 MIN_CROP_PX = 8
+# Real-image detection excludes by the synthetic prefix rather than allowlisting
+# real-image prefixes -- an allowlist (previously "SPAIN_"/"FRANCE_" only)
+# silently drifts out of date every time a new real naming convention is added
+# (e.g. scraped_approved_*).
+SYNTH_PREFIX = "synth_panel_"
 
 
 def base_class_from_folder(folder_name):
@@ -95,7 +100,7 @@ def parse_yolo_label(label_path):
 
 
 def carve_real_test(val_images, val_labels, out_dir):
-    """Crop MCB/RCD/RCD_SI boxes out of SPAIN_/FRANCE_ val photos into a real test set."""
+    """Crop MCB/RCD/RCD_SI boxes out of real (non-synthetic) val photos into a real test set."""
     rows = []
     pos_dir = os.path.join(out_dir, "real_test", "button")
     neg_dir = os.path.join(out_dir, "real_test", "no_button")
@@ -106,7 +111,7 @@ def carve_real_test(val_images, val_labels, out_dir):
         return rows
 
     for fn in sorted(os.listdir(val_images)):
-        if not (fn.startswith("SPAIN_") or fn.startswith("FRANCE_")):
+        if fn.startswith(SYNTH_PREFIX):
             continue
         if os.path.splitext(fn)[1].lower() not in IMAGE_EXTS:
             continue
@@ -219,7 +224,7 @@ def main():
     print(f"\nManifests + real_test crops written to: {args.out_dir}")
     if rt_pos == 0 or rt_neg == 0:
         print("WARNING: real-test set is missing a class. Gate A de-risk needs BOTH "
-              "button and no_button real crops — check for SPAIN_/FRANCE_ val labels.")
+              "button and no_button real crops — check for real (non-synthetic) val labels.")
 
 
 if __name__ == "__main__":
