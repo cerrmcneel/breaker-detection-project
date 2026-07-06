@@ -4,10 +4,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Breaker Data Collection</title>
+    <title>PanelSafe Portal</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="assets/favicon/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon/favicon-16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/favicon/favicon-180.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
             --primary: #9137af;
@@ -432,6 +439,213 @@
         .hidden-input {
             display: none;
         }
+
+        /* Dashboard Portal Layout */
+        .dashboard-container {
+            max-width: 1100px;
+            width: 100%;
+            margin-top: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2.5rem;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+
+        .hero-section {
+            text-align: center;
+            max-width: 700px;
+        }
+
+        .hero-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3rem;
+            font-weight: 800;
+            margin: 0;
+            background: linear-gradient(135deg, #ffffff 30%, #c084fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.03em;
+        }
+
+        .hero-subtitle {
+            font-size: 1.15rem;
+            color: var(--text-muted);
+            margin: 12px 0 0 0;
+            line-height: 1.6;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        .dashboard-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(145, 55, 175, 0.15);
+            border-radius: var(--radius);
+            padding: 24px;
+            text-decoration: none;
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .dashboard-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 10% 10%, rgba(145, 55, 175, 0.1), transparent 60%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(145, 55, 175, 0.4);
+            box-shadow: 0 12px 30px rgba(145, 55, 175, 0.15), 0 0 20px rgba(145, 55, 175, 0.05);
+        }
+
+        .dashboard-card:hover::before {
+            opacity: 1;
+        }
+
+        .card-icon-wrapper {
+            width: 48px;
+            height: 48px;
+            background: rgba(145, 55, 175, 0.1);
+            border: 1px solid rgba(145, 55, 175, 0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #c084fc;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+        .dashboard-card:hover .card-icon-wrapper {
+            background: var(--primary);
+            color: #ffffff;
+            transform: scale(1.05);
+        }
+
+        .card-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin: 0 0 12px 0;
+        }
+
+        .card-desc {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin: 0 0 24px 0;
+            flex-grow: 1;
+        }
+
+        .card-cta {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: transform 0.2s;
+        }
+
+        .dashboard-card:hover .card-cta {
+            transform: translateX(4px);
+        }
+
+        /* Compliance list styles */
+        .compliance-checklist {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            border-top: 1px solid rgba(145, 55, 175, 0.1);
+            padding-top: 30px;
+            width: 100%;
+        }
+
+        .compliance-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .compliance-item svg {
+            color: var(--secondary);
+        }
+
+        /* Modal Overlay for Upload portal */
+        .upload-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .upload-modal-overlay.open {
+            display: flex;
+        }
+
+        .upload-modal-content {
+            position: relative;
+            background: var(--card-bg);
+            border: 1px solid rgba(145, 55, 175, 0.3);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            max-width: 500px;
+            width: 100%;
+            padding: 2rem;
+            box-sizing: border-box;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .modal-close-btn:hover {
+            color: #ffffff;
+        }
     </style>
 </head>
 
@@ -447,353 +661,425 @@
             PanelSafe
         </a>
         <div class="nav-links">
-            <a href="/" class="nav-link active" data-i18n="nav_home">Home</a>
-            <a href="/analysis.html" class="nav-link" data-i18n="nav_analysis">Analysis</a>
+            <a href="/" class="nav-link active" data-i18n="nav_home">Inicio</a>
+            <a href="/analysis.html" class="nav-link" data-i18n="nav_analysis">Analizador IA</a>
+            <a href="/unifilar/" class="nav-link">Generador Unifilar</a>
             <a href="/blog.html" class="nav-link" data-i18n="nav_blog">Blog</a>
         </div>
     </nav>
 
-    <div class="container">
-        <!-- Language Switcher -->
-        <div class="lang-switcher">
-            <button class="lang-btn active" id="btn-en" onclick="setLanguage('en')">EN</button>
-            <button class="lang-btn" id="btn-es" onclick="setLanguage('es')">ES</button>
+    <!-- New Premium Dashboard Container -->
+    <div class="dashboard-container" id="dashboard-view" style="display: flex; flex-direction: column; align-items: center; padding: 40px 20px;">
+        <div class="hero-section" style="text-align: center; margin-bottom: 40px;">
+            <h1 class="hero-title">PanelSafe Portal</h1>
+            <p class="hero-subtitle">Inteligencia Artificial y Cumplimiento Normativo REBT para Cuadros Eléctricos</p>
         </div>
 
-        <!-- Upload Portal View -->
-        <div id="upload-portal-view">
-            <img src="/assets/mostafa-mahmoudi-47jO5Y8nsYo-unsplash.jpg" alt="Circuit Breakers Panel"
-                style="width: 100%; border-radius: 8px; margin-bottom: 0.5rem; object-fit: cover; max-height: 250px;">
-            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 1.5rem; text-align: right;">
-                <span data-i18n="photo_by">Photo by</span> <a href="https://unsplash.com/@mostafa_mahmoudi24"
-                    target="_blank" style="color: var(--primary); text-decoration: none;">Mostafa Mahmoudi</a> <span
-                    data-i18n="on_unsplash">on Unsplash</span>
-            </div>
-            <p data-i18n="phase">Phase 3: Production Ready</p>
-
-            <!-- Hidden Batch Upload Input -->
-            <div id="batch-upload-container"
-                style="display: none; margin-bottom: 15px; padding: 15px; border: 2px dashed var(--primary); border-radius: 8px; background-color: var(--primary-light);">
-                <p style="margin-top: 0; margin-bottom: 10px; font-weight: bold; color: var(--primary);">Admin Batch Upload
-                    Unlocked</p>
-                <input type="file" id="batchFileInput" multiple accept="image/*"
-                    style="display: block; width: 100%; cursor: pointer;">
-            </div>
-
-            <div class="instruction-card">
-                <h3 class="tips-accordion" onclick="this.classList.toggle('open'); this.nextElementSibling.classList.toggle('open');">
-                    <span data-i18n="tips_title">Tips for a Perfect Photo 📸</span>
-                    <span class="chevron">▼</span>
-                </h3>
-                <div class="tips-body">
-                    <ul>
-                        <li data-i18n="tip_1"><strong>⚡ Cover Open:</strong> Please open the plastic cover so the switches are visible.</li>
-                        <li data-i18n="tip_2"><strong>📱 Straight On:</strong> Hold the phone parallel to the wall (avoid steep angles).</li>
-                        <li data-i18n="tip_3"><strong>💡 Lighting:</strong> Ensure the area isn't too dark; use your flash if needed.</li>
-                        <li data-i18n="tip_4"><strong>📦 Full View:</strong> Make sure the entire panel fits inside the guided box.</li>
-                        <li data-i18n="tip_5"><strong>🔘 RCD Test:</strong> For best results test press the button on the RCD.</li>
-                    </ul>
+        <div class="dashboard-grid">
+            <!-- Card 1: AI Analyzer -->
+            <a href="/analysis.html" class="dashboard-card">
+                <div class="card-icon-wrapper">
+                    <i data-lucide="scan-eye"></i>
                 </div>
+                <h2 class="card-title">Analizador de Cuadros (IA)</h2>
+                <p class="card-desc">Sube una foto del cuadro eléctrico. La Inteligencia Artificial detectará, clasificará y extraerá automáticamente los interruptores magnetotérmicos (PIAs) y diferenciales.</p>
+                <div class="card-cta">Iniciar Analizador &rarr;</div>
+            </a>
+
+            <!-- Card 2: Unifilar Generator -->
+            <a href="/unifilar/" class="dashboard-card">
+                <div class="card-icon-wrapper">
+                    <i data-lucide="layout-template"></i>
+                </div>
+                <h2 class="card-title">Generador Unifilar (CAD)</h2>
+                <p class="card-desc">Genera esquemas unifilares profesionales que cumplen la normativa de Industria. Modifica valores en tiempo real y descarga en PDF vectorial y PNG.</p>
+                <div class="card-cta">Abrir Editor Unifilar &rarr;</div>
+            </a>
+
+            <!-- Card 3: Compliance Blog -->
+            <a href="/blog.html" class="dashboard-card">
+                <div class="card-icon-wrapper">
+                    <i data-lucide="book-open"></i>
+                </div>
+                <h2 class="card-title">Blog de Normativa REBT</h2>
+                <p class="card-desc">Consulta artículos técnicos e instrucciones sobre el Reglamento Electrotécnico de Baja Tensión (REBT) y cumplimiento de la ITC-BT-25.</p>
+                <div class="card-cta">Ver Artículos &rarr;</div>
+            </a>
+
+            <!-- Card 4: Collaborative Data Upload -->
+            <div class="dashboard-card" onclick="openUploadModal()" style="cursor: pointer;">
+                <div class="card-icon-wrapper">
+                    <i data-lucide="database"></i>
+                </div>
+                <h2 class="card-title">Colaborar con Datos (Dataset)</h2>
+                <p class="card-desc">Ayuda a mejorar los modelos de reconocimiento de PanelSafe compartiendo fotos de prueba de cuadros eléctricos reales.</p>
+                <div class="card-cta">Subir Imagen &rarr;</div>
             </div>
+        </div>
 
-            <!-- Progress Tracker -->
-            <div class="progress-container" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem;">
-                <span class="progress-title" data-i18n="goal" style="font-size: 1rem; color: var(--text);">Dataset Photos</span>
-                <span class="progress-badge" id="progress-text" style="font-size: 1.1rem; padding: 6px 14px; border-radius: 30px; background: linear-gradient(135deg, var(--primary), #3b82f6); min-width: 40px; text-align: center;">0</span>
+        <div class="compliance-checklist">
+            <div class="compliance-item">
+                <i data-lucide="badge-check"></i>
+                <span>Conforme REBT ITC-BT-25</span>
             </div>
+            <div class="compliance-item">
+                <i data-lucide="badge-check"></i>
+                <span>Librería de Símbolos UNE-EN 60617</span>
+            </div>
+            <div class="compliance-item">
+                <i data-lucide="badge-check"></i>
+                <span>Exportación Directa PDF/PNG</span>
+            </div>
+        </div>
+    </div>
 
-            <form id="uploadForm">
-                <div id="upload-options" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
-                    <button type="button" class="btn btn-primary" id="start-camera-btn" data-i18n="use_camera">
-                        <span>📸</span> <span data-i18n="use_camera_text">Take a Photo</span>
-                    </button>
-
-                    <button type="button" class="btn btn-outline" id="browse-file-btn">
-                        <span>📁</span> <span data-i18n="upload_file">Upload from Gallery</span>
-                    </button>
-
-                    <input type="file" id="cameraInput" accept="image/*" capture="environment" class="hidden-input">
-                    <input type="file" id="fileInput" accept="image/*" class="hidden-input">
+    <!-- Wrapped Original Upload Form inside Modal Overlay -->
+    <div id="upload-modal" class="upload-modal-overlay">
+        <div class="upload-modal-content">
+            <button class="modal-close-btn" onclick="closeUploadModal()">&times;</button>
+            <div class="container" style="margin-top: 0; box-shadow: none; border: none; padding: 0; width: 100%; background: transparent;">
+                <!-- Language Switcher -->
+                <div class="lang-switcher">
+                    <button class="lang-btn active" id="btn-en" onclick="setLanguage('en')">EN</button>
+                    <button class="lang-btn" id="btn-es" onclick="setLanguage('es')">ES</button>
                 </div>
 
-                <!-- Preview UI replaced the camera-container -->
-                <div id="camera-preview-container">
-                    <img id="preview-img" src="" alt="Captured breaker board">
-                    <div class="preview-overlay"></div>
-                    <div class="preview-guide">
-                        <div
-                            style="color: white; background: rgba(0,0,0,0.6); padding: 5px 12px; border-radius: 20px; font-size: 12px; margin-top: auto; margin-bottom: 20px;">
-                            Align breakers inside this box
+                <!-- Upload Portal View -->
+                <div id="upload-portal-view">
+                    <img src="/assets/mostafa-mahmoudi-47jO5Y8nsYo-unsplash.jpg" alt="Circuit Breakers Panel"
+                        style="width: 100%; border-radius: 8px; margin-bottom: 0.5rem; object-fit: cover; max-height: 200px;">
+                    <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 1.5rem; text-align: right;">
+                        <span data-i18n="photo_by">Photo by</span> <a href="https://unsplash.com/@mostafa_mahmoudi24"
+                            target="_blank" style="color: var(--primary); text-decoration: none;">Mostafa Mahmoudi</a> <span
+                            data-i18n="on_unsplash">on Unsplash</span>
+                    </div>
+                    <p data-i18n="phase">Phase 3: Production Ready</p>
+
+                    <!-- Hidden Batch Upload Input -->
+                    <div id="batch-upload-container"
+                        style="display: none; margin-bottom: 15px; padding: 15px; border: 2px dashed var(--primary); border-radius: 8px; background-color: var(--primary-light);">
+                        <p style="margin-top: 0; margin-bottom: 10px; font-weight: bold; color: var(--primary);">Admin Batch Upload
+                            Unlocked</p>
+                        <input type="file" id="batchFileInput" multiple accept="image/*"
+                            style="display: block; width: 100%; cursor: pointer;">
+                    </div>
+
+                    <div class="instruction-card">
+                        <h3 class="tips-accordion" onclick="this.classList.toggle('open'); this.nextElementSibling.classList.toggle('open');">
+                            <span data-i18n="tips_title">Tips for a Perfect Photo 📸</span>
+                            <span class="chevron">▼</span>
+                        </h3>
+                        <div class="tips-body">
+                            <ul>
+                                <li data-i18n="tip_1"><strong>⚡ Cover Open:</strong> Please open the plastic cover so the switches are visible.</li>
+                                <li data-i18n="tip_2"><strong>📱 Straight On:</strong> Hold the phone parallel to the wall (avoid steep angles).</li>
+                                <li data-i18n="tip_3"><strong>💡 Lighting:</strong> Ensure the area isn't too dark; use your flash if needed.</li>
+                                <li data-i18n="tip_4"><strong>📦 Full View:</strong> Make sure the entire panel fits inside the guided box.</li>
+                                <li data-i18n="tip_5"><strong>🔘 RCD Test:</strong> For best results test press the button on the RCD.</li>
+                            </ul>
                         </div>
                     </div>
-                </div>
 
-                <div id="preview-actions" style="display: none; gap: 10px; margin-bottom: 20px;">
-                    <button type="button" class="btn btn-outline" id="retake-btn" style="flex: 1;">
-                        <span data-i18n="retake_btn">🔄 Retake</span>
-                    </button>
-                </div>
-
-                <p id="fileName"
-                    style="margin-bottom: 1.5rem; font-size: 0.875rem; color: var(--text-muted); display: none;"
-                    data-i18n="no_file">No file chosen</p>
-
-                <div style="margin-bottom: 1.5rem; text-align: left;">
-                    <label for="countrySelect" style="display: block; margin-bottom: 0.5rem; font-weight: 500;"
-                        data-i18n="select_country">Select Country:</label>
-                    <input type="text" id="countrySelect" name="country" list="countryList" required autocomplete="off"
-                        placeholder="Type or select a country..."
-                        style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; background-color: #fff;">
-                    <datalist id="countryList">
-                        <option value="Afghanistan">
-                        <option value="Albania">
-                        <option value="Algeria">
-                        <option value="Andorra">
-                        <option value="Angola">
-                        <option value="Antigua and Barbuda">
-                        <option value="Argentina">
-                        <option value="Armenia">
-                        <option value="Australia">
-                        <option value="Austria">
-                        <option value="Azerbaijan">
-                        <option value="Bahamas">
-                        <option value="Bahrain">
-                        <option value="Bangladesh">
-                        <option value="Barbados">
-                        <option value="Belarus">
-                        <option value="Belgium">
-                        <option value="Belize">
-                        <option value="Benin">
-                        <option value="Bhutan">
-                        <option value="Bolivia">
-                        <option value="Bosnia and Herzegovina">
-                        <option value="Botswana">
-                        <option value="Brazil">
-                        <option value="Brunei">
-                        <option value="Bulgaria">
-                        <option value="Burkina Faso">
-                        <option value="Burundi">
-                        <option value="Cabo Verde">
-                        <option value="Cambodia">
-                        <option value="Cameroon">
-                        <option value="Canada">
-                        <option value="Central African Republic">
-                        <option value="Chad">
-                        <option value="Chile">
-                        <option value="China">
-                        <option value="Colombia">
-                        <option value="Comoros">
-                        <option value="Congo">
-                        <option value="Costa Rica">
-                        <option value="Croatia">
-                        <option value="Cuba">
-                        <option value="Cyprus">
-                        <option value="Czechia">
-                        <option value="Denmark">
-                        <option value="Djibouti">
-                        <option value="Dominica">
-                        <option value="Dominican Republic">
-                        <option value="Ecuador">
-                        <option value="Egypt">
-                        <option value="El Salvador">
-                        <option value="Equatorial Guinea">
-                        <option value="Eritrea">
-                        <option value="Estonia">
-                        <option value="Eswatini">
-                        <option value="Ethiopia">
-                        <option value="Fiji">
-                        <option value="Finland">
-                        <option value="France">
-                        <option value="Gabon">
-                        <option value="Gambia">
-                        <option value="Georgia">
-                        <option value="Germany">
-                        <option value="Ghana">
-                        <option value="Greece">
-                        <option value="Grenada">
-                        <option value="Guatemala">
-                        <option value="Guinea">
-                        <option value="Guinea-Bissau">
-                        <option value="Guyana">
-                        <option value="Haiti">
-                        <option value="Honduras">
-                        <option value="Hungary">
-                        <option value="Iceland">
-                        <option value="India">
-                        <option value="Indonesia">
-                        <option value="Iran">
-                        <option value="Iraq">
-                        <option value="Ireland">
-                        <option value="Israel">
-                        <option value="Italy">
-                        <option value="Jamaica">
-                        <option value="Japan">
-                        <option value="Jordan">
-                        <option value="Kazakhstan">
-                        <option value="Kenya">
-                        <option value="Kiribati">
-                        <option value="Kosovo">
-                        <option value="Kuwait">
-                        <option value="Kyrgyzstan">
-                        <option value="Laos">
-                        <option value="Latvia">
-                        <option value="Lebanon">
-                        <option value="Lesotho">
-                        <option value="Liberia">
-                        <option value="Libya">
-                        <option value="Liechtenstein">
-                        <option value="Lithuania">
-                        <option value="Luxembourg">
-                        <option value="Madagascar">
-                        <option value="Malawi">
-                        <option value="Malaysia">
-                        <option value="Maldives">
-                        <option value="Mali">
-                        <option value="Malta">
-                        <option value="Marshall Islands">
-                        <option value="Mauritania">
-                        <option value="Mauritius">
-                        <option value="Mexico">
-                        <option value="Micronesia">
-                        <option value="Moldova">
-                        <option value="Monaco">
-                        <option value="Mongolia">
-                        <option value="Montenegro">
-                        <option value="Morocco">
-                        <option value="Mozambique">
-                        <option value="Myanmar">
-                        <option value="Namibia">
-                        <option value="Nauru">
-                        <option value="Nepal">
-                        <option value="Netherlands">
-                        <option value="New Zealand">
-                        <option value="Nicaragua">
-                        <option value="Niger">
-                        <option value="Nigeria">
-                        <option value="North Korea">
-                        <option value="North Macedonia">
-                        <option value="Norway">
-                        <option value="Oman">
-                        <option value="Pakistan">
-                        <option value="Palau">
-                        <option value="Palestine">
-                        <option value="Panama">
-                        <option value="Papua New Guinea">
-                        <option value="Paraguay">
-                        <option value="Peru">
-                        <option value="Philippines">
-                        <option value="Poland">
-                        <option value="Portugal">
-                        <option value="Qatar">
-                        <option value="Romania">
-                        <option value="Russia">
-                        <option value="Rwanda">
-                        <option value="Saint Kitts and Nevis">
-                        <option value="Saint Lucia">
-                        <option value="Saint Vincent and the Grenadines">
-                        <option value="Samoa">
-                        <option value="San Marino">
-                        <option value="Sao Tome and Principe">
-                        <option value="Saudi Arabia">
-                        <option value="Senegal">
-                        <option value="Serbia">
-                        <option value="Seychelles">
-                        <option value="Sierra Leone">
-                        <option value="Singapore">
-                        <option value="Slovakia">
-                        <option value="Slovenia">
-                        <option value="Solomon Islands">
-                        <option value="Somalia">
-                        <option value="South Africa">
-                        <option value="South Korea">
-                        <option value="South Sudan">
-                        <option value="Spain">
-                        <option value="Sri Lanka">
-                        <option value="Sudan">
-                        <option value="Suriname">
-                        <option value="Sweden">
-                        <option value="Switzerland">
-                        <option value="Syria">
-                        <option value="Taiwan">
-                        <option value="Tajikistan">
-                        <option value="Tanzania">
-                        <option value="Thailand">
-                        <option value="Timor-Leste">
-                        <option value="Togo">
-                        <option value="Tonga">
-                        <option value="Trinidad and Tobago">
-                        <option value="Tunisia">
-                        <option value="Turkey">
-                        <option value="Turkmenistan">
-                        <option value="Tuvalu">
-                        <option value="Uganda">
-                        <option value="Ukraine">
-                        <option value="United Arab Emirates">
-                        <option value="United Kingdom">
-                        <option value="United States">
-                        <option value="Uruguay">
-                        <option value="Uzbekistan">
-                        <option value="Vanuatu">
-                        <option value="Vatican City">
-                        <option value="Venezuela">
-                        <option value="Vietnam">
-                        <option value="Yemen">
-                        <option value="Zambia">
-                        <option value="Zimbabwe">
-                    </datalist>
-                </div>
-
-                <!-- Optional RCD Test Section -->
-                <div class="rcd-section">
-                    <label class="rcd-toggle">
-                        <input type="checkbox" id="rcd-tested-checkbox" onchange="toggleRcdOptions()">
-                        <span data-i18n="rcd_test_prompt">Did you test the RCD button? (Optional)</span>
-                    </label>
-                    <div class="rcd-options" id="rcd-options-container">
-                        <div class="rcd-option">
-                            <input type="radio" id="rcd-responsive" name="rcd_test_result" value="Responsive">
-                            <label for="rcd-responsive" data-i18n="rcd_opt_responsive">Responsive (Instantly
-                                tripped)</label>
-                        </div>
-                        <div class="rcd-option">
-                            <input type="radio" id="rcd-slow" name="rcd_test_result" value="Slow">
-                            <label for="rcd-slow" data-i18n="rcd_opt_slow">Slow (Took a moment to trip)</label>
-                        </div>
-                        <div class="rcd-option">
-                            <input type="radio" id="rcd-unresponsive" name="rcd_test_result" value="Unresponsive">
-                            <label for="rcd-unresponsive" data-i18n="rcd_opt_unresponsive">Unresponsive (Did not
-                                trip)</label>
+                    <!-- Progress Tracker -->
+                    <div class="progress-container" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem;">
+                        <div class="progress-header" style="margin-bottom: 0; flex-grow: 1;">
+                            <span class="progress-title" data-i18n="goal" style="font-size: 0.8rem;">Dataset Photos</span>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="progress-badge" id="upload-count" style="font-size: 11px;">0/1000</span>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="consent-container" style="text-align: left; margin: 1.5rem 0; font-size: 14px; line-height: 1.5;">
-                    <div style="display: flex; align-items: flex-start; gap: 8px;">
-                        <input type="checkbox" id="consent-checkbox" style="margin-top: 3px; cursor: pointer;">
-                        <label for="consent-checkbox" style="cursor: pointer; color: var(--text-muted);" data-i18n="consent_checkbox_label">
-                            I consent to the collection of my electrical panel photo and country metadata for safety analysis and retraining under the <a href="#" id="privacy-policy-link" style="color: var(--primary); text-decoration: underline; font-weight: 500;">Privacy Policy</a>.
-                        </label>
-                    </div>
-                    
-                    <div id="privacy-policy-panel" style="display: none; margin-top: 10px; padding: 12px; background: #F1F5F9; border-radius: 8px; border-left: 3px solid var(--primary); font-size: 12px; color: var(--text-muted); line-height: 1.4; animation: slideIn 0.3s ease-out;">
-                        <div data-i18n="privacy_policy_content">
-                            <strong>Privacy & Consent Notice (GDPR/ePrivacy compliant):</strong><br>
-                            - <strong>Purpose:</strong> We process your uploaded panel image solely to estimate a safety score and retrain our breaker detection model.<br>
-                            - <strong>Cookies & Tracking:</strong> We do NOT set cookies or use tracking cookies.<br>
-                            - <strong>Hosting & Storage:</strong> Images and associated logs are securely stored in Spain/EU.<br>
-                            - <strong>Your Rights:</strong> You can request deletion of your uploaded image at any time by contacting us with your Tracking ID.
+                    <!-- Form -->
+                    <form id="uploadForm">
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="select_country">Select Country:</label>
+                            <input list="countries" name="country" id="countrySelect" class="country-select" placeholder="Type country name..." required>
+                            <datalist id="countries">
+                                <option value="Afghanistan">
+                                <option value="Albania">
+                                <option value="Algeria">
+                                <option value="Andorra">
+                                <option value="Angola">
+                                <option value="Antigua and Barbuda">
+                                <option value="Argentina">
+                                <option value="Armenia">
+                                <option value="Australia">
+                                <option value="Austria">
+                                <option value="Azerbaijan">
+                                <option value="Bahamas">
+                                <option value="Bahrain">
+                                <option value="Bangladesh">
+                                <option value="Barbados">
+                                <option value="Belarus">
+                                <option value="Belgium">
+                                <option value="Belize">
+                                <option value="Benin">
+                                <option value="Bhutan">
+                                <option value="Bolivia">
+                                <option value="Bosnia and Herzegovina">
+                                <option value="Botswana">
+                                <option value="Brazil">
+                                <option value="Brunei">
+                                <option value="Bulgaria">
+                                <option value="Burkina Faso">
+                                <option value="Burundi">
+                                <option value="Cabo Verde">
+                                <option value="Cambodia">
+                                <option value="Cameroon">
+                                <option value="Canada">
+                                <option value="Central African Republic">
+                                <option value="Chad">
+                                <option value="Chile">
+                                <option value="China">
+                                <option value="Colombia">
+                                <option value="Comoros">
+                                <option value="Congo (Congo-Brazzaville)">
+                                <option value="Costa Rica">
+                                <option value="Croatia">
+                                <option value="Cuba">
+                                <option value="Cyprus">
+                                <option value="Czechia (Czech Republic)">
+                                <option value="Democratic Republic of the Congo">
+                                <option value="Denmark">
+                                <option value="Djibouti">
+                                <option value="Dominica">
+                                <option value="Dominican Republic">
+                                <option value="Ecuador">
+                                <option value="Egypt">
+                                <option value="El Salvador">
+                                <option value="Equatorial Guinea">
+                                <option value="Eritrea">
+                                <option value="Estonia">
+                                <option value="Eswatini">
+                                <option value="Ethiopia">
+                                <option value="Fiji">
+                                <option value="Finland">
+                                <option value="France">
+                                <option value="Gabon">
+                                <option value="Gambia">
+                                <option value="Georgia">
+                                <option value="Germany">
+                                <option value="Ghana">
+                                <option value="Greece">
+                                <option value="Grenada">
+                                <option value="Guatemala">
+                                <option value="Guinea">
+                                <option value="Guinea-Bissau">
+                                <option value="Guyana">
+                                <option value="Haiti">
+                                <option value="Honduras">
+                                <option value="Hungary">
+                                <option value="Iceland">
+                                <option value="India">
+                                <option value="Indonesia">
+                                <option value="Iran">
+                                <option value="Iraq">
+                                <option value="Ireland">
+                                <option value="Israel">
+                                <option value="Italy">
+                                <option value="Jamaica">
+                                <option value="Japan">
+                                <option value="Jordan">
+                                <option value="Kazakhstan">
+                                <option value="Kenya">
+                                <option value="Kiribati">
+                                <option value="Kosovo">
+                                <option value="Kuwait">
+                                <option value="Kyrgyzstan">
+                                <option value="Laos">
+                                <option value="Latvia">
+                                <option value="Lebanon">
+                                <option value="Lesotho">
+                                <option value="Liberia">
+                                <option value="Libya">
+                                <option value="Liechtenstein">
+                                <option value="Lithuania">
+                                <option value="Luxembourg">
+                                <option value="Madagascar">
+                                <option value="Malawi">
+                                <option value="Malaysia">
+                                <option value="Maldives">
+                                <option value="Mali">
+                                <option value="Malta">
+                                <option value="Marshall Islands">
+                                <option value="Mauritania">
+                                <option value="Mauritius">
+                                <option value="Mexico">
+                                <option value="Micronesia">
+                                <option value="Moldova">
+                                <option value="Monaco">
+                                <option value="Mongolia">
+                                <option value="Montenegro">
+                                <option value="Morocco">
+                                <option value="Mozambique">
+                                <option value="Myanmar">
+                                <option value="Namibia">
+                                <option value="Nauru">
+                                <option value="Nepal">
+                                <option value="Netherlands">
+                                <option value="New Zealand">
+                                <option value="Nicaragua">
+                                <option value="Niger">
+                                <option value="Nigeria">
+                                <option value="North Korea">
+                                <option value="North Macedonia">
+                                <option value="Norway">
+                                <option value="Oman">
+                                <option value="Pakistan">
+                                <option value="Palau">
+                                <option value="Palestine">
+                                <option value="Panama">
+                                <option value="Papua New Guinea">
+                                <option value="Paraguay">
+                                <option value="Peru">
+                                <option value="Philippines">
+                                <option value="Poland">
+                                <option value="Portugal">
+                                <option value="Qatar">
+                                <option value="Romania">
+                                <option value="Russia">
+                                <option value="Rwanda">
+                                <option value="Saint Kitts and Nevis">
+                                <option value="Saint Lucia">
+                                <option value="Saint Vincent and the Grenadines">
+                                <option value="Samoa">
+                                <option value="San Marino">
+                                <option value="Sao Tome and Principe">
+                                <option value="Saudi Arabia">
+                                <option value="Senegal">
+                                <option value="Serbia">
+                                <option value="Seychelles">
+                                <option value="Sierra Leone">
+                                <option value="Singapore">
+                                <option value="Slovakia">
+                                <option value="Slovenia">
+                                <option value="Solomon Islands">
+                                <option value="Somalia">
+                                <option value="South Africa">
+                                <option value="South Korea">
+                                <option value="South Sudan">
+                                <option value="Spain">
+                                <option value="Sri Lanka">
+                                <option value="Sudan">
+                                <option value="Suriname">
+                                <option value="Sweden">
+                                <option value="Switzerland">
+                                <option value="Syria">
+                                <option value="Taiwan">
+                                <option value="Tajikistan">
+                                <option value="Tanzania">
+                                <option value="Thailand">
+                                <option value="Timor-Leste">
+                                <option value="Togo">
+                                <option value="Tonga">
+                                <option value="Trinidad and Tobago">
+                                <option value="Tunisia">
+                                <option value="Turkey">
+                                <option value="Turkmenistan">
+                                <option value="Tuvalu">
+                                <option value="Uganda">
+                                <option value="Ukraine">
+                                <option value="United Arab Emirates">
+                                <option value="United Kingdom">
+                                <option value="United States">
+                                <option value="Uruguay">
+                                <option value="Uzbekistan">
+                                <option value="Vanuatu">
+                                <option value="Vatican City">
+                                <option value="Venezuela">
+                                <option value="Vietnam">
+                                <option value="Yemen">
+                                <option value="Zambia">
+                                <option value="Zimbabwe">
+                            </datalist>
                         </div>
-                    </div>
-                </div>
 
-                <button type="submit" class="btn btn-primary" id="submit-btn" data-i18n="upload_btn" disabled>Upload</button>
-            </form>
+                        <!-- Optional RCD Test Section -->
+                        <div class="rcd-section">
+                            <label class="rcd-toggle">
+                                <input type="checkbox" id="rcd-tested-checkbox" onchange="toggleRcdOptions()">
+                                <span data-i18n="rcd_test_prompt">Did you test the RCD button? (Optional)</span>
+                            </label>
+                            <div class="rcd-options" id="rcd-options-container">
+                                <div class="rcd-option">
+                                    <input type="radio" id="rcd-responsive" name="rcd_test_result" value="Responsive">
+                                    <label for="rcd-responsive" data-i18n="rcd_opt_responsive">Responsive (Instantly
+                                        tripped)</label>
+                                </div>
+                                <div class="rcd-option">
+                                    <input type="radio" id="rcd-slow" name="rcd_test_result" value="Slow">
+                                    <label for="rcd-slow" data-i18n="rcd_opt_slow">Slow (Took a moment to trip)</label>
+                                </div>
+                                <div class="rcd-option">
+                                    <input type="radio" id="rcd-unresponsive" name="rcd_test_result" value="Unresponsive">
+                                    <label for="rcd-unresponsive" data-i18n="rcd_opt_unresponsive">Unresponsive (Did not
+                                        trip)</label>
+                                </div>
+                            </div>
+                        </div>
 
-            <div id="status"></div>
-        </div> <!-- End Upload Portal View -->
+                        <!-- Camera Preview Box -->
+                        <div id="camera-preview-container">
+                            <img id="preview-img" alt="Breaker Panel Preview">
+                            <div class="preview-overlay"></div>
+                            <div class="preview-guide"></div>
+                        </div>
+
+                        <div id="upload-options" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 1rem;">
+                            <button type="button" class="btn btn-primary" id="start-camera-btn">
+                                📸 <span data-i18n="use_camera">Use Camera</span>
+                            </button>
+                            <button type="button" class="btn btn-outline" id="browse-file-btn">
+                                📁 <span data-i18n="upload_file">Upload File</span>
+                            </button>
+                        </div>
+
+                        <input type="file" id="fileInput" class="hidden-input" accept="image/*">
+                        <input type="file" id="cameraInput" class="hidden-input" accept="image/*" capture="environment">
+                        <span id="fileName" class="text-muted" style="display: none; margin-bottom: 1rem; font-size: 14px;">No file chosen</span>
+
+                        <div id="preview-actions" style="display: none; gap: 10px; margin-bottom: 1rem; width: 100%;">
+                            <button type="button" class="btn btn-outline" id="retake-btn" style="flex: 1;">🔄 Retake</button>
+                            <button type="button" class="btn btn-primary" id="confirm-btn" style="flex: 1;">✅ Use This Photo</button>
+                        </div>
+
+                        <div class="consent-container" style="text-align: left; margin: 1.5rem 0; font-size: 14px; line-height: 1.5;">
+                            <div style="display: flex; align-items: flex-start; gap: 8px;">
+                                <input type="checkbox" id="consent-checkbox" style="margin-top: 3px; cursor: pointer;">
+                                <label for="consent-checkbox" style="cursor: pointer; color: var(--text-muted);" data-i18n="consent_checkbox_label">
+                                    I consent to the collection of my electrical panel photo and country metadata for safety analysis and retraining under the <a href="#" id="privacy-policy-link" style="color: var(--primary); text-decoration: underline; font-weight: 500;">Privacy Policy</a>.
+                                </label>
+                            </div>
+                            
+                            <div id="privacy-policy-panel" style="display: none; margin-top: 10px; padding: 12px; background: #F1F5F9; border-radius: 8px; border-left: 3px solid var(--primary); font-size: 12px; color: var(--text-muted); line-height: 1.4; animation: slideIn 0.3s ease-out;">
+                                <div data-i18n="privacy_policy_content">
+                                    <strong>Privacy & Consent Notice (GDPR/ePrivacy compliant):</strong><br>
+                                    - <strong>Purpose:</strong> We process your uploaded panel image solely to estimate a safety score and retrain our breaker detection model.<br>
+                                    - <strong>Cookies & Tracking:</strong> We do NOT set cookies or use tracking cookies.<br>
+                                    - <strong>Hosting & Storage:</strong> Images and associated logs are securely stored in Spain/EU.<br>
+                                    - <strong>Your Rights:</strong> You can request deletion of your uploaded image at any time by contacting us with your Tracking ID.
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" id="submit-btn" data-i18n="upload_btn" disabled>Upload</button>
+                    </form>
+
+                    <div id="status"></div>
+                </div> <!-- End Upload Portal View -->
+            </div>
+        </div>
     </div>
 
     <script>
+        // Modal functions
+        function openUploadModal() { document.getElementById('upload-modal').classList.add('open'); }
+        function closeUploadModal() { document.getElementById('upload-modal').classList.remove('open'); }
+        
+        // Trigger Lucide icons
+        lucide.createIcons();
+
         const fileInput = document.getElementById('fileInput');
         const cameraInput = document.getElementById('cameraInput');
         const fileNameDisplay = document.getElementById('fileName');
@@ -1285,6 +1571,22 @@
                 console.error("Failed to copy:", err);
             });
         }
+
+        // Modal Helpers
+        function openUploadModal() {
+            document.getElementById('upload-modal').classList.add('open');
+        }
+
+        function closeUploadModal() {
+            document.getElementById('upload-modal').classList.remove('open');
+        }
+
+        // Initialize Lucide icons on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
     </script>
 </body>
 
