@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PanelSafe | Human-in-the-Loop Analysis</title>
-
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="assets/favicon/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon/favicon-32.png">
@@ -376,9 +375,8 @@
             PanelSafe
         </a>
         <div class="nav-links">
-            <a href="/" class="nav-link" data-i18n="nav_home">Inicio</a>
-            <a href="/analysis.html" class="nav-link active" data-i18n="nav_analysis">Analizador IA</a>
-            <a href="/unifilar/" class="nav-link">Generador Unifilar</a>
+            <a href="/" class="nav-link" data-i18n="nav_home">Home</a>
+            <a href="/analysis.html" class="nav-link active" data-i18n="nav_analysis">Analysis</a>
             <a href="/blog.html" class="nav-link" data-i18n="nav_blog">Blog</a>
         </div>
     </nav>
@@ -399,9 +397,6 @@
             </button>
             <button class="btn btn-primary" id="export-btn">
                 <i data-lucide="database"></i> Send to Vault
-            </button>
-            <button class="btn btn-primary" id="generate-unifilar-btn" style="grid-column: span 2; display: none; background: var(--secondary);">
-                <i data-lucide="layout-template"></i> Generate Diagram
             </button>
         </div>
 
@@ -647,7 +642,6 @@
                     populateSidebar();
                     resultsPanel.style.display = 'flex';
                     resultsPanel.style.flexDirection = 'column';
-                    document.getElementById('generate-unifilar-btn').style.display = 'flex';
                     document.getElementById('empty-state').style.display = 'none';
                 };
                 originalImage.src = e.target.result;
@@ -878,121 +872,6 @@
             e.preventDefault();
             dropZone.style.borderColor = 'rgba(0, 102, 255, 0.05)';
             handleFile(e.dataTransfer.files[0]);
-        };
-
-        // --- UNIFILAR SERIALIZATION & REDIRECT ---
-        function serializeToShorthand() {
-            if (!components || components.length === 0) return '';
-            
-            const igas = components.filter(c => c.class === 'MAINBREAKER');
-            const spds = components.filter(c => c.class === 'OVERSURGE');
-            const rcds = components.filter(c => ['RCD', 'RCD_SI'].includes(c.class));
-            const mcbs = components.filter(c => c.class === 'MCB');
-            
-            let lines = [];
-            lines.push("// PanelSafe Shorthand Code - Esquema Unifilar");
-            lines.push("// Formato: [TIPO:RATING:CABLE:TUBO] -> Destino\n");
-            
-            let mainChain = [];
-            
-            // IGA (Main Breaker)
-            if (igas.length > 0) {
-                const iga = igas[0];
-                const rating = iga.ocr_text || iga.amperage || '40A';
-                const cleanRating = rating.endsWith('A') ? rating : rating + 'A';
-                mainChain.push(`[IGA:${cleanRating}:2P]`);
-            } else {
-                mainChain.push(`[IGA:40A:2P]`);
-            }
-            
-            // SPD (Overvoltage Protector)
-            if (spds.length > 0) {
-                mainChain.push(`[SPD]`);
-            }
-            
-            // First RCD (Residual Current Device)
-            if (rcds.length > 0) {
-                const rcd = rcds[0];
-                const rcdType = rcd.class === 'RCD_SI' ? 'RCD_SI' : 'RCD';
-                const amp = rcd.amperage || '40A';
-                const sens = rcd.sensitivity || '30mA';
-                const cleanAmp = amp.endsWith('A') ? amp : amp + 'A';
-                mainChain.push(`[${rcdType}:${cleanAmp}:${sens}:2P]`);
-            } else {
-                mainChain.push(`[RCD:40A:30mA:2P]`);
-            }
-            
-            lines.push(mainChain.join(" -> "));
-            lines.push("");
-            
-            // Individual circuits (MCBs) with smart Spanish REBT auto-mapping
-            lines.push("// Circuitos de protección individual (REBT)");
-            mcbs.forEach((mcb, idx) => {
-                const rawVal = (mcb.ocr_text || '').toUpperCase().trim();
-                let amp = '16A'; // default fallback
-                let label = `C${idx + 1}`;
-                
-                const numericMatch = rawVal.match(/(\d+)/);
-                if (numericMatch) {
-                    amp = numericMatch[1] + 'A';
-                }
-                
-                let cable = '2.5mm';
-                let tube = 'T20';
-                
-                if (amp === '10A') {
-                    cable = '1.5mm';
-                    tube = 'T18';
-                    label = 'C1 (Alumbrado)';
-                } else if (amp === '16A') {
-                    cable = '2.5mm';
-                    tube = 'T20';
-                    if (idx === 0) label = 'C2 (Tomas de Corriente)';
-                    else if (idx === 1) label = 'C5 (Baños y Cocina)';
-                    else label = `C2_Aux_${idx}`;
-                } else if (amp === '20A') {
-                    cable = '4mm';
-                    tube = 'T20';
-                    label = 'C4 (Lavadora / Termo)';
-                } else if (amp === '25A') {
-                    cable = '6mm';
-                    tube = 'T25';
-                    label = 'C3 (Cocina y Horno)';
-                } else if (amp === '32A') {
-                    cable = '10mm';
-                    tube = 'T32';
-                    label = 'C13 (Vehículo Eléctrico)';
-                } else {
-                    label = `C_Circuit_${idx + 1}`;
-                }
-                
-                lines.push(`[PIA:${amp}:${cable}:${tube}] -> ${label}`);
-            });
-            
-            if (rcds.length > 1) {
-                lines.push("");
-                lines.push("// Diferenciales adicionales detectados");
-                for (let i = 1; i < rcds.length; i++) {
-                    const rcd = rcds[i];
-                    const rcdType = rcd.class === 'RCD_SI' ? 'RCD_SI' : 'RCD';
-                    const amp = rcd.amperage || '40A';
-                    const sens = rcd.sensitivity || '30mA';
-                    const cleanAmp = amp.endsWith('A') ? amp : amp + 'A';
-                    lines.push(`[${rcdType}:${cleanAmp}:${sens}:2P] -> circuito_secundario_${i}`);
-                }
-            }
-            
-            return lines.join("\n");
-        }
-
-        document.getElementById('generate-unifilar-btn').onclick = () => {
-            const shorthandCode = serializeToShorthand();
-            if (!shorthandCode) {
-                alert("No elements to serialize.");
-                return;
-            }
-            localStorage.setItem("panelsafe_unifilar_code", shorthandCode);
-            window.location.href = "/unifilar/";
         };
     </script>
 </body>
