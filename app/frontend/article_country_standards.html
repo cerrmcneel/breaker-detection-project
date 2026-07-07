@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Why Country Matters - PanelSafe</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="assets/favicon/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon/favicon-16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/favicon/favicon-180.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0066FF;
+            --primary-dark: #0051CC;
+            --primary-light: #E6F0FF;
+            --bg: #F8FAFC;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --text: #1E293B;
+            --text-muted: #64748B;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --radius: 16px;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            background-image: radial-gradient(at 0% 0%, rgba(0, 102, 255, 0.05) 0px, transparent 50%),
+                              radial-gradient(at 100% 100%, rgba(0, 102, 255, 0.05) 0px, transparent 50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            color: var(--text);
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 1rem 1.5rem;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-brand {
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.875rem;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary);
+            background-color: var(--primary-light);
+        }
+
+        .lang-switcher {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+            margin-top: 80px;
+            gap: 10px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .lang-btn {
+            background-color: transparent;
+            border: 1px solid #ccc;
+            padding: 4px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+
+        .lang-btn.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .article-container {
+            background: white;
+            padding: 48px;
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 800px;
+            line-height: 1.8;
+            color: var(--text);
+            box-sizing: border-box;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .article-header {
+            margin-bottom: 32px;
+        }
+
+        .article-header h1 {
+            color: var(--text);
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 16px;
+            line-height: 1.1;
+            letter-spacing: -0.025em;
+        }
+
+        .article-header .meta {
+            color: var(--text-muted);
+            font-size: 0.9375rem;
+            font-weight: 600;
+        }
+
+        .article-image {
+            width: 100%;
+            height: auto;
+            max-height: 480px;
+            object-fit: cover;
+            border-radius: 16px;
+            margin-bottom: 32px;
+        }
+
+        .article-container h2 {
+            color: var(--text);
+            margin-top: 48px;
+            margin-bottom: 20px;
+            font-size: 1.75rem;
+            font-weight: 800;
+        }
+
+        .article-container p {
+            margin-bottom: 24px;
+            font-size: 1.125rem;
+        }
+
+        .article-container blockquote {
+            border-left: 4px solid var(--primary);
+            margin: 40px 0;
+            padding: 24px 32px;
+            background-color: var(--primary-light);
+            color: var(--primary-dark);
+            font-style: italic;
+            border-radius: 0 16px 16px 0;
+            font-size: 1.125rem;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 40px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .back-link:hover {
+            color: var(--primary-dark);
+        }
+
+        /* Hidden by default for language toggling */
+        .lang-es {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="navbar">
+        <a href="/" class="nav-brand" id="nav-brand">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 2px;">
+                <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            PanelSafe
+        </a>
+        <div class="nav-links">
+            <a href="/" class="nav-link" id="nav-home">Home</a>
+            <a href="/analysis.html" class="nav-link" id="nav-analysis">Analysis</a>
+            <a href="/unifilar/" class="nav-link">Generador Unifilar</a>
+            <a href="/blog.html" class="nav-link active" id="nav-blog">Blog</a>
+        </div>
+    </nav>
+
+    <!-- Language Switcher -->
+    <div class="lang-switcher">
+        <button class="lang-btn active" id="btn-en" onclick="setLanguage('en')">EN</button>
+        <button class="lang-btn" id="btn-es" onclick="setLanguage('es')">ES</button>
+    </div>
+
+    <!-- Article Content -->
+    <div class="article-container">
+
+        <!-- English Version -->
+        <article class="lang-en" id="content-en">
+            <div class="article-header">
+                <h1>Why Country Matters: Regional Wiring Standards and Our Detection Model</h1>
+                <div class="meta">July 7, 2026 • 4 min read</div>
+            </div>
+
+            <img src="/assets/blog/panelsafe-multi-country-detection.jpg" alt="PanelSafe app comparing Spanish REBT and French NF C 15-100 breaker standards" class="article-image">
+
+            <p>Every time someone uploads a photo through PanelSafe, one field does more work than it might seem: country. It's tempting to treat a breaker panel as a breaker panel — but the wiring standards behind that plastic cover differ enormously depending on where the photo was taken, and our detection model has to know the difference.</p>
+
+            <h2>Same Panel, Different Rules</h2>
+            <p>Spain's REBT dictates specific requirements: Class A immunized RCDs for modern installations, mandatory overvoltage protection (PCS), and a standardized IGA at the head of the panel. Cross the border into France, and NF C 15-100 changes the expected differential sensitivity and circuit breaker curve types. Go further afield to installations following UK or Latin American conventions, and both the physical layout and the color coding of conductors shift again.</p>
+
+            <h2>Why This Isn't a Minor Detail</h2>
+            <p>For a computer vision model trained on breaker boards, this isn't a minor detail — it changes what "normal" looks like.</p>
+            <blockquote>A panel that would score as non-compliant under REBT (say, missing a Class A differential) might be entirely standard under a different national code. Without country metadata, our model risks flagging correctly-installed panels as risks, or worse, missing genuine hazards because it's grading against the wrong baseline.</blockquote>
+
+            <h2>A Training Signal, Not Just a Form Field</h2>
+            <p>This is why the country selector isn't just a form field — it's a training signal. Every submission tagged with its country helps us build region-specific scoring logic instead of a one-size-fits-all model that quietly fails outside Spain. As our dataset grows across more countries, our goal is a detection engine that understands the local code as well as a licensed electrician in that market would.</p>
+            <p>If you've uploaded a panel from outside Spain, thank you — that data point is doing more for the model than you might think.</p>
+
+            <a href="/blog.html" class="back-link">← Back to Blog</a>
+        </article>
+
+        <!-- Spanish Version -->
+        <article class="lang-es" id="content-es">
+            <div class="article-header">
+                <h1>Por Qué el País Importa: Normativas de Cableado Regionales y Nuestro Modelo de Detección</h1>
+                <div class="meta">7 Jul, 2026 • 4 min de lectura</div>
+            </div>
+
+            <img src="/assets/blog/panelsafe-multi-country-detection.jpg" alt="App PanelSafe comparando normativas de cuadros eléctricos REBT español y NF C 15-100 francés" class="article-image">
+
+            <p>Cada vez que alguien sube una foto a través de PanelSafe, un campo hace más trabajo del que parece: el país. Es tentador tratar un cuadro eléctrico como un cuadro eléctrico más — pero las normativas de cableado detrás de esa tapa de plástico difieren enormemente según dónde se tomó la foto, y nuestro modelo de detección tiene que saber la diferencia.</p>
+
+            <h2>Mismo Cuadro, Normas Distintas</h2>
+            <p>El REBT español exige requisitos específicos: diferenciales inmunizados Clase A para instalaciones modernas, protección contra sobretensiones (PCS) obligatoria, y un IGA normalizado a la cabeza del cuadro. Al cruzar la frontera hacia Francia, la norma NF C 15-100 cambia la sensibilidad diferencial esperada y los tipos de curva de los magnetotérmicos. Yendo más lejos, hacia instalaciones que siguen las convenciones del Reino Unido o Latinoamérica, tanto la disposición física como el código de colores de los conductores vuelven a cambiar.</p>
+
+            <h2>Por Qué Esto No Es un Detalle Menor</h2>
+            <p>Para un modelo de visión artificial entrenado con cuadros eléctricos, esto no es un detalle menor — cambia lo que parece "normal".</p>
+            <blockquote>Un cuadro que puntuaría como no conforme bajo el REBT (por ejemplo, sin un diferencial Clase A) podría ser completamente estándar bajo otra normativa nacional. Sin los metadatos de país, nuestro modelo corre el riesgo de marcar como riesgo cuadros correctamente instalados, o peor, de no detectar riesgos reales porque está evaluando contra la referencia equivocada.</blockquote>
+
+            <h2>Una Señal de Entrenamiento, No Solo un Campo de Formulario</h2>
+            <p>Por eso el selector de país no es solo un campo de formulario — es una señal de entrenamiento. Cada envío etiquetado con su país nos ayuda a construir una lógica de puntuación específica por región, en lugar de un modelo único que falla silenciosamente fuera de España. A medida que nuestro dataset crece en más países, nuestro objetivo es un motor de detección que entienda la normativa local tan bien como un electricista autorizado de ese mercado.</p>
+            <p>Si has subido un cuadro de fuera de España, gracias — ese dato está aportando al modelo más de lo que podrías pensar.</p>
+
+            <a href="/blog.html" class="back-link">← Volver al Blog</a>
+        </article>
+
+    </div>
+
+    <script>
+        function setLanguage(lang) {
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${lang}`).classList.add('active');
+
+            const navHome = document.getElementById('nav-home');
+            const navAnalysis = document.getElementById('nav-analysis');
+            const navBlog = document.getElementById('nav-blog');
+
+            if (lang === 'es') {
+                if (navHome) navHome.textContent = "Inicio";
+                if (navAnalysis) navAnalysis.textContent = "Análisis";
+                if (navBlog) navBlog.textContent = "Blog";
+                document.title = "Por Qué el País Importa - PanelSafe";
+            } else {
+                if (navHome) navHome.textContent = "Home";
+                if (navAnalysis) navAnalysis.textContent = "Analysis";
+                if (navBlog) navBlog.textContent = "Blog";
+                document.title = "Why Country Matters - PanelSafe";
+            }
+
+            if (lang === 'en') {
+                document.getElementById('content-en').style.display = 'block';
+                document.getElementById('content-es').style.display = 'none';
+            } else if (lang === 'es') {
+                document.getElementById('content-en').style.display = 'none';
+                document.getElementById('content-es').style.display = 'block';
+            }
+
+            localStorage.setItem('breakerLang', lang);
+        }
+
+        const savedLang = localStorage.getItem('breakerLang') || 'en';
+        setLanguage(savedLang);
+    </script>
+</body>
+
+</html>
