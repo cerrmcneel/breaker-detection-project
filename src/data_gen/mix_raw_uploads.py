@@ -3,14 +3,20 @@ import shutil
 import glob
 import random
 
-def mix_raw_uploads(raw_dir="data/images/raw_uploads", output_dir="data/dataset", val_split=0.15):
+def mix_raw_uploads(raw_dir="data/images/raw_uploads", output_dir="data/dataset", val_split=0.15,
+                     deterministic_seed=None):
     """
-    Copies pre-labeled real-world images and their YOLO .txt labels 
+    Copies pre-labeled real-world images and their YOLO .txt labels
     from the raw_uploads folder into the train and val directories.
+
+    deterministic_seed: if set, assigns an EXACT val_split fraction (shuffled with this
+    seed) instead of a per-image random.random() coin flip. At small batch sizes a
+    Bernoulli trial per image has real variance around the target ratio; a pre-shuffle +
+    slice guarantees the exact count and is reproducible.
     """
     print("PanelSafe Real-World Data Mixer")
     print("-------------------------------")
-    
+
     if not os.path.exists(raw_dir):
         print(f"Directory not found: {raw_dir}")
         return
@@ -24,18 +30,27 @@ def mix_raw_uploads(raw_dir="data/images/raw_uploads", output_dir="data/dataset"
         print(f"No images found in {raw_dir}")
         return
 
+    val_set = None
+    if deterministic_seed is not None:
+        shuffled = list(image_files)
+        random.Random(deterministic_seed).shuffle(shuffled)
+        n_val = round(len(shuffled) * val_split)
+        val_set = set(shuffled[:n_val])
+        print(f"Deterministic split (seed={deterministic_seed}): "
+              f"{n_val} val / {len(shuffled) - n_val} train (of {len(shuffled)} images)")
+
     processed_train = 0
     processed_val = 0
-    
+
     for img_path in image_files:
         base_name = os.path.splitext(os.path.basename(img_path))[0]
         txt_path = os.path.join(raw_dir, base_name + ".txt")
-        
+
         # Only process if it has a label file and it's not a tiny/corrupted image
         if os.path.exists(txt_path) and os.path.getsize(img_path) > 100:
-            
+
             # Determine split
-            is_val = random.random() < val_split
+            is_val = (img_path in val_set) if val_set is not None else (random.random() < val_split)
             split_dir = "val" if is_val else "train"
             
             img_out_dir = os.path.join(output_dir, split_dir, "images")

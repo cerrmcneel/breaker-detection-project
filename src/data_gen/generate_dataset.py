@@ -19,6 +19,7 @@ def main():
     parser.add_argument("--balanced", action="store_true", help="Boost minority class probabilities (OVERSURGE, RCD_SI, OTHER)")
     parser.add_argument("--val-split", type=float, default=0.15, help="Fraction of images to reserve for validation [0.0 - 1.0]")
     parser.add_argument("--no-augment", action="store_true", help="Disable per-seed augmentation in compositor")
+    parser.add_argument("--resolution", type=int, default=1280, help="Output image size in pixels (e.g. 640 or 1280)")
     args = parser.parse_args()
 
     # Create output directories (train + val)
@@ -46,12 +47,24 @@ def main():
         print("Error: No seeds found! Please check the seed directory.")
         return
 
+    # Dynamic scaling based on target resolution (default 1280x1280)
+    scale_factor = args.resolution / 640.0
+    rail_height = int(160 * scale_factor)
+    module_width_px = int(40 * scale_factor)
+    img_width = args.resolution
+    img_height = args.resolution
+
     factory = PanelFactory(
         chaos_factor=args.chaos,
-        rail_height=160,
+        rail_height=rail_height,
         boost_minority=args.balanced,
     )
-    compositor = Compositor(seed_library=seed_lib, img_width=640, img_height=640)
+    compositor = Compositor(
+        seed_library=seed_lib, 
+        img_width=img_width, 
+        img_height=img_height,
+        module_width_px=module_width_px
+    )
     do_augment = not args.no_augment
 
     # Determine val split indices
@@ -87,7 +100,7 @@ def main():
         lbl_path = os.path.join(lbl_dir, f"{base_name}.txt")
 
         cv2.imwrite(img_path, canvas)
-        write_label_file(lbl_path, annotations, img_width=640, img_height=640)
+        write_label_file(lbl_path, annotations, img_width=img_width, img_height=img_height)
 
         # Track class distribution
         for ann in annotations:

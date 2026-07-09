@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Silent Heart of Your Home - PanelSafe</title>
+
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="assets/favicon/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon/favicon-32.png">
@@ -212,8 +213,9 @@
             PanelSafe
         </a>
         <div class="nav-links">
-            <a href="/" class="nav-link" id="nav-home">Home</a>
-            <a href="/analysis.html" class="nav-link" id="nav-analysis">Analysis</a>
+            <a href="/" class="nav-link" id="nav-home">Inicio</a>
+            <a href="/analysis.html" class="nav-link" id="nav-analysis">Analizador IA</a>
+            <a href="/unifilar/" class="nav-link">Generador Unifilar</a>
             <a href="/blog.html" class="nav-link active" id="nav-blog">Blog</a>
         </div>
     </nav>
@@ -222,6 +224,7 @@
     <div class="lang-switcher">
         <button class="lang-btn active" id="btn-en" onclick="setLanguage('en')">EN</button>
         <button class="lang-btn" id="btn-es" onclick="setLanguage('es')">ES</button>
+        <button class="lang-btn" id="btn-fr" onclick="setLanguage('fr')">FR</button>
     </div>
 
     <!-- Article Content -->
@@ -349,10 +352,57 @@
             </div>
         </article>
 
+        <!-- French Version -->
+        <article class="lang-fr" id="content-fr" style="display: none;">
+            <div class="article-header">
+                <h1>Le cœur silencieux de votre maison : pourquoi nous avons créé PanelSafe</h1>
+                <div class="meta">10 mars 2026 • 3 min de lecture</div>
+            </div>
+
+            <img src="/assets/markus-spiske-unsplash.jpg" alt="Tableau électrique" class="article-image">
+            <div style="font-size: 0.85rem; color: #666; margin-top: -20px; margin-bottom: 30px; text-align: center;">
+                Photo de <a href="https://unsplash.com/@markusspiske" target="_blank"
+                    style="color: #0070f3; text-decoration: none;">Markus Spiske</a> sur Unsplash
+            </div>
+
+            <p>La prochaine fois que vous entrerez dans une maison typique en Espagne, je vous mets au défi de faire une chose : ouvrir le tableau électrique. Avec la permission du propriétaire, bien sûr. Regardez-le un instant. Pourriez-vous me dire si ce tableau est sûr ?</p>
+            <p>Nos maisons sont nos châteaux. Nous faisons confiance aux murs pour arrêter la pluie et aux serrures pour arrêter le monde extérieur. Mais il y a un cœur silencieux et actif dans chaque maison — le tableau électrique — que nous supposons immortel. En réalité, c'est souvent la partie la plus négligée et la plus dangereuse de la maison.</p>
+
+            <h2>Le risque caché</h2>
+            <p>Imaginez que vous êtes devant votre tableau électrique et que vous réalisez que vous n'avez aucune idée s'il est sûr. À part appuyer sur le bouton du différentiel (RCD) pour voir s'il réagit, la plupart des consommateurs n'en savent pas plus.</p>
+            <p>Soyons honnêtes : combien de personnes savent vraiment à quoi sert ce bouton ? Comme la plupart des gens, vous n'avez probablement pas touché ce bouton « test » depuis des années. Cette ignorance n'est pas qu'un simple manque d'entretien ; c'est un risque. En 2024, 41,9 % des incendies en Espagne ont commencé juste là, derrière ce couvercle en plastique. Ce n'est pas seulement une norme technique ; c'est une norme de survie.</p>
+
+            <h2>Combler l'écart</h2>
+            <p>Nous ne devrions pas avoir à attendre des semaines pour un rendez-vous ou dépenser des centaines d'euros juste pour savoir si nous sommes en danger. Nous avons conçu PanelSafe pour combler cet écart. En prenant simplement une photo, notre application analyse votre tableau et vous donne un score de sécurité instantané.</p>
+            <blockquote>Pourquoi ce score est-il important ? Pensez à un différentiel de type AC dépassé comme à un détecteur de fumée qui ne peut entendre qu'une certaine hauteur de cri. Il fonctionne, mais il est « sourd » au bruit électronique moderne de votre ordinateur portable, de vos ampoules LED et de votre chargeur de véhicule électrique. PanelSafe recherche ces composants sourds pour que vous n'ayez pas à le faire.
+            </blockquote>
+
+            <h2>De la rareté des données à la conformité professionnelle</h2>
+            <p>Le but de PanelSafe est d'apporter de la clarté aux consommateurs. Il identifie si une mise à jour est recommandée et met les utilisateurs en relation avec des professionnels qualifiés locaux. Mettre à jour un tableau ne concerne pas seulement la sécurité incendie ; il s'agit de protéger les milliers d'euros d'appareils électroniques sensibles que nous branchons chaque jour dans nos murs.</p>
+            <p>Nous construisons cela sur un algorithme conçu par des électriciens. En collectant nos 50 premières images auprès de la communauté, nous avons créé un jeu de données initial qui sert d'instantané essentiel de l'état de la sécurité électrique en Espagne.</p>
+            <p>Soyons clairs : une photo n'est pas une certification légale. N'importe quel professionnel vous le dira. Mais c'est là que la trajectoire change. Nous ne construisons pas seulement un « score » — nous construisons le cerveau d'un outil de niveau professionnel. Nous passons d'aider le propriétaire à comprendre son risque, à aider l'électricien à éliminer la paperasse qui l'empêche de faire son meilleur travail.</p>
+            <p>L'objectif de PanelSafe n'est pas seulement une application ; c'est une nouvelle norme. De ces 50 premières images à un outil de conformité entièrement automatisé, nous documentons un parcours qui va de la rareté des données à un réseau électrique plus sûr et plus transparent.</p>
+
+            <a href="/blog.html" class="back-link">← Retour au blog</a>
+
+            <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(0,0,0,0.06); font-size: 0.875rem; color: var(--text-muted);">
+                ⚡ Un projet de <a href="https://electromarjal.com" target="_blank" rel="noopener noreferrer" style="color: var(--primary); font-weight: 700; text-decoration: none;">Marjal Instalaciones Eléctricas</a> — installateurs électriciens agréés
+            </div>
+        </article>
+
     </div>
 
     <script>
+        const NAV_LABELS = {
+            en: { home: "Home", analysis: "Analysis", blog: "Blog", title: "The Silent Heart of Your Home - PanelSafe" },
+            es: { home: "Inicio", analysis: "Análisis", blog: "Blog", title: "El Corazón Silencioso de su Hogar - PanelSafe" },
+            fr: { home: "Accueil", analysis: "Analyse", blog: "Blog", title: "Le cœur silencieux de votre maison - PanelSafe" }
+        };
+        const LANGS = ['en', 'es', 'fr'];
+
         function setLanguage(lang) {
+            if (!NAV_LABELS[lang]) return;
+
             // Update UI buttons
             document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`btn-${lang}`).classList.add('active');
@@ -361,27 +411,17 @@
             const navHome = document.getElementById('nav-home');
             const navAnalysis = document.getElementById('nav-analysis');
             const navBlog = document.getElementById('nav-blog');
-            
-            if (lang === 'es') {
-                if (navHome) navHome.textContent = "Inicio";
-                if (navAnalysis) navAnalysis.textContent = "Análisis";
-                if (navBlog) navBlog.textContent = "Blog";
-                document.title = "El Corazón Silencioso de su Hogar - PanelSafe";
-            } else {
-                if (navHome) navHome.textContent = "Home";
-                if (navAnalysis) navAnalysis.textContent = "Analysis";
-                if (navBlog) navBlog.textContent = "Blog";
-                document.title = "The Silent Heart of Your Home - PanelSafe";
-            }
+            const labels = NAV_LABELS[lang];
+            if (navHome) navHome.textContent = labels.home;
+            if (navAnalysis) navAnalysis.textContent = labels.analysis;
+            if (navBlog) navBlog.textContent = labels.blog;
+            document.title = labels.title;
 
-            // Toggle visibility of articles
-            if (lang === 'en') {
-                document.getElementById('content-en').style.display = 'block';
-                document.getElementById('content-es').style.display = 'none';
-            } else if (lang === 'es') {
-                document.getElementById('content-en').style.display = 'none';
-                document.getElementById('content-es').style.display = 'block';
-            }
+            // Toggle visibility of articles -- show only the selected language's block
+            LANGS.forEach(l => {
+                const el = document.getElementById(`content-${l}`);
+                if (el) el.style.display = (l === lang) ? 'block' : 'none';
+            });
 
             // Persist language selection
             localStorage.setItem('breakerLang', lang);

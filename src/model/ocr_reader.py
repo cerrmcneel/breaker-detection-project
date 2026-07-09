@@ -2,9 +2,11 @@ import cv2
 import numpy as np
 import pytesseract
 import re
+import os
 
-# Point PyTesseract to the Winget installation path on Windows
-# pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+# Point PyTesseract to the Winget installation path on Windows if it exists
+if os.path.exists(r'C:\Program Files\Tesseract-OCR\tesseract.exe'):
+    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 class OCRReader:
     def __init__(self, lang='eng'):
@@ -127,6 +129,11 @@ class OCRReader:
         # Check for SI marker
         if "SI" in text:
             return "SI"
+            
+        # Check for leakage current (RCD marker)
+        leakage_match = re.search(r'\b(30\s?MA|0[.,]03\s?A)\b', text)
+        if leakage_match:
+            return "30MA"
             
         # Check for B, C, or D rating (1 or 2 digits)
         # We allow an optional curve letter B, C, or D

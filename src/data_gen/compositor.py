@@ -158,11 +158,31 @@ class Compositor:
             if augment:
                 seed_resized = self._augment_seed(seed_resized)
 
-            # Paste onto canvas — numpy slice is [y:y+h, x:x+w]
+            # Paste onto canvas with edge-feathered blending
+            bg_slice = canvas[
+                ann["y"]: ann["y"] + ann["h"],
+                ann["x"]: ann["x"] + ann["w"],
+            ]
             canvas[
                 ann["y"]: ann["y"] + ann["h"],
                 ann["x"]: ann["x"] + ann["w"],
-            ] = seed_resized
+            ] = self._blend_seed_feathered(bg_slice, seed_resized)
+
+        # Apply shadows and specular glare to the composite canvas to simulate basement conditions
+        if augment:
+            import random
+            # Apply linear shadows with 50% probability
+            if random.random() < 0.5:
+                canvas = self._apply_shadows(canvas)
+            # Apply specular glare with 50% probability
+            if random.random() < 0.5:
+                canvas = self._apply_glare(canvas)
+
+        # Apply perspective warp with a 70% probability to increase training diversity
+        if augment:
+            import random
+            if random.random() < 0.7:
+                canvas, annotations = self._apply_perspective_warp(canvas, annotations)
 
         return canvas, annotations
 
@@ -268,3 +288,200 @@ class Compositor:
             img = np.clip(img.astype(np.int16) + noise, 0, 255).astype(np.uint8)
 
         return img
+
+    @staticmethod
+    def _blend_seed_feathered(bg_slice, seed_resized, feather_px=4):
+        """
+        Blends seed_resized into bg_slice using a soft feathered mask around the edges
+        to avoid sharp, artificial copy-paste boundaries.
+        """
+        h, w = seed_resized.shape[:2]
+        import numpy as np
+        if h <= feather_px * 2 or w <= feather_px * 2:
+            return seed_resized # Too small to feather
+            
+        # Create a 2D mask of 1s (representing seed content)
+        mask = np.ones((h, w), dtype=np.float32)
+        
+        # Feather horizontal/vertical edges
+        for i in range(feather_px):
+            alpha = (i + 1) / (feather_px + 1)
+            mask[i, :] *= alpha          # Top edge
+            mask[h - 1 - i, :] *= alpha  # Bottom edge
+            mask[:, i] *= alpha          # Left edge
+            mask[:, w - 1 - i] *= alpha  # Right edge
+            
+        # Blur the mask slightly to make transitions even smoother
+        import cv2
+        mask = cv2.GaussianBlur(mask, (3, 3), 0)
+        
+        # Add channel dimension
+        mask_3d = np.expand_dims(mask, axis=-1)
+        
+        # Perform linear interpolation blending
+        blended = (seed_resized.astype(np.float32) * mask_3d) + (bg_slice.astype(np.float32) * (1.0 - mask_3d))
+        return blended.astype(np.uint8)
+
+    @staticmethod
+    def _apply_perspective_warp(canvas, annotations, max_warp=80):
+        """
+        Applies a random 3D perspective homography to the entire canvas,
+        and re-maps all bounding box annotations to fit the new perspective.
+        """
+        import cv2
+        import numpy as np
+        import random
+        
+        h, w = canvas.shape[:2]
+        
+        # Define the original corners of the canvas
+        src_pts = np.array([
+            [0, 0],         # Top-Left
+            [w - 1, 0],     # Top-Right
+            [w - 1, h - 1], # Bottom-Right
+            [0, h - 1]      # Bottom-Left
+        ], dtype=np.float32)
+        
+        # Apply random perspective shifts to define target corners
+        top_left_shift_x = random.randint(-max_warp, max_warp)
+        top_left_shift_y = random.randint(-max_warp, max_warp)
+        top_right_shift_x = random.randint(-max_warp, max_warp)
+        top_right_shift_y = random.randint(-max_warp, max_warp)
+        bottom_right_shift_x = random.randint(-max_warp, max_warp)
+        bottom_right_shift_y = random.randint(-max_warp, max_warp)
+        bottom_left_shift_x = random.randint(-max_warp, max_warp)
+        bottom_left_shift_y = random.randint(-max_warp, max_warp)
+        
+        dst_pts = np.array([
+            [top_left_shift_x, top_left_shift_y],
+            [w - 1 + top_right_shift_x, top_right_shift_y],
+            [w - 1 + bottom_right_shift_x, h - 1 + bottom_right_shift_y],
+            [bottom_left_shift_x, h - 1 + bottom_left_shift_y]
+        ], dtype=np.float32)
+        
+        # Get homography matrix
+        M = cv2.getPerspectiveTransform(src_pts, dst_pts)
+        
+        # Warp the canvas image with a realistic dark gray background
+        warped_canvas = cv2.warpPerspective(canvas, M, (w, h), borderValue=(30, 30, 30))
+        
+        # Warp all annotations
+        warped_annotations = []
+        for ann in annotations:
+            # Reconstruct the 4 corners of the bounding box
+            bx1 = ann["x"]
+            by1 = ann["y"]
+            bx2 = ann["x"] + ann["w"]
+            by2 = ann["y"] + ann["h"]
+            
+            box_pts = np.array([
+                [bx1, by1],
+                [bx2, by1],
+                [bx2, by2],
+                [bx1, by2]
+            ], dtype=np.float32).reshape(-1, 1, 2)
+            
+            # Project box corners
+            warped_box_pts = cv2.perspectiveTransform(box_pts, M).reshape(-1, 2)
+            
+            # Find the new bounding box enclosing these 4 projected points
+            min_x = np.min(warped_box_pts[:, 0])
+            max_x = np.max(warped_box_pts[:, 0])
+            min_y = np.min(warped_box_pts[:, 1])
+            max_y = np.max(warped_box_pts[:, 1])
+            
+            # Clamp to canvas dimensions
+            min_x = max(0, min(w - 1, min_x))
+            max_x = max(0, min(w - 1, max_x))
+            min_y = max(0, min(h - 1, min_y))
+            max_y = max(0, min(h - 1, max_y))
+            
+            new_w = max_x - min_x
+            new_h = max_y - min_y
+            
+            # Keep only valid annotations
+            if new_w > 5 and new_h > 5:
+                warped_annotations.append({
+                    "class_id": ann["class_id"],
+                    "x": int(min_x),
+                    "y": int(min_y),
+                    "w": int(new_w),
+                    "h": int(new_h)
+                })
+                
+        return warped_canvas, warped_annotations
+
+    @staticmethod
+    def _apply_shadows(img):
+        """
+        Superimposes a random linear shadow gradient (e.g., top cutout shadow)
+        to simulate uneven overhead lighting.
+        """
+        import numpy as np
+        import random
+        
+        h, w = img.shape[:2]
+        direction = random.choice(["top", "bottom", "left", "right"])
+        
+        shadow_ratio = random.uniform(0.3, 0.7)
+        max_opacity = random.uniform(0.4, 0.75)
+        
+        if direction in ["top", "bottom"]:
+            length = int(h * shadow_ratio)
+            gradient = np.linspace(max_opacity, 0.0, length, dtype=np.float32)
+            mask = np.ones((h,), dtype=np.float32)
+            if direction == "top":
+                mask[:length] = 1.0 - gradient
+            else:
+                mask[h - length:] = 1.0 - np.flip(gradient)
+            mask_3d = mask[:, np.newaxis, np.newaxis]
+        else:
+            length = int(w * shadow_ratio)
+            gradient = np.linspace(max_opacity, 0.0, length, dtype=np.float32)
+            mask = np.ones((w,), dtype=np.float32)
+            if direction == "left":
+                mask[:length] = 1.0 - gradient
+            else:
+                mask[w - length:] = 1.0 - np.flip(gradient)
+            mask_3d = mask[np.newaxis, :, np.newaxis]
+            
+        img_float = img.astype(np.float32) * mask_3d
+        return np.clip(img_float, 0, 255).astype(np.uint8)
+
+    @staticmethod
+    def _apply_glare(img):
+        """
+        Superimposes a radial glare highlight at a random location
+        to simulate camera flash or direct light reflections on glossy plastic.
+        """
+        import numpy as np
+        import random
+        
+        h, w = img.shape[:2]
+        
+        cx = random.randint(0, w - 1)
+        cy = random.randint(0, h - 1)
+        
+        diag = np.sqrt(w**2 + h**2)
+        r = int(diag * random.uniform(0.15, 0.40))
+        
+        y, x = np.ogrid[:h, :w]
+        dist_sq = (x - cx)**2 + (y - cy)**2
+        
+        sigma = r / 2.0
+        mask = np.exp(-dist_sq / (2 * (sigma**2)))
+        
+        max_glare = random.uniform(60, 180)
+        glare_overlay = (mask * max_glare).astype(np.float32)
+        
+        b_mult = random.uniform(0.85, 1.0)
+        g_mult = random.uniform(0.90, 1.0)
+        r_mult = random.uniform(0.95, 1.0)
+        
+        glare_3d = np.zeros_like(img, dtype=np.float32)
+        glare_3d[..., 0] = glare_overlay * b_mult
+        glare_3d[..., 1] = glare_overlay * g_mult
+        glare_3d[..., 2] = glare_overlay * r_mult
+        
+        img_float = img.astype(np.float32) + glare_3d
+        return np.clip(img_float, 0, 255).astype(np.uint8)

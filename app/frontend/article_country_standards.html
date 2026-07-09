@@ -224,6 +224,7 @@
     <div class="lang-switcher">
         <button class="lang-btn active" id="btn-en" onclick="setLanguage('en')">EN</button>
         <button class="lang-btn" id="btn-es" onclick="setLanguage('es')">ES</button>
+        <button class="lang-btn" id="btn-fr" onclick="setLanguage('fr')">FR</button>
     </div>
 
     <!-- Article Content -->
@@ -287,36 +288,64 @@
             </div>
         </article>
 
+        <!-- French Version -->
+        <article class="lang-fr" id="content-fr" style="display: none;">
+            <div class="article-header">
+                <h1>Pourquoi le pays compte : normes de câblage régionales et notre modèle de détection</h1>
+                <div class="meta">7 juillet 2026 • 4 min de lecture</div>
+            </div>
+
+            <img src="/assets/blog/panelsafe-multi-country-detection.jpg" alt="Application PanelSafe comparant les normes de tableaux électriques REBT espagnol et NF C 15-100 français" class="article-image">
+
+            <p>Chaque fois que quelqu'un envoie une photo via PanelSafe, un champ fait plus de travail qu'il n'y paraît : le pays. Il est tentant de traiter un tableau électrique comme un tableau électrique quelconque — mais les normes de câblage derrière ce couvercle en plastique diffèrent énormément selon l'endroit où la photo a été prise, et notre modèle de détection doit en connaître la différence.</p>
+
+            <h2>Même tableau, règles différentes</h2>
+            <p>Le REBT espagnol impose des exigences spécifiques : différentiels immunisés de Classe A pour les installations modernes, protection contre les surtensions (PCS) obligatoire, et un IGA normalisé en tête de tableau. En traversant la frontière vers la France, la norme NF C 15-100 change la sensibilité différentielle attendue et les types de courbe des disjoncteurs. En allant plus loin, vers des installations suivant les conventions britanniques ou latino-américaines, la disposition physique et le code couleur des conducteurs changent encore.</p>
+
+            <h2>Pourquoi ce n'est pas un détail mineur</h2>
+            <p>Pour un modèle de vision par ordinateur entraîné sur des tableaux électriques, ce n'est pas un détail mineur — cela change ce à quoi ressemble la « normalité ».</p>
+            <blockquote>Un tableau qui serait noté non conforme selon le REBT (par exemple, sans différentiel de Classe A) pourrait être parfaitement standard selon une autre norme nationale. Sans les métadonnées de pays, notre modèle risque de signaler comme dangereux des tableaux correctement installés, ou pire, de manquer de véritables dangers parce qu'il évalue par rapport à la mauvaise référence.</blockquote>
+
+            <h2>Un signal d'entraînement, pas seulement un champ de formulaire</h2>
+            <p>C'est pourquoi le sélecteur de pays n'est pas qu'un simple champ de formulaire — c'est un signal d'entraînement. Chaque soumission associée à son pays nous aide à construire une logique de notation spécifique à chaque région, plutôt qu'un modèle universel qui échoue silencieusement en dehors de l'Espagne. À mesure que notre jeu de données s'étend à davantage de pays, notre objectif est un moteur de détection qui comprend la réglementation locale aussi bien qu'un électricien agréé de ce marché.</p>
+            <p>Si vous avez envoyé un tableau situé hors d'Espagne, merci — cette donnée apporte au modèle plus que vous ne le pensez.</p>
+
+            <a href="/blog.html" class="back-link">← Retour au blog</a>
+
+            <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(0,0,0,0.06); font-size: 0.875rem; color: var(--text-muted);">
+                ⚡ Un projet de <a href="https://electromarjal.com" target="_blank" rel="noopener noreferrer" style="color: var(--primary); font-weight: 700; text-decoration: none;">Marjal Instalaciones Eléctricas</a> — installateurs électriciens agréés
+            </div>
+        </article>
+
     </div>
 
     <script>
+        const NAV_LABELS = {
+            en: { home: "Home", analysis: "Analysis", blog: "Blog", title: "Why Country Matters - PanelSafe" },
+            es: { home: "Inicio", analysis: "Análisis", blog: "Blog", title: "Por Qué el País Importa - PanelSafe" },
+            fr: { home: "Accueil", analysis: "Analyse", blog: "Blog", title: "Pourquoi le pays compte - PanelSafe" }
+        };
+        const LANGS = ['en', 'es', 'fr'];
+
         function setLanguage(lang) {
+            if (!NAV_LABELS[lang]) return;
+
             document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`btn-${lang}`).classList.add('active');
 
             const navHome = document.getElementById('nav-home');
             const navAnalysis = document.getElementById('nav-analysis');
             const navBlog = document.getElementById('nav-blog');
+            const labels = NAV_LABELS[lang];
+            if (navHome) navHome.textContent = labels.home;
+            if (navAnalysis) navAnalysis.textContent = labels.analysis;
+            if (navBlog) navBlog.textContent = labels.blog;
+            document.title = labels.title;
 
-            if (lang === 'es') {
-                if (navHome) navHome.textContent = "Inicio";
-                if (navAnalysis) navAnalysis.textContent = "Análisis";
-                if (navBlog) navBlog.textContent = "Blog";
-                document.title = "Por Qué el País Importa - PanelSafe";
-            } else {
-                if (navHome) navHome.textContent = "Home";
-                if (navAnalysis) navAnalysis.textContent = "Analysis";
-                if (navBlog) navBlog.textContent = "Blog";
-                document.title = "Why Country Matters - PanelSafe";
-            }
-
-            if (lang === 'en') {
-                document.getElementById('content-en').style.display = 'block';
-                document.getElementById('content-es').style.display = 'none';
-            } else if (lang === 'es') {
-                document.getElementById('content-en').style.display = 'none';
-                document.getElementById('content-es').style.display = 'block';
-            }
+            LANGS.forEach(l => {
+                const el = document.getElementById(`content-${l}`);
+                if (el) el.style.display = (l === lang) ? 'block' : 'none';
+            });
 
             localStorage.setItem('breakerLang', lang);
         }

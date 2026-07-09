@@ -31,6 +31,26 @@ To bridge the Sim-to-Real gap, the project evaluates:
 - **Strategy K (Differential Learning Rates):** Frozen backbones ($\eta = 10^{-6}$) and high-rate classification heads ($\eta = 10^{-3}$) to prevent catastrophic forgetting on real photos.
 - **Strategy L (Semi-Supervised Pseudo-Labeling):** Self-labeling high-confidence uploads to expand the training set.
 
+## Continuous Learning / Automated Retraining — Deliberately Deferred
+
+Strategy L (self-labeling high-confidence uploads) and the "/active-learning/save"
+endpoint already collect the raw material for a continuous-retraining loop, but
+automating the retraining trigger itself is a deliberate non-goal for now, not
+an oversight. At ~121 real images with single-digit counts for some classes
+(RCD_SI, OVERSURGE), an automated loop would mostly automate noisy, unstable
+retraining swings -- the kind of run-to-run variance this project already
+measured directly when comparing Nano/Medium/Large (see
+[ablation_study](/methodology/ablation_study.md)) -- without a human catching
+problems before they compound. The evaluation discipline documented in
+[evaluation_rigor](/methodology/evaluation_rigor.md) is what has caught every
+real bug this project has found; full automation would remove exactly that
+checkpoint.
+
+**Revisit threshold**: reconsider automated continuous learning once every
+class has at least **100 real examples** (raised from an initial informal
+estimate of 30, on the view that a decision this consequential should demand
+a higher bar of evidence before trusting an automated loop with it).
+
 ## Roadmap: Scaling to the Full Field Taxonomy (Not Yet Implemented)
 
 The current 6-class flat taxonomy covers the essentials of a domestic CGMP. A production tool must recognize the full suite of modular devices electricians use in the field (contactors, timers, *telerruptores*, modular sockets, RCBOs, phase indicators, varied surge arresters, etc.). The scalable path is **not** one detector per class — that is N× compute/VRAM, loses the inter-class contrast a unified head learns, and forces cross-model NMS arbitration. Instead:

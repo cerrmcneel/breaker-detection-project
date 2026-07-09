@@ -1,0 +1,38 @@
+{
+  "C1": {
+    "name": "Alumbrado (Lighting)",
+    "mcb": "10A",
+    "cable": "1.5mm²",
+    "tube": "18mm"
+  },
+  "C2": {
+    "name": "Tomas de Uso General (General Plugs)",
+    "mcb": "16A",
+    "cable": "2.5mm²",
+    "tube": "20mm"
+  },
+  "C3": {
+    "name": "Cocina y Horno (Oven & Cooker)",
+    "mcb": "25A",
+    "cable": "6mm²",
+    "tube": "25mm"
+  },
+  "C4": {
+    "name": "Lavadora y Lavavajillas (Laundry / Dishwasher)",
+    "mcb": "20A",
+    "cable": "4mm²",
+    "tube": "20mm"
+  },
+  "C5": {
+    "name": "Tomas de Baño y Cocina (Wet Area Plugs)",
+    "mcb": "16A",
+    "cable": "2.5mm²",
+    "tube": "20mm"
+  },
+  "C13": {
+    "name": "Vehículo Eléctrico (EV Charging)",
+    "mcb": "16A",
+    "cable": "2.5mm²",
+    "tube": "25mm"
+  }
+}

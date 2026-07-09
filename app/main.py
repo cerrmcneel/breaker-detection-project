@@ -159,7 +159,10 @@ async def predict_panel(file: UploadFile = File(...)):
         logger.info("Forwarding image to K3s GPU Worker pipeline...")
         try:
             with open(temp_path, "rb") as f:
-                response = requests.post(INFERENCE_URL, files={"file": f}, timeout=45)
+                # 90s: leaves headroom for a cold-started scale-to-zero GPU backend
+                # (e.g. the Modal failover endpoint) to load the model before the
+                # gateway itself gives up and surfaces an error to the user.
+                response = requests.post(INFERENCE_URL, files={"file": f}, timeout=90)
                 response.raise_for_status()
                 cluster_data = response.json()
                 refined_predictions = cluster_data.get("predictions", [])
@@ -300,8 +303,10 @@ async def upload_image(file: UploadFile = File(...), country: str = Form(default
         try:
             files = {"file": (file.filename, file_bytes, file.content_type)}
             # The full pipeline (YOLO + OCR + HMM) is far slower than raw YOLO; the old
-            # 5s ceiling caused silent timeouts. Give real headroom.
-            response = requests.post(INFERENCE_URL, files=files, timeout=30)
+            # 5s ceiling caused silent timeouts. 90s also leaves headroom for a
+            # cold-started scale-to-zero GPU backend (e.g. Modal failover) to load
+            # the model before this gateway gives up and errors out to the user.
+            response = requests.post(INFERENCE_URL, files=files, timeout=90)
             response.raise_for_status()
             cluster_data = response.json()
             predictions = cluster_data.get("predictions", [])

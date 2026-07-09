@@ -1,0 +1,143 @@
+:root {
+  /* Color Design Tokens */
+  --bg-app: #08070a;
+  --bg-card: rgba(20, 18, 25, 0.7);
+  --bg-card-hover: rgba(26, 23, 33, 0.85);
+  --border-card: rgba(145, 55, 175, 0.15);
+  --border-card-hover: rgba(145, 55, 175, 0.35);
+  
+  --primary: #9137af;
+  --primary-light: #a84fc7;
+  --primary-glow: rgba(145, 55, 175, 0.2);
+  --success: #73c83c;
+  --success-glow: rgba(115, 200, 60, 0.15);
+  --warning: #f59e0b;
+  --error: #ef4444;
+  
+  --text-primary: #ffffff;
+  --text-secondary: #a39cae;
+  --text-muted: #6b6375;
+  --input-bg: #100f13;
+  --input-border: #221f2a;
+  --input-focus: #9137af;
+  
+  /* Font Families */
+  --font-title: 'Outfit', 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-code: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  font-size: 16px;
+  letter-spacing: 0.2px;
+  color-scheme: dark;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  background-image: 
+    radial-gradient(circle at 10% 20%, rgba(145, 55, 175, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(115, 200, 60, 0.03) 0%, transparent 40%);
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scrollbar Customization */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0d0c10;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2b2735;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Typography styles */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-title);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+a {
+  color: var(--primary-light);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--primary);
+}
+
+/* Forms & Interactive Inputs */
+input, select, textarea {
+  background-color: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+input:hover, select:hover, textarea:hover {
+  border-color: #3b354a;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--input-focus);
+  box-shadow: 0 0 0 3px rgba(145, 55, 175, 0.25);
+  background-color: #121016;
+}
+
+button {
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* General Layout Card Styles */
+.panel-card {
+  background-color: var(--bg-card);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-card);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.panel-card:hover {
+  border-color: var(--border-card-hover);
+  box-shadow: 0 8px 36px 0 rgba(145, 55, 175, 0.05);
+}

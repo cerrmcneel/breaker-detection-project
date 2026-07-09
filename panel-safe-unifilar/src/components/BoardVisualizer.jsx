@@ -1,8 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { exportSvgToImage } from '../utils/Exporter';
+import rebtDefaults from '../config/rebt_defaults.json';
+import { useLanguage } from '../i18n.jsx';
 
+// NOTE: the SVG diagram rendered below (the actual "esquema unifilar") keeps
+// its embedded text in Spanish regardless of UI language -- it's the literal
+// document an installer submits for REBT compliance in Spain. Only the
+// surrounding app UI (buttons, the editable-values table, hints) is
+// translated. See i18n.js's top comment for the full rationale.
 export default function BoardVisualizer({ parsedNodes }) {
+  const { t } = useLanguage();
   const svgRef = useRef(null);
 
   // 1. FILTER AND GROUP NODES
@@ -36,7 +44,11 @@ export default function BoardVisualizer({ parsedNodes }) {
       const updated = { ...prev };
       pias.forEach((pia, idx) => {
         if (!updated[pia.id]) {
-          // Detect amperage rating from OCR/text
+          const targetKey = pia.target;
+          const knownDefault = targetKey && rebtDefaults[targetKey];
+
+          // Detect amperage rating from OCR/text -- fallback guess, only used
+          // when the parsed circuit target isn't a recognized REBT circuit ID.
           const rawRating = (pia.rating || '').toUpperCase();
           let amp = '16A';
           if (rawRating.includes('10')) amp = '10A';
@@ -44,45 +56,59 @@ export default function BoardVisualizer({ parsedNodes }) {
           else if (rawRating.includes('25')) amp = '25A';
           else if (rawRating.includes('32')) amp = '32A';
 
-          // Assign REBT defaults
-          let usage = `Circuito C${idx + 1}`;
+          let usage = `${t('usage_circuit_prefix')} ${targetKey || `C${idx + 1}`}`;
           let power = '3450';
           let section = '2.5';
           let tube = '20';
 
           if (amp === '10A') {
-            usage = 'Alumbrado';
+            usage = t('usage_lighting');
             power = '2300';
             section = '1.5';
             tube = '18';
           } else if (amp === '20A') {
-            usage = 'Lavadora / Termo';
+            usage = t('usage_laundry');
             power = '4600';
             section = '4.0';
             tube = '20';
           } else if (amp === '25A') {
-            usage = 'Cocina y Horno';
+            usage = t('usage_kitchen_oven');
             power = '5750';
             section = '6.0';
             tube = '25';
           } else if (amp === '32A') {
-            usage = 'Cargador Vehículo Eléctrico';
+            usage = t('usage_ev_charger');
             power = '7360';
             section = '10.0';
             tube = '32';
           } else if (idx === 0) {
-            usage = 'Tomas de Uso General';
+            usage = t('usage_general_plugs');
           } else if (idx === 1) {
-            usage = 'Tomas Baño y Cocina Auxiliar';
+            usage = t('usage_bathroom_kitchen');
+          }
+
+          // Authoritative source: rebt_defaults.json, keyed by circuit ID --
+          // the same config Editor.jsx's macro buttons already use. Overrides
+          // the amperage/position guess above whenever the parsed circuit
+          // target matches a known ID, instead of leaving two disagreeing
+          // sources of truth for the same circuit (found via confusion-matrix
+          // review 2026-07-05: e.g. "C13" was mislabeled "Circuito C6").
+          if (knownDefault) {
+            usage = knownDefault.name;
+            section = knownDefault.cable.replace(/mm.*/i, '');
+            tube = knownDefault.tube.replace(/mm/i, '');
           }
 
           updated[pia.id] = {
-            label: pia.target || `C${idx + 1}`,
+            label: targetKey || `C${idx + 1}`,
             usage,
             power,
             voltage: '230',
             section,
-            tube
+            tube,
+            // HITL flag: this row is a system-generated suggestion, not a
+            // human-confirmed value, until someone edits any field in it.
+            autoSuggested: true
           };
         }
       });
@@ -95,7 +121,8 @@ export default function BoardVisualizer({ parsedNodes }) {
       ...prev,
       [id]: {
         ...prev[id],
-        [field]: value
+        [field]: value,
+        autoSuggested: false
       }
     }));
   };
@@ -137,45 +164,53 @@ export default function BoardVisualizer({ parsedNodes }) {
   return (
     <div className="visualizer-container">
       <div className="visualizer-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h3 className="visualizer-title" style={{ margin: 0 }}>Esquema Unifilar Oficial (UNE-EN 60617)</h3>
-        
+        <h3 className="visualizer-title" style={{ margin: 0 }}>{t('visualizer_title')}</h3>
+
         <div className="diagram-actions-row" style={{ display: 'flex', gap: '8px' }}>
           <button className="macro-btn main-head-btn" onClick={() => triggerDownload('png')}>
-            Descargar PNG
+            {t('download_png')}
           </button>
           <button className="macro-btn main-head-btn" style={{ background: '#3b82f6', color: '#fff', borderColor: '#2563eb' }} onClick={triggerPrint}>
-            Imprimir / Guardar PDF
+            {t('print_pdf')}
           </button>
         </div>
       </div>
 
       {pias.length === 0 ? (
         <div className="empty-visualizer-state">
-          <p>Ningún interruptor detectado. Sube una foto en la pestaña de Análisis o introduce circuitos en el editor de la izquierda.</p>
+          <p>{t('empty_state')}</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', background: '#1c1924', padding: '20px', borderRadius: '12px', border: '1px solid rgba(145, 55, 175, 0.2)' }}>
-          
+
           {/* 4. INTERACTIVE SIDEBAR CONTROLS TO MANUALLY EDIT ATTRIBUTES */}
           <div className="diagram-editor-table" style={{ overflowX: 'auto', background: '#100e16', padding: '16px', borderRadius: '8px' }}>
-            <span className="macro-label" style={{ marginBottom: '12px' }}>Datos Técnicos del Cuadro Eléctrico (Editar Valores):</span>
+            <span className="macro-label" style={{ marginBottom: '12px' }}>{t('table_title')}</span>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', color: '#e5e7eb', textAlign: 'left' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                  <th style={{ padding: '8px' }}>Ref</th>
-                  <th style={{ padding: '8px' }}>Uso / Consumo</th>
-                  <th style={{ padding: '8px' }}>Potencia (W)</th>
-                  <th style={{ padding: '8px' }}>Tensión (V)</th>
-                  <th style={{ padding: '8px' }}>Cable (mm²)</th>
-                  <th style={{ padding: '8px' }}>Tubo (mm)</th>
+                  <th style={{ padding: '8px' }}>{t('col_ref')}</th>
+                  <th style={{ padding: '8px' }}></th>
+                  <th style={{ padding: '8px' }}>{t('col_usage')}</th>
+                  <th style={{ padding: '8px' }}>{t('col_power')}</th>
+                  <th style={{ padding: '8px' }}>{t('col_voltage')}</th>
+                  <th style={{ padding: '8px' }}>{t('col_cable')}</th>
+                  <th style={{ padding: '8px' }}>{t('col_tube')}</th>
                 </tr>
               </thead>
               <tbody>
                 {pias.map((pia) => {
                   const data = circuitData[pia.id] || { label: '', usage: '', power: '', voltage: '230', section: '1.5', tube: '16' };
                   return (
-                    <tr key={pia.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <tr key={pia.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: data.autoSuggested ? 'rgba(234, 179, 8, 0.06)' : 'transparent' }}>
                       <td style={{ padding: '6px', fontWeight: 'bold', color: '#c084fc' }}>{data.label}</td>
+                      <td style={{ padding: '6px', whiteSpace: 'nowrap' }}>
+                        {data.autoSuggested && (
+                          <span title={t('unreviewed_tooltip')} style={{ fontSize: '0.7rem', color: '#eab308', border: '1px solid rgba(234,179,8,0.4)', borderRadius: '4px', padding: '2px 6px' }}>
+                            ⚠ {t('unreviewed_badge')}
+                          </span>
+                        )}
+                      </td>
                       <td style={{ padding: '6px' }}>
                         <input 
                           type="text" 
@@ -225,14 +260,20 @@ export default function BoardVisualizer({ parsedNodes }) {
 
           {/* 5. Crisp, High-Contrast SVG Drawing (Black/White for submission) */}
           <div style={{ background: '#ffffff', padding: '16px', borderRadius: '8px', boxShadow: 'inset 0 0 10px rgba(0,0,0,0.1)' }}>
-            <TransformWrapper minScale={0.25} maxScale={8} initialScale={1} centerOnInit wheel={{ step: 0.12 }} doubleClick={{ mode: 'reset' }}>
+            {/* react-zoom-pan-pinch multiplies `step` by the wheel event's raw deltaY
+                (smooth mode, on by default) -- a single mouse-wheel notch reports
+                deltaY around 100 in Chrome/Windows, so step=0.002 yields roughly a
+                0.2 scale-unit change per notch instead of jumping several full
+                scale units (verified live: step=0.03 jumped from scale 1 to 4 in
+                one notch). */}
+            <TransformWrapper minScale={0.25} maxScale={8} initialScale={1} centerOnInit wheel={{ step: 0.002 }} doubleClick={{ mode: 'reset' }}>
               {({ zoomIn, zoomOut, resetTransform }) => (
                 <>
                   <div className="diagram-zoom-controls" style={{ display: 'flex', gap: '8px', marginBottom: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                    <button className="macro-btn" onClick={() => zoomIn()}>＋ Acercar</button>
-                    <button className="macro-btn" onClick={() => zoomOut()}>－ Alejar</button>
-                    <button className="macro-btn" onClick={() => resetTransform()}>⟲ Restablecer</button>
-                    <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>Rueda para zoom · arrastra para mover · doble clic para restablecer</span>
+                    <button className="macro-btn" onClick={() => zoomIn()}>＋ {t('zoom_in')}</button>
+                    <button className="macro-btn" onClick={() => zoomOut()}>－ {t('zoom_out')}</button>
+                    <button className="macro-btn" onClick={() => resetTransform()}>⟲ {t('zoom_reset')}</button>
+                    <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>{t('zoom_hint')}</span>
                   </div>
                   <TransformComponent wrapperStyle={{ width: '100%', height: '72vh', cursor: 'grab', background: '#ffffff', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.08)' }}>
             <svg
@@ -260,7 +301,7 @@ export default function BoardVisualizer({ parsedNodes }) {
               <g stroke="#000000" strokeWidth="2" fill="none">
                 {/* Arm and terminals */}
                 <circle cx={400} cy={90} r={3} fill="#000000" />
-                <circle cx={400} y={130} r={3} />
+                <circle cx={400} cy={130} r={3} />
                 <line x1={400} y1={90} x2={385} y2={125} />
                 
                 {/* Thermal-magnetic cross/release flags */}

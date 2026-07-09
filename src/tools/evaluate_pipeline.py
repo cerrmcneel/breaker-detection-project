@@ -10,26 +10,26 @@ CLASS_MAP = ["MCB", "RCD", "RCD_SI", "MAINBREAKER", "OVERSURGE", "OTHER"]
 
 def load_ground_truth(label_path, img_w, img_h):
     """
-    Parses a YOLO txt label file and converts normalized coordinates 
+    Parses a YOLO txt label file and converts normalized coordinates
     to absolute pixel coordinates [x1, y1, x2, y2].
     """
     gt_boxes = []
     if not os.path.exists(label_path):
         return gt_boxes
-        
+
     with open(label_path, "r") as f:
         for line in f:
             parts = line.strip().split()
             if len(parts) >= 5:
                 class_id = int(parts[0])
                 cx, cy, w, h = map(float, parts[1:5])
-                
+
                 # Convert from normalized center/width/height to absolute x1,y1,x2,y2
                 x1 = (cx - w / 2) * img_w
                 y1 = (cy - h / 2) * img_h
                 x2 = (cx + w / 2) * img_w
                 y2 = (cy + h / 2) * img_h
-                
+
                 gt_boxes.append({
                     "class": CLASS_MAP[class_id] if class_id < len(CLASS_MAP) else "UNKNOWN",
                     "box": [x1, y1, x2, y2]
@@ -44,11 +44,11 @@ def compute_iou(box1, box2):
     y1 = max(box1[1], box2[1])
     x2 = min(box1[2], box2[2])
     y2 = min(box1[3], box2[3])
-    
+
     inter_area = max(0, x2 - x1) * max(0, y2 - y1)
     box1_area = (box1[2] - box1[0]) * (box1[3] - box1[1])
     box2_area = (box2[2] - box2[0]) * (box2[3] - box2[1])
-    
+
     union_area = box1_area + box2_area - inter_area
     if union_area == 0:
         return 0
@@ -62,7 +62,7 @@ def evaluate_on_real_dataset(pipeline):
     project_root = pathlib.Path(__file__).parent.parent.parent
     val_images_dir = project_root / "data" / "dataset" / "val" / "images"
     val_labels_dir = project_root / "data" / "dataset" / "val" / "labels"
-    
+
     if not val_images_dir.exists():
         print(f"Error: validation folder not found at {val_images_dir}")
         return None
@@ -89,10 +89,12 @@ def evaluate_on_real_dataset(pipeline):
         return None
 
     total_gt_boxes = 0
+    confusion = {c: {pred: 0 for pred in CLASS_MAP} for c in CLASS_MAP}
     correct_localizations = 0
     correct_classifications = 0
     correct_sequences = 0
     total_latency = 0.0
+    per_box_records = []  # one row per localized box: for EDA (significance testing, per-image variance)
 
     for img_path in img_files:
         # Load image to get dimensions
@@ -100,30 +102,30 @@ def evaluate_on_real_dataset(pipeline):
         if img is None:
             continue
         h_img, w_img = img.shape[:2]
-        
+
         # Load ground truth
         label_path = val_labels_dir / f"{img_path.stem}.txt"
         gt_items = load_ground_truth(label_path, w_img, h_img)
         total_gt_boxes += len(gt_items)
-        
+
         # Run inference
         t0 = time.time()
         preds = pipeline.run_inference(str(img_path))
         latency = (time.time() - t0) * 1000
         total_latency += latency
-        
+
         # Sort predictions left-to-right
         preds_sorted = sorted(preds, key=lambda item: item["box"][0])
-        
+
         # 1. Bounding Box & Class Accuracy
         matched_gt = set()
         img_correct_localizations = 0
         img_correct_classifications = 0
-        
+
         for p in preds_sorted:
             best_iou = 0
             best_gt_idx = -1
-            
+
             for idx, gt in enumerate(gt_items):
                 if idx in matched_gt:
                     continue
@@ -131,15 +133,28 @@ def evaluate_on_real_dataset(pipeline):
                 if iou > best_iou:
                     best_iou = iou
                     best_gt_idx = idx
-            
+
             # Successful localization threshold (IoU > 0.4)
             if best_gt_idx != -1 and best_iou >= 0.4:
                 matched_gt.add(best_gt_idx)
                 img_correct_localizations += 1
                 correct_localizations += 1
-                
-                # Check classification correctness
-                if p["class"] == gt_items[best_gt_idx]["class"]:
+
+                true_cls = gt_items[best_gt_idx]["class"]
+                pred_cls = p["class"]
+                if true_cls in confusion and pred_cls in confusion[true_cls]:
+                    confusion[true_cls][pred_cls] += 1
+
+                is_correct = (pred_cls == true_cls)
+                per_box_records.append({
+                    "image": img_path.name,
+                    "true_class": true_cls,
+                    "pred_class": pred_cls,
+                    "correct": is_correct,
+                    "iou": best_iou,
+                })
+
+                if is_correct:
                     correct_classifications += 1
                     img_correct_classifications += 1
 
@@ -166,18 +181,29 @@ def evaluate_on_real_dataset(pipeline):
         "localization_acc": loc_acc,
         "classification_acc": cls_acc,
         "sequence_acc": seq_acc,
-        "avg_latency_ms": avg_latency
+        "avg_latency_ms": avg_latency,
+        "confusion": confusion,
+        "per_box_records": per_box_records,
     }
+
+def print_confusion_matrix(confusion):
+    print("\nConfusion Matrix (Rows = True, Cols = Predicted):")
+    print(f"{'True \\ Pred':15s} | " + " | ".join(f"{c:10s}" for c in CLASS_MAP))
+    print("-" * 90)
+    for true_cls in CLASS_MAP:
+        row = confusion[true_cls]
+        row_str = f"{true_cls:15s} | " + " | ".join(f"{row[pred_cls]:10d}" for pred_cls in CLASS_MAP)
+        print(row_str)
 
 def run_ablation_study():
     """Runs the ablation study systematically across different configuration flags."""
     project_root = pathlib.Path(__file__).parent.parent.parent
     config_path = project_root / "src" / "model" / "pipeline_config.json"
-    
+
     if not config_path.exists():
         print(f"Error: Config file not found at {config_path}")
         return
-        
+
     print("\n==================================================")
     print("      PANELSAFE PIPELINE ABLATION STUDY RUNNER    ")
     print("==================================================\n")
@@ -206,25 +232,27 @@ def run_ablation_study():
     original_config = config_path.read_text(encoding="utf-8")
 
     results_table = []
-    
+
     try:
         pipeline = PanelSafePipeline(config_path=str(config_path))
-        
+
         for s in scenarios:
             print(f"Running evaluation scenario: {s['name']}...")
-            
+
             # Apply temporary config update in pipeline object directly
             for k, v in s["updates"].items():
                 pipeline.config[k] = v
-                
+
             # If two_stage, make sure weights are loaded/mocked
             if s["updates"].get("classifier_mode") == "two_stage" and not pipeline.crop_classifier:
                 pipeline.load_crop_classifier()
-            
+
             # Run
             metrics = evaluate_on_real_dataset(pipeline)
-            
+
             if metrics:
+                print(f"\n--- {s['name']} ---")
+                print_confusion_matrix(metrics["confusion"])
                 results_table.append({
                     "name": s["name"],
                     "loc_acc": metrics["localization_acc"],

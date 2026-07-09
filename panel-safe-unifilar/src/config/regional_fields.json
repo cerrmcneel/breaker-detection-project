@@ -1,0 +1,26 @@
+{
+  "Cataluña": [
+    { "key": "cert_number", "label": "Número de Boletín", "type": "text", "placeholder": "CAT-XXXXXX" },
+    { "key": "installer_id", "label": "Carnet de Instalador", "type": "text", "placeholder": "INS-CAT-XXXX" },
+    { "key": "icc", "label": "Icc (Short-Circuit Current)", "type": "text", "placeholder": "4.5 kA" },
+    { "key": "v_drop", "label": "Caída de Tensión Máxima", "type": "text", "placeholder": "1.5%" }
+  ],
+  "Comunidad Valenciana": [
+    { "key": "reg_number", "label": "Número de Registro Territorial", "type": "text", "placeholder": "CV-R-XXXXX" },
+    { "key": "installer_company", "label": "Empresa Instaladora Autorizada", "type": "text", "placeholder": "ElectroMarjal S.L." },
+    { "key": "icc", "label": "Icc (Short-Circuit Current)", "type": "text", "placeholder": "6 kA" },
+    { "key": "voltage_drop", "label": "Caída de Tensión", "type": "text", "placeholder": "1.0%" }
+  ],
+  "Andalucía": [
+    { "key": "puds_code", "label": "Código Único de Tramitación (PUDS)", "type": "text", "placeholder": "AND-PUD-XXXXXX" },
+    { "key": "installer_license", "label": "Nº Carnet Profesional", "type": "text", "placeholder": "AND-PRO-XXXX" },
+    { "key": "company_name", "label": "Nombre Empresa", "type": "text", "placeholder": "Instalaciones Sur" },
+    { "key": "max_power", "label": "Potencia Máxima Admisible", "type": "text", "placeholder": "9.2 kW" }
+  ],
+  "Madrid": [
+    { "key": "exp_number", "label": "Número de Expediente (EICI)", "type": "text", "placeholder": "MAD-EXP-XXXX" },
+    { "key": "certifier", "label": "Organismo de Control Autorizado", "type": "text", "placeholder": "OCA-MAD-XXX" },
+    { "key": "installer_name", "label": "Nombre del Instalador", "type": "text", "placeholder": "Juan Pérez" },
+    { "key": "icc", "label": "Icc (Short-Circuit Current)", "type": "text", "placeholder": "4.5 kA" }
+  ]
+}

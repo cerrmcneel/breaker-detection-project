@@ -26,83 +26,18 @@ spec:
       containers:
       - name: yolo-inference
         image: ultralytics/ultralytics:latest
+        workingDir: /app
         command:
         - python3
         - -c
         - |
-          import torch
-          from ultralytics import YOLO
-          from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-          import json
-          import cv2
-          import numpy as np
-          import time
-
-          print("--- PanelSafe Inference Engine v2.4 (Scaling Fixed) ---")
-          model = YOLO("/models/best.pt")
-          model.to("cuda")
-
-          class InferenceHandler(BaseHTTPRequestHandler):
-              def do_GET(self):
-                  self.send_response(200)
-                  self.end_headers()
-                  self.wfile.write(b"AI SERVER IS ALIVE AND SCALING")
-
-              def do_POST(self):
-                  if self.path == "/predict":
-                      try:
-                          content_length = int(self.headers['Content-Length'])
-                          file_data = self.rfile.read(content_length)
-                          
-                          if b"boundary=" in self.headers.get('Content-Type', '').encode():
-                              parts = file_data.split(b"\r\n\r\n")
-                              if len(parts) > 1:
-                                  file_data = parts[1].split(b"\r\n--")[0]
-
-                          nparr = np.frombuffer(file_data, np.uint8)
-                          img_orig = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                          
-                          if img_orig is not None:
-                              h_orig, w_orig = img_orig.shape[:2]
-                              
-                              # Resize for inference speed
-                              if max(h_orig, w_orig) > 1280:
-                                  scale = 1280 / max(h_orig, w_orig)
-                                  img_inf = cv2.resize(img_orig, None, fx=scale, fy=scale)
-                              else:
-                                  scale = 1.0
-                                  img_inf = img_orig
-                              
-                              results = model.predict(img_inf, conf=0.20, device="cuda", verbose=False)
-                              
-                              predictions = []
-                              for r in results:
-                                  for b in r.boxes:
-                                      # SCALE COORDINATES BACK TO ORIGINAL SIZE
-                                      box = b.xyxy[0].tolist()
-                                      scaled_box = [coord / scale for coord in box]
-                                      
-                                      predictions.append({
-                                          "box": scaled_box,
-                                          "class": r.names[int(b.cls[0])],
-                                          "conf": float(b.conf[0])
-                                      })
-                              
-                              print(f"Detected {len(predictions)} objects. Scaling back by {1/scale:.2f}x")
-                              self.send_response(200)
-                              self.send_header("Content-type", "application/json")
-                              self.end_headers()
-                              self.wfile.write(json.dumps({"status": "success", "predictions": predictions}).encode())
-                          else:
-                              self.send_response(400)
-                              self.end_headers()
-                      except Exception as e:
-                          print(f"Error: {e}")
-                          self.send_response(500)
-                          self.end_headers()
-
-          server = ThreadingHTTPServer(("0.0.0.0", 8088), InferenceHandler)
-          server.serve_forever()
+          import subprocess, sys
+          print("Installing easyocr inside K3s GPU container...")
+          subprocess.run([sys.executable, "-m", "pip", "install", "easyocr"], check=True)
+          
+          print("Starting GPU Inference Server...")
+          import src.model.inference_server
+          src.model.inference_server.run_server()
         ports:
         - containerPort: 8088
         env:
@@ -120,6 +55,8 @@ spec:
           mountPath: /dev/dxg
         - name: models
           mountPath: /models
+        - name: app-volume
+          mountPath: /app
       volumes:
       - name: wsl-libs
         hostPath:
@@ -130,6 +67,9 @@ spec:
       - name: models
         hostPath:
           path: /mnt/c/ironhack/labs/breaker-detection-project/models
+      - name: app-volume
+        hostPath:
+          path: /mnt/c/ironhack/labs/breaker-detection-project
 ---
 apiVersion: v1
 kind: Service

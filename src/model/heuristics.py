@@ -1,3 +1,19 @@
+def compute_iou(box1, box2):
+    """Calculates Intersection over Union (IoU) of two bounding boxes [x1, y1, x2, y2]."""
+    x1 = max(box1[0], box2[0])
+    y1 = max(box1[1], box2[1])
+    x2 = min(box1[2], box2[2])
+    y2 = min(box1[3], box2[3])
+    
+    inter_area = max(0, x2 - x1) * max(0, y2 - y1)
+    box1_area = (box1[2] - box1[0]) * (box1[3] - box1[1])
+    box2_area = (box2[2] - box2[0]) * (box2[3] - box2[1])
+    
+    union_area = box1_area + box2_area - inter_area
+    if union_area == 0:
+        return 0
+    return inter_area / union_area
+
 class SpatialHeuristicEngine:
     def __init__(self, mainbreaker_position="leftmost"):
         """
@@ -6,6 +22,8 @@ class SpatialHeuristicEngine:
             mainbreaker_position (str): "leftmost", "rightmost", "topmost", or "bottommost"
         """
         self.mainbreaker_position = mainbreaker_position
+        from src.model.hmm_corrector import HMMCorrector
+        self.hmm_corrector = HMMCorrector()
 
     def group_into_rows(self, predictions, y_tolerance=50):
         """Groups bounding boxes into physical DIN-rail rows based on Y coordinates."""
@@ -33,26 +51,64 @@ class SpatialHeuristicEngine:
             
         return rows
 
-    def apply_logic(self, predictions, image_path=None):
+    def apply_logic(self, predictions, image_path=None, use_hmm=True):
         """
-        Ingests raw YOLO predictions and reclassifies based on electrical layout rules.
+        Ingests raw YOLO predictions and reclassifies based on HMM sequence decoding.
         Expected format: [{'box': [x1, y1, x2, y2], 'class': 'MCB', 'conf': 0.88}, ...]
         """
         if not predictions:
             return []
 
         rows = self.group_into_rows(predictions)
-        all_sorted = [pred for row in rows for pred in row]
-        
         import statistics
-        
-        # Add Grid Extrapolation (The "Missing Box" Fixer)
-        for row in rows:
-            mcb_widths = [p['box'][2] - p['box'][0] for p in row if p['class'] == 'MCB']
-            if not mcb_widths:
-                continue
-            median_width = statistics.median(mcb_widths)
+
+        refined_rows = []
+        for rail_idx, row in enumerate(rows):
+            rail_type = "main" if rail_idx == 0 else "secondary"
             
+            # 1. Find baseline module width in pixels BEFORE merging or extrapolating
+            # general household MCBs are the smallest, 1-module components and form the majority
+            widths = []
+            for p in row:
+                w_pixels = p['box'][2] - p['box'][0]
+                if p['class'] in ['RCD', 'RCD_SI', 'MAINBREAKER', 'OVERSURGE']:
+                    widths.append(w_pixels / 2.0)
+                else:
+                    widths.append(w_pixels)
+            if widths:
+                widths.sort()
+                # Use 25th percentile to find the 1-module size, protecting against large misclassified units
+                median_width = widths[max(0, len(widths) // 4)]
+                if median_width < 15:
+                    median_width = 40.0
+            else:
+                median_width = 40.0
+
+            # 2. Fragmented Box Merging (merge overlapping boxes of the same class)
+            merged_row = []
+            if row:
+                curr = row[0]
+                for next_p in row[1:]:
+                    # Use 2D IoU to check for significant overlap (e.g. double detections of the same object)
+                    iou = compute_iou(curr['box'], next_p['box'])
+                    if iou > 0.4 and next_p['class'] == curr['class']:
+                        # Merge boxes
+                        curr['box'] = [
+                            min(curr['box'][0], next_p['box'][0]),
+                            min(curr['box'][1], next_p['box'][1]),
+                            max(curr['box'][2], next_p['box'][2]),
+                            max(curr['box'][3], next_p['box'][3])
+                        ]
+                        curr['conf'] = max(curr['conf'], next_p['conf'])
+                        curr['heuristic_applied'] = True
+                        curr['heuristic_correction'] = 'MERGE_FRAGMENTED'
+                    else:
+                        merged_row.append(curr)
+                        curr = next_p
+                merged_row.append(curr)
+            row = merged_row
+                
+            # 3. Grid Extrapolation (The "Missing Box" Fixer)
             i = 0
             while i < len(row) - 1:
                 curr = row[i]
@@ -81,143 +137,54 @@ class SpatialHeuristicEngine:
                     row.insert(i+1, synthetic_pred)
                 i += 1
 
-        # Re-flatten the list after adding synthetic boxes
-        all_sorted = [pred for row in rows for pred in row]
+            if use_hmm:
+                # 4. Construct HMM observation sequence
+                hmm_sequence = []
+                for pred in row:
+                    w_pixels = pred["box"][2] - pred["box"][0]
+                    mod_width = max(1, min(4, round(w_pixels / median_width)))
+                    
+                    hmm_sequence.append({
+                        "class": pred["class"],
+                        "conf": pred["conf"],
+                        "width": mod_width,
+                        "ocr_text": pred.get("ocr_text", "")
+                    })
 
-        # Rule 8: The Sandwiched RCD Failsafe
-        # RCDs are almost never placed in the middle of a continuous block of MCBs.
-        # If an RCD has an MCB immediately to its left AND an MCB immediately to its right,
-        # it is almost certainly a YOLO false positive.
-        for row in rows:
-            for i in range(1, len(row) - 1):
-                curr = row[i]
-                if curr['class'] in ['RCD', 'RCD_SI']:
-                    left_dev = row[i-1]
-                    right_dev = row[i+1]
-                    if left_dev['class'] == 'MCB' and right_dev['class'] == 'MCB':
-                        # Check horizontal proximity to ensure they are actually adjacent
-                        dist_left = curr['box'][0] - left_dev['box'][2]
-                        dist_right = right_dev['box'][0] - curr['box'][2]
-                        if dist_left < 30 and dist_right < 30:
-                            curr['class'] = 'MCB'
-                            curr['heuristic_applied'] = True
-                            curr['heuristic_correction'] = 'SANDWICHED_RCD_DEMOTION'
+                # 5. Decode sequence using HMM Viterbi corrector
+                corrected_states = self.hmm_corrector.decode_rail(hmm_sequence, rail_type)
+                
+                # 6. Apply corrected states back to predictions
+                for idx, state in enumerate(corrected_states):
+                    orig_class = row[idx]["class"]
+                    if orig_class != state:
+                        row[idx]["class"] = state
+                        row[idx]["heuristic_applied"] = True
+                        row[idx]["heuristic_correction"] = f"HMM_VITERBI_DECODE"
+                        row[idx]["hmm_original_class"] = orig_class
+                    
+            refined_rows.extend(row)
 
-        # Rule 5: RCD Cluster Sanity Check (The "5 RCDs" fix)
-        # If we see multiple RCDs in a row without MCBs, the extras are likely MCBs.
-        # This is a common YOLO error due to the visual similarity of test buttons.
-        rcd_count = 0
-        for i, pred in enumerate(all_sorted):
-            if pred['class'] in ['RCD', 'RCD_SI']:
-                rcd_count += 1
-                # If we've already seen an RCD and this one is right next to it, 
-                # be suspicious if it's very narrow.
-                if rcd_count > 1:
-                    # Heuristic: Only the first RCD in a sequence is likely a real RCD
-                    # The others are likely MCBs misidentified.
-                    pred['class'] = 'MCB'
-                    pred['conf'] = pred['conf'] * 0.8 # Lower confidence of the correction
-                    pred['heuristic_correction'] = "RCD_CLUSTER_FIX"
-            else:
-                rcd_count = 0 # Reset count when we hit an MCB or other
-
-        # Rule 6: Fragmented Box Merging (The "Oversurge" fix)
-        # If two boxes of the same class are almost touching, merge them.
-        final_preds = []
-        if all_sorted:
-            curr = all_sorted[0]
-            for next_p in all_sorted[1:]:
-                # Check if boxes are almost touching (within 15 pixels)
-                dist = next_p['box'][0] - curr['box'][2]
-                if dist < 15 and next_p['class'] == curr['class']:
-                    # Merge boxes
-                    curr['box'] = [
-                        min(curr['box'][0], next_p['box'][0]),
-                        min(curr['box'][1], next_p['box'][1]),
-                        max(curr['box'][2], next_p['box'][2]),
-                        max(curr['box'][3], next_p['box'][3])
-                    ]
-                    curr['conf'] = max(curr['conf'], next_p['conf'])
-                    curr['heuristic_applied'] = True
-                else:
-                    final_preds.append(curr)
-                    curr = next_p
-            final_preds.append(curr)
-
-        # Rule 7: Global RCD Mathematical Cap
-        # The REBT recommends no more than 5 MCBs per RCD. We enforce a global mathematical cap.
-        # This will demote the lowest confidence RCDs if the model over-predicts them.
-        import math
-        total_mcbs = sum(1 for p in final_preds if p['class'] == 'MCB')
-        max_rcds = max(1, math.ceil(total_mcbs / 5.0))
-        
-        all_rcds = [p for p in final_preds if p['class'] in ['RCD', 'RCD_SI']]
-        if len(all_rcds) > max_rcds:
-            # Sort by confidence ascending (lowest confidence first)
-            all_rcds.sort(key=lambda x: x['conf'])
-            
-            # Demote the excess RCDs to MCBs
-            excess_count = len(all_rcds) - max_rcds
-            for i in range(excess_count):
-                rcd_to_demote = all_rcds[i]
-                rcd_to_demote['class'] = 'MCB'
-                rcd_to_demote['heuristic_applied'] = True
-                rcd_to_demote['heuristic_correction'] = 'GLOBAL_RCD_CAP'
-
-        # Rule 9: Test Button Scanner (OpenCV Classic Vision)
-        # Verify RCDs by scanning for the physical test button using Canny Edge Detection.
-        if image_path:
-            import cv2
-            img = cv2.imread(image_path)
-            if img is not None:
-                for pred in final_preds:
-                    if pred['class'] in ['RCD', 'RCD_SI']:
-                        x1, y1, x2, y2 = map(int, pred['box'])
-                        # Clamp coordinates to image boundaries
-                        h, w = img.shape[:2]
-                        x1, y1 = max(0, x1), max(0, y1)
-                        x2, y2 = min(w, x2), min(h, y2)
-                        
-                        crop = img[y1:y2, x1:x2]
-                        if crop.size == 0:
-                            continue
-                            
-                        gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
-                        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-                        edges = cv2.Canny(blurred, 50, 150)
-                        
-                        contours, _ = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-                        
-                        button_found = False
-                        total_area = (x2 - x1) * (y2 - y1)
-                        for cnt in contours:
-                            area = cv2.contourArea(cnt)
-                            # Test button is usually 0.5% to 15% of the breaker's surface area
-                            if total_area * 0.005 < area < total_area * 0.15:
-                                button_found = True
-                                break
-                                
-                        if not button_found:
-                            pred['class'] = 'MCB'
-                            pred['heuristic_applied'] = True
-                            pred['heuristic_correction'] = 'NO_BUTTON_DETECTED'
-
-        return final_preds
+        return refined_rows
 
 # Example usage for testing
 if __name__ == "__main__":
     engine = SpatialHeuristicEngine()
     
-    # Mock output: 
-    # Row 1: MCB (IGA), Gap, RCD, MCB, MCB
+    # Mock output on main rail representing:
+    # 1. Main Breaker (detected as MCB with high confidence - size 2 modules)
+    # 2. RCD (clean)
+    # 3. MCB (clean)
+    # 4. MCB (clean)
     mock_yolo_output = [
-        {'box': [100, 50, 150, 200], 'class': 'MCB', 'conf': 0.95}, # Should become MAINBREAKER
-        {'box': [250, 50, 300, 200], 'class': 'RCD', 'conf': 0.88}, # Anchor
-        {'box': [310, 50, 360, 200], 'class': 'MCB', 'conf': 0.91}, # Normal MCB
-        {'box': [370, 50, 420, 200], 'class': 'MCB', 'conf': 0.92}  # Normal MCB
+        {'box': [100, 50, 180, 200], 'class': 'MCB', 'conf': 0.95}, # Should become MAINBREAKER due to size 2 and transition
+        {'box': [200, 50, 280, 200], 'class': 'RCD', 'conf': 0.88}, 
+        {'box': [290, 50, 330, 200], 'class': 'MCB', 'conf': 0.91},
+        {'box': [340, 50, 380, 200], 'class': 'MCB', 'conf': 0.92}
     ]
     
     refined = engine.apply_logic(mock_yolo_output)
     print("Refined Predictions:")
     for p in refined:
-        print(f"{p['class']} at x={p['box'][0]}")
+        changed_marker = f" (Corrected from {p['hmm_original_class']})" if p.get("heuristic_correction") == "HMM_VITERBI_DECODE" else ""
+        print(f"  Class: {p['class']:12s} | Box: {p['box']}{changed_marker}")
