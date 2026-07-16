@@ -15,7 +15,7 @@ export default function BoardVisualizer({ parsedNodes }) {
 
   // 1. FILTER AND GROUP NODES
   const iga = parsedNodes.find(n => n.type.toUpperCase() === 'IGA') || { type: 'IGA', rating: '40A', poles: '2P' };
-  const spd = parsedNodes.find(n => n.type.toUpperCase() === 'SPD') || { type: 'SPD' };
+  const spd = parsedNodes.find(n => n.type.toUpperCase() === 'SPD');
   const rcds = parsedNodes.filter(n => ['RCD', 'RCD_SI'].includes(n.type.toUpperCase()));
   const pias = parsedNodes.filter(n => ['PIA', 'MCB'].includes(n.type.toUpperCase()));
 
@@ -38,6 +38,15 @@ export default function BoardVisualizer({ parsedNodes }) {
 
   // 2. STATE FOR EDITABLE CIRCUIT CHARACTERISTICS (THE BOTTOM TABLE DATA)
   const [circuitData, setCircuitData] = useState({});
+
+  // Main incoming feed (Derivación Individual) spec -- was hardcoded text in
+  // the SVG with no way to edit it. Defaults match the previous hardcoded
+  // values so existing diagrams don't visually change until edited.
+  const [mainFeedData, setMainFeedData] = useState({
+    conductorSpec: '4x10',
+    cableType: 'RZI-K (AS)',
+    conduitDiameter: '32',
+  });
 
   useEffect(() => {
     setCircuitData(prev => {
@@ -127,6 +136,10 @@ export default function BoardVisualizer({ parsedNodes }) {
     }));
   };
 
+  const handleMainFeedChange = (field, value) => {
+    setMainFeedData(prev => ({ ...prev, [field]: value }));
+  };
+
   // 3. LAYOUT MATHEMATICS
   const totalPiasCount = pias.length || 1;
   const colWidth = 160;
@@ -184,6 +197,39 @@ export default function BoardVisualizer({ parsedNodes }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', background: '#1c1924', padding: '20px', borderRadius: '12px', border: '1px solid rgba(145, 55, 175, 0.2)' }}>
 
           {/* 4. INTERACTIVE SIDEBAR CONTROLS TO MANUALLY EDIT ATTRIBUTES */}
+          <div className="diagram-editor-table" style={{ overflowX: 'auto', background: '#100e16', padding: '16px', borderRadius: '8px' }}>
+            <span className="macro-label" style={{ marginBottom: '12px' }}>{t('main_feed_title')}</span>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '8px' }}>
+              <label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.75rem', color: '#9ca3af', gap: '4px' }}>
+                {t('main_feed_conductor')}
+                <input
+                  type="text"
+                  value={mainFeedData.conductorSpec}
+                  onChange={(e) => handleMainFeedChange('conductorSpec', e.target.value)}
+                  style={{ background: '#191722', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '4px 8px', borderRadius: '4px', width: '90px' }}
+                />
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.75rem', color: '#9ca3af', gap: '4px' }}>
+                {t('main_feed_cable')}
+                <input
+                  type="text"
+                  value={mainFeedData.cableType}
+                  onChange={(e) => handleMainFeedChange('cableType', e.target.value)}
+                  style={{ background: '#191722', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '4px 8px', borderRadius: '4px', width: '110px' }}
+                />
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.75rem', color: '#9ca3af', gap: '4px' }}>
+                {t('main_feed_conduit')}
+                <input
+                  type="text"
+                  value={mainFeedData.conduitDiameter}
+                  onChange={(e) => handleMainFeedChange('conduitDiameter', e.target.value)}
+                  style={{ background: '#191722', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '4px 8px', borderRadius: '4px', width: '70px' }}
+                />
+              </label>
+            </div>
+          </div>
+
           <div className="diagram-editor-table" style={{ overflowX: 'auto', background: '#100e16', padding: '16px', borderRadius: '8px' }}>
             <span className="macro-label" style={{ marginBottom: '12px' }}>{t('table_title')}</span>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', color: '#e5e7eb', textAlign: 'left' }}>
@@ -293,9 +339,9 @@ export default function BoardVisualizer({ parsedNodes }) {
                 <line x1={400} y1={30} x2={400} y2={90} />
               </g>
               {drawConductorSlashes(400, 50)}
-              <text x={415} y={45} fontSize="11" fontWeight="bold" fill="#000000">D.I. (4x10) mm² Cu</text>
-              <text x={415} y={60} fontSize="11" fill="#000000">RZI-K (AS)</text>
-              <text x={415} y={75} fontSize="11" fill="#000000">BAJO TUBO=32mm</text>
+              <text x={415} y={45} fontSize="11" fontWeight="bold" fill="#000000">D.I. ({mainFeedData.conductorSpec}) mm² Cu</text>
+              <text x={415} y={60} fontSize="11" fill="#000000">{mainFeedData.cableType}</text>
+              <text x={415} y={75} fontSize="11" fill="#000000">BAJO TUBO={mainFeedData.conduitDiameter}mm</text>
 
               {/* IGA SWITCH */}
               <g stroke="#000000" strokeWidth="2" fill="none">
@@ -316,15 +362,19 @@ export default function BoardVisualizer({ parsedNodes }) {
               <text x={415} y={120} fontSize="11" fill="#000000">{iga.rating || '40A'} / {iga.poles || '2P'}</text>
 
               {/* SPD (Overvoltage Protector) */}
-              <g stroke="#000000" strokeWidth="2" fill="none">
-                <line x1={400} y1={155} x2={500} y2={155} />
-                <rect x={500} y={140} width={30} height={30} />
-                <line x1={500} y1={170} x2={530} y2={140} />
-                <line x1={515} y1={170} x2={515} y2={190} />
-              </g>
-              {drawGroundSymbol(515, 190)}
-              <text x={540} y={158} fontSize="10" fill="#000000">SPD Protec.</text>
-              <text x={540} y={170} fontSize="10" fill="#000000">Sobretensiones</text>
+              {spd && (
+                <>
+                  <g stroke="#000000" strokeWidth="2" fill="none">
+                    <line x1={400} y1={155} x2={500} y2={155} />
+                    <rect x={500} y={140} width={30} height={30} />
+                    <line x1={500} y1={170} x2={530} y2={140} />
+                    <line x1={515} y1={170} x2={515} y2={190} />
+                  </g>
+                  {drawGroundSymbol(515, 190)}
+                  <text x={540} y={158} fontSize="10" fill="#000000">SPD Protec.</text>
+                  <text x={540} y={170} fontSize="10" fill="#000000">Sobretensiones</text>
+                </>
+              )}
 
               {/* 5B. MAIN BUSBAR (Thick Horizontal Line) */}
               <line x1={80} y1={180} x2={svgWidth - 80} y2={180} stroke="#000000" strokeWidth="6" strokeLinecap="square" />

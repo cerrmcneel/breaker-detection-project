@@ -94,11 +94,40 @@
             background-color: var(--primary-light);
         }
 
+        /* --- RESIZE HANDLE (between sidebar and viewport) --- */
+        .resize-handle {
+            width: 8px;
+            flex-shrink: 0;
+            height: calc(100vh - 64px);
+            background: transparent;
+            cursor: ew-resize;
+            position: relative;
+            z-index: 20;
+        }
+
+        .resize-handle::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 3px;
+            width: 2px;
+            background: var(--border);
+            transition: background 0.15s;
+        }
+
+        .resize-handle:hover::after,
+        .resize-handle.dragging::after {
+            background: var(--primary);
+            width: 3px;
+            left: 2.5px;
+        }
+
         /* --- SIDEBAR (LEFT) --- */
         .sidebar {
             width: 30vw;
-            max-width: 600px;
-            min-width: 450px;
+            max-width: 900px;
+            min-width: 360px;
             height: calc(100vh - 64px);
             background: var(--card-bg);
             border-right: 1px solid var(--border);
@@ -243,7 +272,10 @@
 
         .inputs {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            /* Reflows automatically: narrow sidebar -> 1 column (each field full-width,
+               easy to hit), wide sidebar -> 2+ columns. Fixes fields becoming too
+               cramped to comfortably click/type into at the old rigid 30vw width. */
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
             gap: 1rem;
         }
 
@@ -498,6 +530,9 @@
         </div>
     </div>
 
+    <!-- DRAG-TO-RESIZE HANDLE -->
+    <div class="resize-handle" id="resize-handle" title="Drag to resize"></div>
+
     <!-- RIGHT VIEWPORT -->
     <div class="viewport" id="viewport-container">
         <div class="loading-overlay" id="loading">
@@ -609,6 +644,39 @@
         const componentList = document.getElementById('component-list');
         const compCount = document.getElementById('comp-count');
         const viewport = document.querySelector('.viewport');
+
+        // --- SIDEBAR DRAG-TO-RESIZE ---
+        (function setupSidebarResize() {
+            const sidebar = document.querySelector('.sidebar');
+            const handle = document.getElementById('resize-handle');
+            const SIDEBAR_WIDTH_KEY = 'panelsafe_sidebar_width';
+            let isResizing = false;
+
+            const savedWidth = localStorage.getItem(SIDEBAR_WIDTH_KEY);
+            if (savedWidth) sidebar.style.width = `${savedWidth}px`;
+
+            handle.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                handle.classList.add('dragging');
+                document.body.style.userSelect = 'none';
+                e.preventDefault();
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isResizing) return;
+                const min = 360, max = 900;
+                const newWidth = Math.min(max, Math.max(min, e.clientX));
+                sidebar.style.width = `${newWidth}px`;
+            });
+
+            window.addEventListener('mouseup', () => {
+                if (!isResizing) return;
+                isResizing = false;
+                handle.classList.remove('dragging');
+                document.body.style.userSelect = '';
+                localStorage.setItem(SIDEBAR_WIDTH_KEY, parseInt(sidebar.style.width, 10));
+            });
+        })();
 
         let activeComponentIndex = -1;
         let draggingHandle = null;
@@ -901,7 +969,7 @@
                             <option value="30mA" ${comp.sensitivity === '30mA' ? 'selected' : ''}>30mA</option>
                             <option value="300mA" ${comp.sensitivity === '300mA' ? 'selected' : ''}>300mA</option>
                         </select>
-                        <input type="number" placeholder="${T('placeholder_amps')}" value="${comp.amperage || ''}" oninput="updateComp(${index}, 'amperage', this.value)" style="grid-column: span 2;">
+                        <input type="number" placeholder="${T('placeholder_amps')}" value="${comp.amperage || ''}" oninput="updateComp(${index}, 'amperage', this.value)">
                     `;
                 } else {
                     inputsHtml = `
