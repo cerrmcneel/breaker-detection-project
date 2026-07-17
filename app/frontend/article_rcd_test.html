@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Why We Ask About Your RCD Test - PanelSafe</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="assets/favicon/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon/favicon-16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/favicon/favicon-180.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0066FF;
+            --primary-dark: #0051CC;
+            --primary-light: #E6F0FF;
+            --bg: #F8FAFC;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --text: #1E293B;
+            --text-muted: #64748B;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --radius: 16px;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            background-image: radial-gradient(at 0% 0%, rgba(0, 102, 255, 0.05) 0px, transparent 50%),
+                              radial-gradient(at 100% 100%, rgba(0, 102, 255, 0.05) 0px, transparent 50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            color: var(--text);
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 1rem 1.5rem;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-brand {
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.875rem;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary);
+            background-color: var(--primary-light);
+        }
+
+        .lang-switcher {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+            margin-top: 80px;
+            gap: 10px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .lang-btn {
+            background-color: transparent;
+            border: 1px solid #ccc;
+            padding: 4px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+
+        .lang-btn.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .article-container {
+            background: white;
+            padding: 48px;
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 800px;
+            line-height: 1.8;
+            color: var(--text);
+            box-sizing: border-box;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .article-header {
+            margin-bottom: 32px;
+        }
+
+        .article-header h1 {
+            color: var(--text);
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 16px;
+            line-height: 1.1;
+            letter-spacing: -0.025em;
+        }
+
+        .article-header .meta {
+            color: var(--text-muted);
+            font-size: 0.9375rem;
+            font-weight: 600;
+        }
+
+        .article-image {
+            width: 100%;
+            height: 260px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            background: linear-gradient(135deg, #0070f3, #00c6ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 4rem;
+        }
+
+        .article-container h2 {
+            color: var(--text);
+            margin-top: 48px;
+            margin-bottom: 20px;
+            font-size: 1.75rem;
+            font-weight: 800;
+        }
+
+        .article-container p {
+            margin-bottom: 24px;
+            font-size: 1.125rem;
+        }
+
+        .article-container blockquote {
+            border-left: 4px solid var(--primary);
+            margin: 40px 0;
+            padding: 24px 32px;
+            background-color: var(--primary-light);
+            color: var(--primary-dark);
+            font-style: italic;
+            border-radius: 0 16px 16px 0;
+            font-size: 1.125rem;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 40px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .back-link:hover {
+            color: var(--primary-dark);
+        }
+
+        /* Hidden by default for language toggling */
+        .lang-es {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="navbar">
+        <a href="/" class="nav-brand" id="nav-brand">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 2px;">
+                <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            PanelSafe
+        </a>
+        <div class="nav-links">
+            <a href="/" class="nav-link" id="nav-home">Home</a>
+            <a href="/analysis.html" class="nav-link" id="nav-analysis">Analysis</a>
+            <a href="/unifilar/" class="nav-link">Generador Unifilar</a>
+            <a href="/blog.html" class="nav-link active" id="nav-blog">Blog</a>
+        </div>
+    </nav>
+
+    <!-- Language Switcher -->
+    <div class="lang-switcher">
+        <button class="lang-btn active" id="btn-en" onclick="setLanguage('en')">EN</button>
+        <button class="lang-btn" id="btn-es" onclick="setLanguage('es')">ES</button>
+        <button class="lang-btn" id="btn-fr" onclick="setLanguage('fr')">FR</button>
+    </div>
+
+    <!-- Article Content -->
+    <div class="article-container">
+
+        <!-- English Version -->
+        <article class="lang-en" id="content-en">
+            <div class="article-header">
+                <h1>Why We Ask About Your RCD Test — And Why It Matters More Than the Photo</h1>
+                <div class="meta">July 17, 2026 • 3 min read</div>
+            </div>
+
+            <div class="article-image">🔌</div>
+
+            <p>When you upload a panel photo to PanelSafe, we ask one extra question most people skip past: did you press the RCD test button, and if so, was the trip responsive, slow, or did it not trip at all?</p>
+
+            <h2>The Photo Doesn't Tell You If It Still Works</h2>
+            <p>It's easy to assume the photo does all the work. It doesn't. A residual current device (RCD) can look pristine — clean casing, correct amperage rating, mounted exactly where code says it should be — and still fail the one job it exists to do: cutting power fast enough to prevent a fatal shock. Vision models are excellent at classifying what a breaker is. They can't tell you whether it still works.</p>
+            <blockquote>A "responsive" trip confirms the mechanism is sound. A "slow" trip is an early warning — often the first sign of a mechanism that's about to fail outright. An "unresponsive" result means the panel has zero protection against electric shock, regardless of how new or well-organized it looks in the photo.</blockquote>
+
+            <h2>A High-Signal Field, Not a Formality</h2>
+            <p>That's why the test-button result is one of the highest-signal fields in our dataset. Pairing this simple field with the image lets our scoring engine catch risks that are invisible to computer vision alone, and it makes every submission more useful for retraining the detection model against real-world failure patterns — not just visual appearance.</p>
+
+            <h2>Five Seconds That Make Every Score More Accurate</h2>
+            <p>It takes five seconds: press the button, note what happened, upload. It's the single easiest way to make your safety score — and everyone else's — more accurate.</p>
+
+            <a href="/blog.html" class="back-link">← Back to Blog</a>
+
+            <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(0,0,0,0.06); font-size: 0.875rem; color: var(--text-muted);">
+                ⚡ A project by <a href="https://electromarjal.com" target="_blank" rel="noopener noreferrer" style="color: var(--primary); font-weight: 700; text-decoration: none;">Marjal Instalaciones Eléctricas</a> — licensed electrical contractors
+            </div>
+        </article>
+
+        <!-- Spanish Version -->
+        <article class="lang-es" id="content-es">
+            <div class="article-header">
+                <h1>Por Qué Preguntamos por tu Prueba del Diferencial — Y Por Qué Importa Más que la Foto</h1>
+                <div class="meta">17 Jul, 2026 • 3 min de lectura</div>
+            </div>
+
+            <div class="article-image">🔌</div>
+
+            <p>Cuando subes una foto de tu cuadro a PanelSafe, te hacemos una pregunta adicional que mucha gente pasa por alto: ¿pulsaste el botón de test del diferencial (ID)? Y si lo hiciste, ¿el disparo fue inmediato, lento, o no llegó a saltar?</p>
+
+            <h2>La Foto No Te Dice Si Sigue Funcionando</h2>
+            <p>Es fácil asumir que la foto lo dice todo. No es así. Un interruptor diferencial (ID) puede parecer impecable — carcasa limpia, amperaje correcto, montado exactamente donde exige la normativa — y aun así fallar en el único trabajo para el que existe: cortar la corriente lo bastante rápido como para evitar una descarga mortal. Los modelos de visión artificial son excelentes clasificando qué es un interruptor. No pueden decirte si todavía funciona.</p>
+            <blockquote>Un disparo "inmediato" confirma que el mecanismo funciona correctamente. Un disparo "lento" es una alerta temprana — a menudo la primera señal de un mecanismo a punto de fallar por completo. Un resultado "sin disparo" significa que el cuadro tiene protección cero frente a electrocución, sin importar lo nuevo u ordenado que parezca en la foto.</blockquote>
+
+            <h2>Un Campo de Alta Señal, No un Trámite</h2>
+            <p>Por eso el resultado del botón de test es uno de los campos con mayor valor informativo de nuestro dataset. Combinar este simple dato con la imagen permite que nuestro motor de puntuación detecte riesgos invisibles para la visión artificial por sí sola, y hace que cada envío sea más útil para reentrenar el modelo de detección contra patrones de fallo reales — no solo apariencia visual.</p>
+
+            <h2>Cinco Segundos que Hacen Cada Puntuación Más Precisa</h2>
+            <p>Toma cinco segundos: pulsa el botón, anota qué ocurrió, sube la foto. Es la forma más sencilla de hacer que tu puntuación de seguridad — y la de todos los demás — sea más precisa.</p>
+
+            <a href="/blog.html" class="back-link">← Volver al Blog</a>
+
+            <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(0,0,0,0.06); font-size: 0.875rem; color: var(--text-muted);">
+                ⚡ Un proyecto de <a href="https://electromarjal.com" target="_blank" rel="noopener noreferrer" style="color: var(--primary); font-weight: 700; text-decoration: none;">Marjal Instalaciones Eléctricas</a> — instaladores eléctricos autorizados
+            </div>
+        </article>
+
+        <!-- French Version -->
+        <article class="lang-fr" id="content-fr" style="display: none;">
+            <div class="article-header">
+                <h1>Pourquoi Nous Vous Demandons le Résultat du Test de votre Différentiel — Et Pourquoi C'est Plus Important que la Photo</h1>
+                <div class="meta">17 juillet 2026 • 3 min de lecture</div>
+            </div>
+
+            <div class="article-image">🔌</div>
+
+            <p>Lorsque vous téléversez une photo de votre tableau sur PanelSafe, nous posons une question supplémentaire que beaucoup ignorent : avez-vous appuyé sur le bouton de test du différentiel (DDR), et si oui, le déclenchement a-t-il été immédiat, lent, ou n'a-t-il pas eu lieu du tout ?</p>
+
+            <h2>La Photo Ne Vous Dit Pas S'il Fonctionne Encore</h2>
+            <p>Il est tentant de croire que la photo suffit. Ce n'est pas le cas. Un dispositif différentiel résiduel (DDR) peut sembler impeccable — boîtier propre, calibre correct, monté exactement là où la norme l'exige — et pourtant échouer dans la seule tâche pour laquelle il existe : couper le courant assez vite pour éviter une électrocution mortelle. Les modèles de vision sont excellents pour classifier ce qu'est un disjoncteur. Ils ne peuvent pas vous dire s'il fonctionne encore.</p>
+            <blockquote>Un déclenchement "immédiat" confirme que le mécanisme est sain. Un déclenchement "lent" est un signal d'alerte précoce — souvent le premier signe d'un mécanisme sur le point de tomber complètement en panne. Un résultat "aucun déclenchement" signifie que le tableau n'offre aucune protection contre l'électrocution, quel que soit son état apparent sur la photo.</blockquote>
+
+            <h2>Un Champ à Haute Valeur Informative, Pas une Formalité</h2>
+            <p>C'est pourquoi le résultat du bouton de test est l'un des champs les plus riches en information de notre jeu de données. Associer cette simple donnée à l'image permet à notre moteur de notation de détecter des risques invisibles pour la seule vision par ordinateur, et rend chaque soumission plus utile pour ré-entraîner le modèle de détection sur des schémas de défaillance réels — pas seulement sur l'apparence visuelle.</p>
+
+            <h2>Cinq Secondes Pour une Notation Plus Précise</h2>
+            <p>Cela prend cinq secondes : appuyez sur le bouton, notez ce qui s'est passé, téléversez. C'est le moyen le plus simple d'améliorer votre score de sécurité — et celui de tout le monde.</p>
+
+            <a href="/blog.html" class="back-link">← Retour au blog</a>
+
+            <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(0,0,0,0.06); font-size: 0.875rem; color: var(--text-muted);">
+                ⚡ Un projet de <a href="https://electromarjal.com" target="_blank" rel="noopener noreferrer" style="color: var(--primary); font-weight: 700; text-decoration: none;">Marjal Instalaciones Eléctricas</a> — installateurs électriciens agréés
+            </div>
+        </article>
+
+    </div>
+
+    <script>
+        const NAV_LABELS = {
+            en: { home: "Home", analysis: "Analysis", blog: "Blog", title: "Why We Ask About Your RCD Test - PanelSafe" },
+            es: { home: "Inicio", analysis: "Análisis", blog: "Blog", title: "Por Qué Preguntamos por tu Prueba del Diferencial - PanelSafe" },
+            fr: { home: "Accueil", analysis: "Analyse", blog: "Blog", title: "Pourquoi Nous Demandons le Test du Différentiel - PanelSafe" }
+        };
+        const LANGS = ['en', 'es', 'fr'];
+
+        function setLanguage(lang) {
+            if (!NAV_LABELS[lang]) return;
+
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${lang}`).classList.add('active');
+
+            const navHome = document.getElementById('nav-home');
+            const navAnalysis = document.getElementById('nav-analysis');
+            const navBlog = document.getElementById('nav-blog');
+            const labels = NAV_LABELS[lang];
+            if (navHome) navHome.textContent = labels.home;
+            if (navAnalysis) navAnalysis.textContent = labels.analysis;
+            if (navBlog) navBlog.textContent = labels.blog;
+            document.title = labels.title;
+
+            LANGS.forEach(l => {
+                const el = document.getElementById(`content-${l}`);
+                if (el) el.style.display = (l === lang) ? 'block' : 'none';
+            });
+
+            localStorage.setItem('breakerLang', lang);
+        }
+
+        const savedLang = localStorage.getItem('breakerLang') || 'en';
+        setLanguage(savedLang);
+    </script>
+</body>
+
+</html>
