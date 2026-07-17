@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Tool: Generador Unifilar - PanelSafe</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="assets/favicon/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon/favicon-16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/favicon/favicon-180.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0066FF;
+            --primary-dark: #0051CC;
+            --primary-light: #E6F0FF;
+            --bg: #F8FAFC;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --text: #1E293B;
+            --text-muted: #64748B;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --radius: 16px;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            background-image: radial-gradient(at 0% 0%, rgba(0, 102, 255, 0.05) 0px, transparent 50%),
+                              radial-gradient(at 100% 100%, rgba(0, 102, 255, 0.05) 0px, transparent 50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            color: var(--text);
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 1rem 1.5rem;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-brand {
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.875rem;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary);
+            background-color: var(--primary-light);
+        }
+
+        .lang-switcher {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+            margin-top: 80px;
+            gap: 10px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .lang-btn {
+            background-color: transparent;
+            border: 1px solid #ccc;
+            padding: 4px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+
+        .lang-btn.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .article-container {
+            background: white;
+            padding: 48px;
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 800px;
+            line-height: 1.8;
+            color: var(--text);
+            box-sizing: border-box;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .article-header {
+            margin-bottom: 32px;
+        }
+
+        .article-header h1 {
+            color: var(--text);
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 16px;
+            line-height: 1.1;
+            letter-spacing: -0.025em;
+        }
+
+        .article-header .meta {
+            color: var(--text-muted);
+            font-size: 0.9375rem;
+            font-weight: 600;
+        }
+
+        .article-image {
+            width: 100%;
+            height: 260px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            background: linear-gradient(135deg, #0070f3, #00c6ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 4rem;
+        }
+
+        .article-container h2 {
+            color: var(--text);
+            margin-top: 48px;
+            margin-bottom: 20px;
+            font-size: 1.75rem;
+            font-weight: 800;
+        }
+
+        .article-container p {
+            margin-bottom: 24px;
+            font-size: 1.125rem;
+        }
+
+        .article-container blockquote {
+            border-left: 4px solid var(--primary);
+            margin: 40px 0;
+            padding: 24px 32px;
+            background-color: var(--primary-light);
+            color: var(--primary-dark);
+            font-style: italic;
+            border-radius: 0 16px 16px 0;
+            font-size: 1.125rem;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 40px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .back-link:hover {
+            color: var(--primary-dark);
+        }
+
+        /* Hidden by default for language toggling */
+        .lang-es {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="navbar">
+        <a href="/" class="nav-brand" id="nav-brand">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 2px;">
+                <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            PanelSafe
+        </a>
+        <div class="nav-links">
+            <a href="/" class="nav-link" id="nav-home">Home</a>
+            <a href="/analysis.html" class="nav-link" id="nav-analysis">Analysis</a>
+            <a href="/unifilar/" class="nav-link">Generador Unifilar</a>
+            <a href="/blog.html" class="nav-link active" id="nav-blog">Blog</a>
+        </div>
+    </nav>
+
+    <!-- Language Switcher -->
+    <div class="lang-switcher">
+        <button class="lang-btn active" id="btn-en" onclick="setLanguage('en')">EN</button>
+        <button class="lang-btn" id="btn-es" onclick="setLanguage('es')">ES</button>
+        <button class="lang-btn" id="btn-fr" onclick="setLanguage('fr')">FR</button>
+    </div>
+
+    <!-- Article Content -->
+    <div class="article-container">
+
+        <!-- English Version -->
+        <article class="lang-en" id="content-en">
+            <div class="article-header">
+                <h1>New Tool: Generate REBT-Compliant Single-Line Diagrams Instantly</h1>
+                <div class="meta">July 14, 2026 • 3 min read</div>
+            </div>
+
+            <div class="article-image">📐</div>
+
+            <p>We just shipped the Generador Unifilar, a browser-based CAD tool for producing single-line diagrams (esquemas unifilares) that comply with Spanish REBT/Industria requirements — no desktop software required.</p>
+
+            <h2>The Problem Every Técnico Knows</h2>
+            <p>Anyone who has prepared documentation for a boletín eléctrico knows the pain: redrawing the same panel schematic by hand, hunting for the right IEC symbol, then re-exporting when a client asks for one more circuit.</p>
+
+            <h2>What It Does</h2>
+            <p>The Generador Unifilar uses a UNE-EN 60617 symbol library, lets you edit values in real time, and exports straight to vector PDF or PNG — ready to attach to a technical file or hand to an Administrador de Fincas.</p>
+
+            <h2>Two Ends of the Same Compliance Job</h2>
+            <p>It's built on the same philosophy as our breaker-board Analizador IA: take a task that technical offices redo manually every week and make it instant and standardized. Combined with the panel photo analyzer, PanelSafe now covers both ends of a compliance job — auditing what's installed, and documenting what should be installed.</p>
+            <p>Try it at <a href="/unifilar/" style="color: var(--primary); font-weight: 700;">panelsafe.cv/unifilar</a> — feedback from installers and técnicos is what shapes what we build next.</p>
+
+            <a href="/blog.html" class="back-link">← Back to Blog</a>
+
+            <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(0,0,0,0.06); font-size: 0.875rem; color: var(--text-muted);">
+                ⚡ A project by <a href="https://electromarjal.com" target="_blank" rel="noopener noreferrer" style="color: var(--primary); font-weight: 700; text-decoration: none;">Marjal Instalaciones Eléctricas</a> — licensed electrical contractors
+            </div>
+        </article>
+
+        <!-- Spanish Version -->
+        <article class="lang-es" id="content-es">
+            <div class="article-header">
+                <h1>Nueva Herramienta: Genera Esquemas Unifilares Conformes al REBT al Instante</h1>
+                <div class="meta">14 Jul, 2026 • 3 min de lectura</div>
+            </div>
+
+            <div class="article-image">📐</div>
+
+            <p>Acabamos de lanzar el Generador Unifilar, una herramienta CAD desde el navegador para producir esquemas unifilares conformes con los requisitos del REBT/Industria en España — sin necesidad de software de escritorio.</p>
+
+            <h2>El Problema que Todo Técnico Conoce</h2>
+            <p>Cualquiera que haya preparado documentación para un boletín eléctrico conoce el dolor: volver a dibujar el mismo esquema de cuadro a mano, buscar el símbolo IEC correcto, y volver a exportar cuando un cliente pide un circuito más.</p>
+
+            <h2>Qué Hace</h2>
+            <p>El Generador Unifilar utiliza una librería de símbolos UNE-EN 60617, permite editar valores en tiempo real, y exporta directamente a PDF vectorial o PNG — listo para adjuntar a un expediente técnico o entregar a un Administrador de Fincas.</p>
+
+            <h2>Dos Extremos del Mismo Trabajo de Cumplimiento</h2>
+            <p>Está construido sobre la misma filosofía que nuestro Analizador IA de cuadros: tomar una tarea que las oficinas técnicas repiten manualmente cada semana y hacerla instantánea y estandarizada. Combinado con el analizador de fotos del cuadro, PanelSafe ahora cubre ambos extremos de un trabajo de cumplimiento — auditar lo que está instalado, y documentar lo que debería instalarse.</p>
+            <p>Pruébalo en <a href="/unifilar/" style="color: var(--primary); font-weight: 700;">panelsafe.cv/unifilar</a> — el feedback de instaladores y técnicos es lo que da forma a lo que construimos a continuación.</p>
+
+            <a href="/blog.html" class="back-link">← Volver al Blog</a>
+
+            <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(0,0,0,0.06); font-size: 0.875rem; color: var(--text-muted);">
+                ⚡ Un proyecto de <a href="https://electromarjal.com" target="_blank" rel="noopener noreferrer" style="color: var(--primary); font-weight: 700; text-decoration: none;">Marjal Instalaciones Eléctricas</a> — instaladores eléctricos autorizados
+            </div>
+        </article>
+
+        <!-- French Version -->
+        <article class="lang-fr" id="content-fr" style="display: none;">
+            <div class="article-header">
+                <h1>Nouvel Outil : Générez des Schémas Unifilaires Conformes au REBT Instantanément</h1>
+                <div class="meta">14 juillet 2026 • 3 min de lecture</div>
+            </div>
+
+            <div class="article-image">📐</div>
+
+            <p>Nous venons de lancer le Generador Unifilar, un outil de CAO dans le navigateur permettant de produire des schémas unifilaires conformes aux exigences REBT/Industria en Espagne — sans logiciel de bureau requis.</p>
+
+            <h2>Le Problème que Tout Technicien Connaît</h2>
+            <p>Quiconque a préparé la documentation d'un boletín eléctrico connaît la douleur : redessiner à la main le même schéma de tableau, chercher le bon symbole CEI, puis réexporter quand un client demande un circuit de plus.</p>
+
+            <h2>Ce Qu'il Fait</h2>
+            <p>Le Generador Unifilar utilise une bibliothèque de symboles UNE-EN 60617, permet de modifier les valeurs en temps réel, et exporte directement en PDF vectoriel ou PNG — prêt à joindre à un dossier technique ou à remettre à un Administrador de Fincas.</p>
+
+            <h2>Les Deux Faces d'une Même Mission de Conformité</h2>
+            <p>Il repose sur la même philosophie que notre Analizador IA de tableaux : prendre une tâche que les bureaux techniques refont manuellement chaque semaine et la rendre instantanée et standardisée. Associé à l'analyseur de photos de tableau, PanelSafe couvre désormais les deux faces d'une mission de conformité — auditer ce qui est installé, et documenter ce qui devrait l'être.</p>
+            <p>Essayez-le sur <a href="/unifilar/" style="color: var(--primary); font-weight: 700;">panelsafe.cv/unifilar</a> — les retours des installateurs et techniciens façonnent ce que nous construisons ensuite.</p>
+
+            <a href="/blog.html" class="back-link">← Retour au blog</a>
+
+            <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(0,0,0,0.06); font-size: 0.875rem; color: var(--text-muted);">
+                ⚡ Un projet de <a href="https://electromarjal.com" target="_blank" rel="noopener noreferrer" style="color: var(--primary); font-weight: 700; text-decoration: none;">Marjal Instalaciones Eléctricas</a> — installateurs électriciens agréés
+            </div>
+        </article>
+
+    </div>
+
+    <script>
+        const NAV_LABELS = {
+            en: { home: "Home", analysis: "Analysis", blog: "Blog", title: "New Tool: Generador Unifilar - PanelSafe" },
+            es: { home: "Inicio", analysis: "Análisis", blog: "Blog", title: "Nueva Herramienta: Generador Unifilar - PanelSafe" },
+            fr: { home: "Accueil", analysis: "Analyse", blog: "Blog", title: "Nouvel Outil : Generador Unifilar - PanelSafe" }
+        };
+        const LANGS = ['en', 'es', 'fr'];
+
+        function setLanguage(lang) {
+            if (!NAV_LABELS[lang]) return;
+
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${lang}`).classList.add('active');
+
+            const navHome = document.getElementById('nav-home');
+            const navAnalysis = document.getElementById('nav-analysis');
+            const navBlog = document.getElementById('nav-blog');
+            const labels = NAV_LABELS[lang];
+            if (navHome) navHome.textContent = labels.home;
+            if (navAnalysis) navAnalysis.textContent = labels.analysis;
+            if (navBlog) navBlog.textContent = labels.blog;
+            document.title = labels.title;
+
+            LANGS.forEach(l => {
+                const el = document.getElementById(`content-${l}`);
+                if (el) el.style.display = (l === lang) ? 'block' : 'none';
+            });
+
+            localStorage.setItem('breakerLang', lang);
+        }
+
+        const savedLang = localStorage.getItem('breakerLang') || 'en';
+        setLanguage(savedLang);
+    </script>
+</body>
+
+</html>
