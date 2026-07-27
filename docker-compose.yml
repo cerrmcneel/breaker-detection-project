@@ -23,6 +23,9 @@ services:
     environment:
       - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
     command: tunnel --no-autoupdate run
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     networks:
       - default
       - marjal_net
