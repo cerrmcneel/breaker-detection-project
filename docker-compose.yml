@@ -23,6 +23,10 @@ services:
     environment:
       - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
     command: tunnel --no-autoupdate run
+    # Pinned deliberately, kept even after the host-level DNS root cause (empty
+    # Tailscale Global Nameservers) was fixed 2026-07-27. This is the container
+    # that breaks public site availability if DNS fails again -- cheap insurance
+    # against a repeat, not leftover debugging config.
     dns:
       - 1.1.1.1
       - 8.8.8.8
