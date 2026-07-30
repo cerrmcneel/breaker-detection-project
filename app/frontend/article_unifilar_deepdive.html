@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>From Photo to Single-Line Diagram: Inside the Unifilar Generator - PanelSafe</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="assets/favicon/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon/favicon-16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/favicon/favicon-180.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0066FF;
+            --primary-dark: #0051CC;
+            --primary-light: #E6F0FF;
+            --bg: #F8FAFC;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --text: #1E293B;
+            --text-muted: #64748B;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --radius: 16px;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            background-image: radial-gradient(at 0% 0%, rgba(0, 102, 255, 0.05) 0px, transparent 50%),
+                              radial-gradient(at 100% 100%, rgba(0, 102, 255, 0.05) 0px, transparent 50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            color: var(--text);
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 1rem 1.5rem;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-brand {
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.875rem;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary);
+            background-color: var(--primary-light);
+        }
+
+        .lang-switcher {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+            margin-top: 80px;
+            gap: 10px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .lang-btn {
+            background-color: transparent;
+            border: 1px solid #ccc;
+            padding: 4px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+
+        .lang-btn.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .article-container {
+            background: white;
+            padding: 48px;
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 800px;
+            line-height: 1.8;
+            color: var(--text);
+            box-sizing: border-box;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .article-header {
+            margin-bottom: 32px;
+        }
+
+        .article-header h1 {
+            color: var(--text);
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 16px;
+            line-height: 1.1;
+            letter-spacing: -0.025em;
+        }
+
+        .article-header .meta {
+            color: var(--text-muted);
+            font-size: 0.9375rem;
+            font-weight: 600;
+        }
+
+        .article-image {
+            width: 100%;
+            height: 260px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            background: linear-gradient(135deg, #0070f3, #00c6ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 4rem;
+        }
+
+        .article-container h2 {
+            color: var(--text);
+            margin-top: 48px;
+            margin-bottom: 20px;
+            font-size: 1.75rem;
+            font-weight: 800;
+        }
+
+        .article-container p {
+            margin-bottom: 24px;
+            font-size: 1.125rem;
+        }
+
+        .article-container blockquote {
+            border-left: 4px solid var(--primary);
+            margin: 40px 0;
+            padding: 24px 32px;
+            background-color: var(--primary-light);
+            color: var(--primary-dark);
+            font-style: italic;
+            border-radius: 0 16px 16px 0;
+            font-size: 1.125rem;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 40px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .back-link:hover {
+            color: var(--primary-dark);
+        }
+
+        /* Hidden by default for language toggling */
+        .lang-es {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="navbar">
+        <a href="/" class="nav-brand" id="nav-brand">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 2px;">
+                <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            PanelSafe
+        </a>
+        <div class="nav-links">
+            <a href="/" class="nav-link" id="nav-home">Home</a>
+            <a href="/analysis.html" class="nav-link" id="nav-analysis">Analysis</a>
+            <a href="/unifilar/" class="nav-link">Generador Unifilar</a>
+            <a href="/blog.html" class="nav-link active" id="nav-blog">Blog</a>
+        </div>
+    </nav>
+
+    <!-- Language Switcher -->
+    <div class="lang-switcher">
+        <button class="lang-btn active" id="btn-en" onclick="setLanguage('en')">EN</button>
+        <button class="lang-btn" id="btn-es" onclick="setLanguage('es')">ES</button>
+        <button class="lang-btn" id="btn-fr" onclick="setLanguage('fr')">FR</button>
+    </div>
+
+    <!-- Article Content -->
+    <div class="article-container">
+
+
+        <!-- English Version -->
+        <article class="lang-en" id="content-en">
+            <div class="article-header">
+                <h1>From Photo to Single-Line Diagram: Inside the Unifilar Generator</h1>
+                <div class="meta">July 30, 2026 &bull; 4 min read</div>
+            </div>
+
+            <div class="article-image">&#129513;</div>
+
+            <p>Every REBT job ends with the same piece of paperwork: the esquema unifilar. It's the document Industria wants, the one the bolet&iacute;n depends on, and the one most installers redraw by hand in a generic CAD tool at the end of a long day.</p>
+
+            <h2>From Detection Output to Diagram Structure</h2>
+            <p>The Unifilar Generator now live on PanelSafe closes that gap. The detection model already identifies and classifies the devices in a panel photo &mdash; IGA, differentials, MCBs, surge protection &mdash; along with their ratings and their left-to-right position on each DIN rail. That output is structurally very close to what a single-line diagram encodes: a hierarchy of protective devices and the circuits hanging off them.</p>
+            <p>The generator takes that structure and renders it using the UNE-EN 60617 symbol library, laying out the general switch at the top, differentials as branch nodes, and MCBs as leaves. Values stay editable in the browser: if the model reads a C16 where the real device is a C20, you correct it in place and the drawing updates immediately &mdash; no re-upload, no round trip to the server. Export is vector PDF for the file you hand in, plus PNG for the report or the WhatsApp message to the client.</p>
+
+            <h2>Two Design Decisions</h2>
+            <p>Two design decisions are worth calling out. First, the detection result is treated as a draft, never as truth &mdash; the installer is always the one who signs. Second, everything after upload runs client-side, so a corrected diagram never leaves the browser unless the user chooses to save it.</p>
+
+            <h2>What's Next</h2>
+            <p>Next on the roadmap: inheriting circuit labels (C1 alumbrado, C2 tomas, C3 cocina) from the detected breaker ratings, so the diagram arrives pre-annotated instead of blank.</p>
+            <p>Try it: <a href="/unifilar/" style="color: var(--primary); font-weight: 700;">panelsafe.cv/unifilar</a></p>
+
+            <a href="/blog.html" class="back-link">&larr; Back to Blog</a>
+
+            <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(0,0,0,0.06); font-size: 0.875rem; color: var(--text-muted);">
+                &#9889; A project by <a href="https://electromarjal.com" target="_blank" rel="noopener noreferrer" style="color: var(--primary); font-weight: 700; text-decoration: none;">Marjal Instalaciones El&eacute;ctricas</a> &mdash; licensed electrical contractors
+            </div>
+        </article>
+
+        <!-- Spanish Version -->
+        <article class="lang-es" id="content-es">
+            <div class="article-header">
+                <h1>De la Foto al Esquema Unifilar: Por Dentro del Generador Unifilar</h1>
+                <div class="meta">30 de Julio de 2026 &bull; 4 min de lectura</div>
+            </div>
+
+            <div class="article-image">&#129513;</div>
+
+            <p>Todo trabajo bajo el REBT termina con el mismo documento: el esquema unifilar. Es lo que pide Industria, aquello de lo que depende el bolet&iacute;n, y lo que la mayor&iacute;a de instaladores acaba redibujando a mano en un CAD gen&eacute;rico al final de una jornada larga.</p>
+
+            <h2>De la Detecci&oacute;n a la Estructura del Esquema</h2>
+            <p>El Generador Unifilar, ya disponible en PanelSafe, cierra esa brecha. El modelo de detecci&oacute;n ya identifica y clasifica los dispositivos de la foto de un cuadro &mdash; IGA, diferenciales, PIAs, protecci&oacute;n contra sobretensiones &mdash; junto con sus calibres y su posici&oacute;n de izquierda a derecha en cada carril DIN. Esa salida es estructuralmente muy parecida a lo que codifica un esquema unifilar: una jerarqu&iacute;a de dispositivos de protecci&oacute;n y los circuitos que cuelgan de ellos.</p>
+            <p>El generador toma esa estructura y la representa con la librer&iacute;a de s&iacute;mbolos UNE-EN 60617, situando el interruptor general arriba, los diferenciales como nodos de rama y los PIAs como hojas. Los valores siguen siendo editables en el navegador: si el modelo lee un C16 donde el dispositivo real es un C20, lo corriges ah&iacute; mismo y el dibujo se actualiza al instante &mdash; sin volver a subir la foto y sin ida y vuelta al servidor. La exportaci&oacute;n es PDF vectorial para el expediente que entregas, m&aacute;s PNG para el informe o el mensaje de WhatsApp al cliente.</p>
+
+            <h2>Dos Decisiones de Dise&ntilde;o</h2>
+            <p>Merece la pena destacar dos decisiones de dise&ntilde;o. Primera: el resultado de la detecci&oacute;n se trata siempre como un borrador, nunca como una verdad &mdash; quien firma es siempre el instalador. Segunda: todo lo posterior a la subida se ejecuta en el lado del cliente, de modo que un esquema corregido nunca sale del navegador salvo que el usuario decida guardarlo.</p>
+
+            <h2>Qu&eacute; Viene Ahora</h2>
+            <p>Lo siguiente en la hoja de ruta: heredar las etiquetas de circuito (C1 alumbrado, C2 tomas, C3 cocina) a partir de los calibres detectados, para que el esquema llegue pre-anotado en lugar de en blanco.</p>
+            <p>Pru&eacute;balo: <a href="/unifilar/" style="color: var(--primary); font-weight: 700;">panelsafe.cv/unifilar</a></p>
+
+            <a href="/blog.html" class="back-link">&larr; Volver al Blog</a>
+
+            <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(0,0,0,0.06); font-size: 0.875rem; color: var(--text-muted);">
+                &#9889; Un proyecto de <a href="https://electromarjal.com" target="_blank" rel="noopener noreferrer" style="color: var(--primary); font-weight: 700; text-decoration: none;">Marjal Instalaciones El&eacute;ctricas</a> &mdash; instaladores autorizados
+            </div>
+        </article>
+
+        <!-- French Version -->
+        <article class="lang-fr" id="content-fr" style="display: none;">
+            <div class="article-header">
+                <h1>De la Photo au Sch&eacute;ma Unifilaire : Dans les Coulisses du G&eacute;n&eacute;rateur</h1>
+                <div class="meta">30 juillet 2026 &bull; 4 min de lecture</div>
+            </div>
+
+            <div class="article-image">&#129513;</div>
+
+            <p>Tout chantier sous REBT se termine par le m&ecirc;me document : le sch&eacute;ma unifilaire. C'est ce que demande l'administration, ce dont d&eacute;pend le certificat, et ce que la plupart des installateurs redessinent &agrave; la main dans un logiciel de CAO g&eacute;n&eacute;rique en fin de journ&eacute;e.</p>
+
+            <h2>De la D&eacute;tection &agrave; la Structure du Sch&eacute;ma</h2>
+            <p>Le G&eacute;n&eacute;rateur Unifilaire, d&eacute;sormais disponible sur PanelSafe, comble cet &eacute;cart. Le mod&egrave;le de d&eacute;tection identifie et classe d&eacute;j&agrave; les appareils sur la photo d'un tableau &mdash; disjoncteur g&eacute;n&eacute;ral, diff&eacute;rentiels, disjoncteurs divisionnaires, parafoudre &mdash; ainsi que leurs calibres et leur position de gauche &agrave; droite sur chaque rail DIN. Cette sortie est structurellement tr&egrave;s proche de ce qu'encode un sch&eacute;ma unifilaire : une hi&eacute;rarchie d'appareils de protection et les circuits qui en d&eacute;pendent.</p>
+            <p>Le g&eacute;n&eacute;rateur reprend cette structure et la restitue avec la biblioth&egrave;que de symboles UNE-EN 60617, en pla&ccedil;ant l'interrupteur g&eacute;n&eacute;ral en haut, les diff&eacute;rentiels comme n&oelig;uds de branche et les divisionnaires comme feuilles. Les valeurs restent modifiables dans le navigateur : si le mod&egrave;le lit un C16 l&agrave; o&ugrave; l'appareil r&eacute;el est un C20, vous corrigez sur place et le dessin se met &agrave; jour imm&eacute;diatement &mdash; sans nouvel envoi ni aller-retour serveur. L'export se fait en PDF vectoriel pour le dossier &agrave; remettre, plus PNG pour le rapport ou le message WhatsApp au client.</p>
+
+            <h2>Deux Choix de Conception</h2>
+            <p>Deux choix de conception m&eacute;ritent d'&ecirc;tre soulign&eacute;s. D'abord, le r&eacute;sultat de la d&eacute;tection est trait&eacute; comme un brouillon, jamais comme une v&eacute;rit&eacute; &mdash; c'est toujours l'installateur qui signe. Ensuite, tout ce qui suit l'envoi s'ex&eacute;cute c&ocirc;t&eacute; client : un sch&eacute;ma corrig&eacute; ne quitte donc jamais le navigateur, sauf si l'utilisateur choisit de l'enregistrer.</p>
+
+            <h2>La Suite</h2>
+            <p>Prochaine &eacute;tape sur la feuille de route : h&eacute;riter des libell&eacute;s de circuits (C1 &eacute;clairage, C2 prises, C3 cuisine) &agrave; partir des calibres d&eacute;tect&eacute;s, afin que le sch&eacute;ma arrive pr&eacute;-annot&eacute; plut&ocirc;t que vierge.</p>
+            <p>Essayez-le : <a href="/unifilar/" style="color: var(--primary); font-weight: 700;">panelsafe.cv/unifilar</a></p>
+
+            <a href="/blog.html" class="back-link">&larr; Retour au Blog</a>
+
+            <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(0,0,0,0.06); font-size: 0.875rem; color: var(--text-muted);">
+                &#9889; Un projet de <a href="https://electromarjal.com" target="_blank" rel="noopener noreferrer" style="color: var(--primary); font-weight: 700; text-decoration: none;">Marjal Instalaciones El&eacute;ctricas</a> &mdash; installateurs agr&eacute;&eacute;s
+            </div>
+        </article>
+
+    </div>
+
+    <script>
+        const NAV_LABELS = {
+            en: { home: "Home", analysis: "Analysis", blog: "Blog", title: "From Photo to Single-Line Diagram - PanelSafe" },
+            es: { home: "Inicio", analysis: "Análisis", blog: "Blog", title: "De la Foto al Esquema Unifilar - PanelSafe" },
+            fr: { home: "Accueil", analysis: "Analyse", blog: "Blog", title: "De la Photo au Schéma Unifilaire - PanelSafe" }
+        };
+        const LANGS = ['en', 'es', 'fr'];
+
+        function setLanguage(lang) {
+            if (!NAV_LABELS[lang]) return;
+
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${lang}`).classList.add('active');
+
+            const navHome = document.getElementById('nav-home');
+            const navAnalysis = document.getElementById('nav-analysis');
+            const navBlog = document.getElementById('nav-blog');
+            const labels = NAV_LABELS[lang];
+            if (navHome) navHome.textContent = labels.home;
+            if (navAnalysis) navAnalysis.textContent = labels.analysis;
+            if (navBlog) navBlog.textContent = labels.blog;
+            document.title = labels.title;
+
+            LANGS.forEach(l => {
+                const el = document.getElementById(`content-${l}`);
+                if (el) el.style.display = (l === lang) ? 'block' : 'none';
+            });
+
+            localStorage.setItem('breakerLang', lang);
+        }
+
+        const savedLang = localStorage.getItem('breakerLang') || 'en';
+        setLanguage(savedLang);
+    </script>
+</body>
+
+</html>
