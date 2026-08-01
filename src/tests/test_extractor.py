@@ -1,7 +1,9 @@
-import pytest
-import numpy as np
-import cv2
 import os
+
+import cv2
+import numpy as np
+import pytest
+
 
 def test_seed_extraction_aspect_ratio():
     """

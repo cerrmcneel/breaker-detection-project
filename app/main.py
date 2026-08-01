@@ -1,25 +1,21 @@
-import os
-import uuid
-import re
-import urllib.parse
+import asyncio
+import hashlib
 import json
 import logging
-import hashlib
-import asyncio
-import requests
-from datetime import datetime
-from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Request
-from fastapi.responses import JSONResponse, HTMLResponse
-from fastapi.staticfiles import StaticFiles
-from dotenv import load_dotenv
-
-import argparse
+import os
 import random
+import re
 import string
+import urllib.parse
+import uuid
+from datetime import datetime
+
 import cv2
 import numpy as np
-from src.model.heuristics import SpatialHeuristicEngine
-from src.model.ocr_reader import OCRReader
+import requests
+from dotenv import load_dotenv
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi.staticfiles import StaticFiles
 
 # Load environment variables
 load_dotenv()
@@ -136,8 +132,14 @@ async def add_cache_control_header(request, call_next):
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "data/images/raw_uploads")
 LOG_FILE = os.path.join(os.path.dirname(UPLOAD_DIR), "upload_log.json")
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
-ALLOWED_MIME_TYPES = {"image/jpeg", "image/png", "image/gif"}
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif"}
+def validate_image_upload(file_bytes: bytes) -> None:
+    """
+    Raises HTTPException if file_bytes is not a valid, decodable image.
+    """
+    img = cv2.imdecode(np.frombuffer(file_bytes, dtype=np.uint8), cv2.IMREAD_COLOR)
+    if img is None:
+        raise HTTPException(status_code=400, detail="Invalid image file")
 
 @app.post("/predict/")
 async def predict_panel(file: UploadFile = File(...)):
@@ -149,9 +151,9 @@ async def predict_panel(file: UploadFile = File(...)):
     temp_filename = f"temp_{uuid.uuid4()}{safe_ext}"
     temp_path = os.path.join(UPLOAD_DIR, temp_filename)
     os.makedirs(UPLOAD_DIR, exist_ok=True)
-    
     try:
         contents = await file.read()
+        validate_image_upload(contents)
         with open(temp_path, "wb") as f:
             f.write(contents)
 
@@ -179,6 +181,9 @@ async def predict_panel(file: UploadFile = File(...)):
                 "inference_engine": "K3s-GPU-Cluster-Pipeline"
             }
         }
+    except HTTPException:
+        if os.path.exists(temp_path): os.remove(temp_path)
+        raise
     except Exception as e:
         logger.error(f"Prediction Error: {e}")
         if os.path.exists(temp_path): os.remove(temp_path)
@@ -263,13 +268,10 @@ def grade_panel_layout(predictions, rcd_test_result, country="Unknown"):
 @app.post("/upload/")
 async def upload_image(file: UploadFile = File(...), country: str = Form(default="Unknown"), rcd_test_result: str = Form(default="Not Tested")):
     try:
-        if file.content_type not in ALLOWED_MIME_TYPES:
-            raise HTTPException(status_code=400, detail="Invalid file type.")
-        
         file_bytes = await file.read()
         if len(file_bytes) > MAX_FILE_SIZE:
             raise HTTPException(status_code=413, detail="File too large.")
-            
+        validate_image_upload(file_bytes)
         file_hash = hashlib.sha256(file_bytes).hexdigest()
         
         # Check against currently scanned hashes for up-to-date de-duplication
@@ -341,6 +343,8 @@ async def upload_image(file: UploadFile = File(...), country: str = Form(default
             with open(LOG_FILE, "w") as f: json.dump(entries, f, indent=4)
 
         return {"status": "success", "filename": unique_filename, "tracking_id": tracking_id, "score": auto_score, "feedback": auto_feedback, "inference_ok": inference_ok, "inference_detail": inference_detail}
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Upload error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -368,13 +372,10 @@ async def save_active_learning(request: Request, file: UploadFile = File(...), a
             if origin_host and origin_host != request_host:
                 raise HTTPException(status_code=403, detail="Cross-origin request blocked.")
 
-        # Same file-type/size validation already applied to /upload/.
-        if file.content_type not in ALLOWED_MIME_TYPES:
-            raise HTTPException(status_code=400, detail="Invalid file type.")
-
         file_bytes = await file.read()
         if len(file_bytes) > MAX_FILE_SIZE:
             raise HTTPException(status_code=413, detail="File too large.")
+        validate_image_upload(file_bytes)
 
         # Build the on-disk name from a UUID + sanitized extension only; never trust
         # the client-supplied filename (it can contain path separators -> traversal).

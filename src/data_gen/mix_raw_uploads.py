@@ -1,7 +1,8 @@
-import os
-import shutil
 import glob
+import os
 import random
+import shutil
+
 
 def mix_raw_uploads(raw_dir="data/images/raw_uploads", output_dir="data/dataset", val_split=0.15,
                      deterministic_seed=None):

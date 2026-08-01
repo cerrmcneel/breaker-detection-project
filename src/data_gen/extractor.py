@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 
+
 class SeedExtractor:
     def warp_crop(self, image, corners):
         """

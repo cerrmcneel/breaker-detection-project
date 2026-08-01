@@ -1,8 +1,9 @@
+import os
+import re
+
 import cv2
 import numpy as np
 import pytesseract
-import re
-import os
 
 # Point PyTesseract to the Winget installation path on Windows if it exists
 if os.path.exists(r'C:\Program Files\Tesseract-OCR\tesseract.exe'):
@@ -118,35 +119,72 @@ class OCRReader:
                               flags=cv2.INTER_CUBIC,
                               borderMode=cv2.BORDER_REPLICATE)
 
+    # Standard IEC 60898 MCB current ratings. Anything outside this set is a
+    # misread or a fragment of a model number, not a real rating.
+    VALID_RATINGS = {1, 2, 3, 4, 6, 10, 13, 16, 20, 25, 32, 40, 50, 63}
+
+    # A curve letter immediately followed by a valid rating, as a standalone token.
+    # Both \b anchors matter: without the leading one, the model number "BD62"
+    # yields a bogus "D62"; without the trailing one, "C1234" yields "C12".
+    _RATING_RE = re.compile(r'\b([BCD])\s?(\d{1,2})\b')
+
+    # RCD residual-current marker. Deliberately NOT \b-anchored: real OCR output
+    # runs the marker into neighbouring glyphs ("IAN0,03A", "30 MAL"), and the old
+    # \b(...)\b form silently missed every one of those.
+    _LEAKAGE_RE = re.compile(r'30\s*M\s*A|0[.,]0?3\s*A')
+
+    # "SI" = superinmunizado (nuisance-trip-immune RCD). Must be a STANDALONE token:
+    # a bare substring test matches SIEMENS, Schneider RESI9, SIMON and a long tail
+    # of OCR garble (EBSIN, MNSI6V, JENSION...). Measured 2026-07-28 over 1,060 real
+    # crops, the substring form was wrong 58/58 times. Word-boundary matching rejects
+    # all of those while still accepting the real forms "SI", "A-SI" and "A[SI]".
+    _SI_RE = re.compile(r'\bSI\b')
+
     def _clean_ocr_text(self, text):
         """
-        Cleans raw OCR output to return only expected electrical values.
-        Looks for MCB ratings (e.g., C16) and 'SI' marker.
-        Returns empty string if no valid pattern is found to prevent garbage output.
+        Reduces raw OCR output to a single electrical verdict the HMM can consume:
+        "SI", a curve+rating like "C16", "30MA", or "" for no usable signal.
+
+        Resolves by STRENGTH of evidence, not by first match. Ordering matters
+        because the verdict carries a 19:1 likelihood ratio in the HMM's emission
+        probability, so a confidently-wrong verdict is far more damaging than none.
         """
-        text = text.upper().strip()
-        
-        # Check for SI marker
-        if "SI" in text:
+        text = (text or "").upper().strip()
+
+        si = bool(self._SI_RE.search(text))
+        leakage = bool(self._LEAKAGE_RE.search(text))
+
+        rating = None
+        for match in self._RATING_RE.finditer(text):
+            if int(match.group(2)) in self.VALID_RATINGS:
+                rating = f"{match.group(1)}{match.group(2)}"
+                break
+
+        # A superinmunizado device is still an RCD, so a standalone SI token
+        # corroborated by a leakage marker is the genuine RCD_SI signature.
+        if si and leakage:
             return "SI"
-            
-        # Check for leakage current (RCD marker)
-        leakage_match = re.search(r'\b(30\s?MA|0[.,]03\s?A)\b', text)
-        if leakage_match:
+
+        # Leakage outranks a curve+rating when both appear. "30mA" only ever occurs
+        # on a residual-current device, whereas a C16 in the same crop is usually
+        # bleed from a neighbour: RCDs are 2+ modules wide and sit at the head of a
+        # rail, so their crops routinely catch the adjacent MCB's marking, while a
+        # 1-module MCB crop mostly bleeds into other MCBs. Measured 2026-07-28, every
+        # crop carrying both markers was a true RCD.
+        if leakage:
             return "30MA"
-            
-        # Check for B, C, or D rating (1 or 2 digits)
-        # We allow an optional curve letter B, C, or D
-        match = re.search(r'([B|C|D])\s?(\d{1,2})', text)
-        if match:
-            return f"{match.group(1)}{match.group(2)}"
-            
-        # Fallback: if we just find a standalone 10, 16, 20, 25, 32, 40, 63 (common amperages)
-        # We'll assume it's a C-curve for now if no letter is found
-        amp_match = re.search(r'\b(10|16|20|25|32|40|63)\b', text)
-        if amp_match:
-            return f"C{amp_match.group(1)}"
-            
+
+        # A curve LETTER is the MCB-specific discriminator. A bare amperage is not:
+        # RCDs carry current ratings too ("40A"), which is why the old bare-amperage
+        # fallback was removed -- it fired on model numbers ("NL1-63" -> "C63") and
+        # pushed true RCDs toward MCB.
+        if rating:
+            return rating
+
+        # Deliberately NOT returning "SI" here. An uncorroborated two-character token
+        # is not enough evidence for the rarest class in the taxonomy at 19:1 leverage,
+        # and across 1,060 real crops there was not a single box where a standalone SI
+        # was the only available signal -- so this costs no measurable recall.
         return ""
 
 if __name__ == "__main__":

@@ -1,12 +1,15 @@
-import os
 import json
-import torch
+import os
+
 import cv2
+import torch
 from PIL import Image
 from ultralytics import YOLO
+
+from src.model.crop_classifier import BreakerCropClassifier
 from src.model.heuristics import SpatialHeuristicEngine
 from src.model.ocr_reader import OCRReader
-from src.model.crop_classifier import BreakerCropClassifier
+
 
 class PanelSafePipeline:
     def __init__(self, config_path=None):

@@ -1,6 +1,7 @@
 import os
-import shutil
 import random
+import shutil
+
 
 def mix_val_to_train(num_to_move=60):
     val_images_dir = "data/dataset/val/images"

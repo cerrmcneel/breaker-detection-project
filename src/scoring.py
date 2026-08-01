@@ -3,7 +3,13 @@ import pandas as pd
 # Column names are single-sourced in src/data_schema.py (shared with the labeler that
 # writes data/breaker_dataset.csv) so reader and writer cannot drift apart.
 from src.data_schema import (
-    HAS_OVP, HAS_RCD_SI, PANEL_AGE, HAS_RCD, RCD_LOAD_RATIO, COMMENTS, RCD_TEST_RESULT,
+    COMMENTS,
+    HAS_OVP,
+    HAS_RCD,
+    HAS_RCD_SI,
+    PANEL_AGE,
+    RCD_LOAD_RATIO,
+    RCD_TEST_RESULT,
 )
 
 

@@ -1,5 +1,7 @@
 import os
+
 from ultralytics import YOLO
+
 
 def export_to_onnx(model_path):
     print(f"Loading weights from {model_path}...")

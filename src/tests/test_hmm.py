@@ -1,6 +1,8 @@
 # src/tests/test_hmm.py
 import pytest
+
 from src.model.hmm_corrector import HMMCorrector
+
 
 def test_hmm_corrector_initialization():
     corrector = HMMCorrector()

@@ -18,13 +18,14 @@ Outputs (under --out-dir, default data/button_dataset/):
     manifest_real_test.csv
     summary.json   (class counts + suggested inverse-frequency class weights)
 """
-import os
-import re
+import argparse
 import csv
 import json
-import random
-import argparse
+import os
 import pathlib
+import random
+import re
+
 from PIL import Image
 
 POSITIVE_BASES = {"RCD", "RCD_SI"}
@@ -188,10 +189,10 @@ def main():
     random.shuffle(val_rows)
 
     write_manifest(os.path.join(args.out_dir, "manifest_train.csv"),
-                   [(p, l, c, "train") for (p, l, c) in train_rows],
+                   [(path, label, cls, "train") for (path, label, cls) in train_rows],
                    ["path", "label", "source_class", "split"])
     write_manifest(os.path.join(args.out_dir, "manifest_val.csv"),
-                   [(p, l, c, "val") for (p, l, c) in val_rows],
+                   [(path, label, cls, "val") for (path, label, cls) in val_rows],
                    ["path", "label", "source_class", "split"])
 
     # ---- Real held-out test ----

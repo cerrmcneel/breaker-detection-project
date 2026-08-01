@@ -1,5 +1,8 @@
-import pytest
 import random
+
+import pytest
+
+from src.data_gen.compositor import Compositor
 
 # ============================================================
 #  TDD — test_panelfactory.py
@@ -16,9 +19,7 @@ import random
 #  - No rail ever exceeds its module capacity
 #  - All generated class names are in the known CLASS_MAP
 # ============================================================
-
-from src.data_gen.grammar import Panel, Rail, Breaker, PanelFactory
-from src.data_gen.compositor import Compositor
+from src.data_gen.grammar import Breaker, Panel, PanelFactory, Rail
 
 VALID_CLASSES = set(Compositor.CLASS_MAP.keys())
 

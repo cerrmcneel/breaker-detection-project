@@ -1,6 +1,7 @@
-import pytest
-import numpy as np
 import cv2
+import numpy as np
+import pytest
+
 
 def test_load_seeds_finds_images(tmp_path):
     """

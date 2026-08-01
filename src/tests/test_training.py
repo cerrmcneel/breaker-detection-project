@@ -1,5 +1,7 @@
 import os
+
 import yaml
+
 
 def test_yaml_config_structure():
     yaml_path = "data.yaml"

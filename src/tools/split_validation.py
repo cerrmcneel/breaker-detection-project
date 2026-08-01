@@ -1,6 +1,7 @@
 import os
 import shutil
 
+
 def split_validation_set():
     raw_dir = os.path.join("data", "images", "raw_uploads")
     val_img_dir = os.path.join("data", "dataset", "val", "images")

@@ -254,9 +254,10 @@ class Compositor:
         np.ndarray
             Augmented image, same shape as input.
         """
+        import random
+
         import cv2
         import numpy as np
-        import random
 
         h, w = img.shape[:2]
 
@@ -328,9 +329,10 @@ class Compositor:
         Applies a random 3D perspective homography to the entire canvas,
         and re-maps all bounding box annotations to fit the new perspective.
         """
+        import random
+
         import cv2
         import numpy as np
-        import random
         
         h, w = canvas.shape[:2]
         
@@ -417,8 +419,9 @@ class Compositor:
         Superimposes a random linear shadow gradient (e.g., top cutout shadow)
         to simulate uneven overhead lighting.
         """
-        import numpy as np
         import random
+
+        import numpy as np
         
         h, w = img.shape[:2]
         direction = random.choice(["top", "bottom", "left", "right"])
@@ -454,8 +457,9 @@ class Compositor:
         Superimposes a radial glare highlight at a random location
         to simulate camera flash or direct light reflections on glossy plastic.
         """
-        import numpy as np
         import random
+
+        import numpy as np
         
         h, w = img.shape[:2]
         

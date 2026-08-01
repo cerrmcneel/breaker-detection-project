@@ -60,7 +60,6 @@ class SpatialHeuristicEngine:
             return []
 
         rows = self.group_into_rows(predictions)
-        import statistics
 
         refined_rows = []
         for rail_idx, row in enumerate(rows):
@@ -160,7 +159,7 @@ class SpatialHeuristicEngine:
                     if orig_class != state:
                         row[idx]["class"] = state
                         row[idx]["heuristic_applied"] = True
-                        row[idx]["heuristic_correction"] = f"HMM_VITERBI_DECODE"
+                        row[idx]["heuristic_correction"] = "HMM_VITERBI_DECODE"
                         row[idx]["hmm_original_class"] = orig_class
                     
             refined_rows.extend(row)

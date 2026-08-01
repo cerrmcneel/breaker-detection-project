@@ -38,17 +38,25 @@ examples from OTHER installers, not just the primary author's own recent work
 Run: python -m src.model.train_tabular_risk_model
 """
 import pathlib
+
 import pandas as pd
-from sklearn.model_selection import StratifiedKFold, cross_val_score, cross_val_predict
-from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.model_selection import StratifiedKFold, cross_val_predict, cross_val_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import classification_report, confusion_matrix
 
 from src.data_schema import (
-    PANEL_AGE, PHASE_TYPE, HAS_RCD_SI, HAS_IGA, IGA_AMP, HAS_OVP,
-    MCB_VALUES, NUM_MCBS, NUMBER_RCD,
+    HAS_IGA,
+    HAS_OVP,
+    HAS_RCD_SI,
+    IGA_AMP,
+    MCB_VALUES,
+    NUM_MCBS,
+    NUMBER_RCD,
+    PANEL_AGE,
+    PHASE_TYPE,
 )
 
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[2]

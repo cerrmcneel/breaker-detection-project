@@ -1,11 +1,10 @@
-import os
-import json
-import uuid
 import hashlib
+import json
+import os
 import subprocess
-import cv2
-import numpy as np
+import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
 from src.model.pipeline import PanelSafePipeline
 
 print("--- PanelSafe GPU Inference Pipeline Server ---")
@@ -96,8 +95,12 @@ class InferenceHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 print(f"Error during GPU pipeline inference: {e}")
                 if temp_path and os.path.exists(temp_path):
-                    try: os.remove(temp_path)
-                    except: pass
+                    try:
+                        os.remove(temp_path)
+                    except OSError:
+                        # Best-effort cleanup of the scratch file; the request has
+                        # already failed and is being reported to the caller below.
+                        pass
                 self.send_response(500)
                 self.end_headers()
                 self.wfile.write(f"Error: {e}".encode())

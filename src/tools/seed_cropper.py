@@ -35,11 +35,12 @@ How it works
        ESC / Q   →  Quit
 """
 
-import cv2
-import numpy as np
+import glob
 import os
 import sys
-import glob
+
+import cv2
+import numpy as np
 
 from src.data_gen.extractor import SeedExtractor
 
@@ -331,7 +332,7 @@ def main():
         process_image(path, window)
 
     cv2.destroyAllWindows()
-    print(f"\n[DONE] Session complete.")
+    print("\n[DONE] Session complete.")
     print(f"       Final counts: {save_counts}")
 
 if __name__ == "__main__":

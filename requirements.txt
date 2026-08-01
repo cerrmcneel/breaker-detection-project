@@ -6,6 +6,13 @@ pytest
 opencv-python
 numpy
 ultralytics
+# DELIBERATELY UNUSED -- do not wire back into src/model/pipeline.py.
+# SAHI was added to remediate poor real-world scoring before the actual root
+# cause was found (a classes.txt/data.yaml ordering mismatch that permuted all
+# six classes in every hand-labelled real image). Once the labels were fixed, a
+# controlled ablation showed slicing made results WORSE, so it was removed from
+# the live pipeline. Kept installed only so that ablation stays reproducible.
+# Re-run that ablation against corrected labels before re-adding it.
 sahi
 torch --index-url https://download.pytorch.org/whl/cpu
 easyocr

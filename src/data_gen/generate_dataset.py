@@ -1,12 +1,13 @@
-import os
-import cv2
 import argparse
+import os
 import random
 
-from src.data_gen.seed_library import SeedLibrary
-from src.data_gen.grammar import PanelFactory
+import cv2
+
 from src.data_gen.compositor import Compositor
+from src.data_gen.grammar import PanelFactory
 from src.data_gen.label_writer import write_label_file
+from src.data_gen.seed_library import SeedLibrary
 
 
 def main():

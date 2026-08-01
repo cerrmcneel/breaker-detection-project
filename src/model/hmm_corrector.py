@@ -1,7 +1,9 @@
 # src/model/hmm_corrector.py
-import os
 import json
+import os
+
 import numpy as np
+
 
 class HMMCorrector:
     def __init__(self, config_path="src/model/hmm_config.json"):
@@ -135,7 +137,6 @@ class HMMCorrector:
             path_probability (float): total path likelihood
         """
         T = len(sequence)
-        N = len(self.classes)
         
         # Initialize DP tables
         # V[t][j] = float probability

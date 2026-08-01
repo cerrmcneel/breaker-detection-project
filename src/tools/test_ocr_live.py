@@ -1,6 +1,9 @@
-import cv2
 import os
+
+import cv2
+
 from src.model.ocr_reader import OCRReader
+
 
 def test_ocr_on_validation_image():
     # Setup paths

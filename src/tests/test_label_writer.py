@@ -1,6 +1,7 @@
-import pytest
 import os
 import tempfile
+
+import pytest
 
 # ============================================================
 #  TDD — test_label_writer.py
@@ -8,7 +9,6 @@ import tempfile
 #  Run them now and they should FAIL (RED phase).
 #  Then we implement label_writer.py to make them GREEN.
 # ============================================================
-
 from src.data_gen.label_writer import normalize_box, write_label_file
 
 

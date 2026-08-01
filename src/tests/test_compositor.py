@@ -1,5 +1,7 @@
 import pytest
 
+from src.data_gen.compositor import Compositor
+
 # ============================================================
 #  TDD — test_compositor.py
 #
@@ -17,9 +19,7 @@ import pytest
 #    Vertical:   start_y  = (img_height - total_height) // 2
 #  All expected coordinates below account for this centering.
 # ============================================================
-
-from src.data_gen.grammar import Panel, Rail, Breaker
-from src.data_gen.compositor import Compositor
+from src.data_gen.grammar import Breaker, Panel, Rail
 
 
 # Helper — build a Compositor with predictable dimensions

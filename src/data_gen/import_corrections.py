@@ -1,8 +1,9 @@
-import os
-import json
-import cv2
 import glob
+import json
+import os
 import random
+
+import cv2
 
 # Mapping must match compositor.py
 CLASS_MAP = {

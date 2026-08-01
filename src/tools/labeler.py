@@ -10,23 +10,36 @@ cropper at src/tools/seed_cropper.py). It produces no detection labels.
 
 Run from anywhere:  python -m src.tools.labeler
 """
-import os
 import csv
 import glob
-import shutil
+import hashlib
+import json
+import os
 import pathlib
-from datetime import datetime
+import shutil
 import threading
 import tkinter as tk
+from datetime import datetime
 from tkinter import filedialog
-from PIL import Image, ImageTk, ImageOps
-import json
-import hashlib
+
+from PIL import Image, ImageTk
 
 from src.data_schema import (
+    COMMENTS,
+    COUNTRY,
     CSV_FIELDNAMES,
-    FILENAME, TIMESTAMP, COUNTRY, PANEL_AGE, PHASE_TYPE, HAS_RCD, HAS_RCD_SI,
-    HAS_IGA, IGA_AMP, HAS_OVP, MCB_VALUES, NUM_MCBS, COMMENTS, NUMBER_RCD,
+    FILENAME,
+    HAS_IGA,
+    HAS_OVP,
+    HAS_RCD,
+    HAS_RCD_SI,
+    IGA_AMP,
+    MCB_VALUES,
+    NUM_MCBS,
+    NUMBER_RCD,
+    PANEL_AGE,
+    PHASE_TYPE,
+    TIMESTAMP,
 )
 
 # Anchor all paths to the project root (src/tools/labeler.py -> parents[2]) so the tool

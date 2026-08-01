@@ -40,6 +40,7 @@ ONE-TIME SETUP (run these yourself -- needs your own Modal account/billing):
   modal deploy deploy/modal_failover.py
 """
 import os
+
 import modal
 
 app = modal.App("panelsafe-failover")
@@ -83,7 +84,8 @@ def inference_asgi():
     sys.path.insert(0, "/code")
     os.chdir("/code")
 
-    from fastapi import FastAPI, UploadFile, File
+    from fastapi import FastAPI, File, UploadFile
+
     from src.model.pipeline import PanelSafePipeline
 
     web_app = FastAPI()

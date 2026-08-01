@@ -1,8 +1,9 @@
 import os
-import time
 import pathlib
-import numpy as np
+import time
+
 import cv2
+
 from src.model.pipeline import PanelSafePipeline
 
 # YOLO label index mapping for PanelSafe (data.yaml)

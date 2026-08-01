@@ -1,11 +1,12 @@
 import pytest
 
+
 def test_rail_overflow_protection():
     """
     Test that a Rail (Max 12 modules) correctly rejects 
     components that exceed its capacity.
     """
-    from src.data_gen.grammar import Rail, Breaker
+    from src.data_gen.grammar import Breaker, Rail
     
     # Initialize a standard 12-module rail
     rail = Rail(max_modules=12)

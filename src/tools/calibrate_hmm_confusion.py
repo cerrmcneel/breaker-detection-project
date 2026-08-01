@@ -19,11 +19,11 @@ Usage (from project root):
     .venv/Scripts/python.exe src/tools/calibrate_hmm_confusion.py
 """
 
-import os
-import sys
+import collections
 import json
 import pathlib
-import collections
+import sys
+
 import cv2
 from ultralytics import YOLO
 

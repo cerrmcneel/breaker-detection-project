@@ -1,6 +1,8 @@
 import os
-import cv2
 import shutil
+
+import cv2
+
 
 def audit_seeds(seed_dir="data/seeds"):
     """

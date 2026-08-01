@@ -22,11 +22,12 @@ Usage:
     python -m src.tools.prelabel_uploads --conf 0.30
     python -m src.tools.prelabel_uploads --overwrite      # re-do already-labeled too
 """
-import os
-import glob
-import time
 import argparse
+import glob
+import os
 import pathlib
+import time
+
 from ultralytics import YOLO
 
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[2]

@@ -1,5 +1,7 @@
-import requests
 import os
+
+import requests
+
 
 def test_predict_api():
     url = "http://localhost:8000/predict/"

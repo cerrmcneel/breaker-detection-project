@@ -17,11 +17,12 @@ Usage:
     python -m src.tools.visualize_labels --split train --limit 40
     python -m src.tools.visualize_labels --images-dir X --labels-dir Y --out-dir Z
 """
-import os
-import glob
 import argparse
+import glob
+import os
 import pathlib
 from collections import Counter
+
 import cv2
 
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[2]

@@ -1,0 +1,43 @@
+# Lint configuration for CI (.github/workflows/ci.yml runs `ruff check .`).
+#
+# This codebase predates linting, so the rule set is adopted in stages rather
+# than switching on ruff's full default surface and drowning CI in 180 findings
+# on day one. What is enabled here is the high-signal core:
+#
+#   E4/E7/E9 + F  ruff's own default set -- pyflakes catches real defects
+#                 (unused/undefined names, redefinitions), not style opinions
+#   I             import sorting, fully auto-fixable
+#
+# Deliberately NOT enabled yet, with reasons -- these are real findings worth
+# revisiting, not noise to be buried:
+#
+#   BLE001 (29x) blind `except Exception`. Genuinely the highest-value group
+#                here: this is exactly the defect class that made /predict/ and
+#                /upload/ collapse every deliberate 400/413/503 into a generic
+#                500 (fixed 2026-07-28). Enabling it means auditing 29 handlers
+#                and deciding which are load-bearing, which is real work rather
+#                than a lint pass.
+#   S110/S112   `try/except/pass|continue` -- overlaps BLE001, same audit.
+#   DTZ005 (5x) naive `datetime.now()`. Matters if timestamps ever cross a
+#                timezone; today everything is single-region.
+#   RUF012      mutable class defaults needing ClassVar annotations.
+#   ASYNC230    blocking file I/O inside async endpoints in app/main.py -- a
+#                real throughput concern for the upload path, worth its own pass.
+#
+# Re-check the deferred list with:  ruff check . --statistics
+line-length = 120
+
+[lint]
+select = ["E4", "E7", "E9", "F", "I"]
+
+# Style-only, and this project has no formatter configured to normalise them.
+# Turning these on would mean 36 mechanical edits across unrelated files for no
+# correctness gain.
+ignore = [
+    "E701",  # multiple statements on one line (colon)
+    "E702",  # multiple statements on one line (semicolon)
+]
+
+[lint.per-file-ignores]
+# Tests deliberately import fixtures/modules for side effects and patch targets.
+"src/tests/*" = ["F401"]
