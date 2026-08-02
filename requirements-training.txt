@@ -1,0 +1,7 @@
+# Full training and heavy ML inference requirements
+-r requirements.txt
+ultralytics
+sahi
+torch --index-url https://download.pytorch.org/whl/cpu
+easyocr
+pytesseract
