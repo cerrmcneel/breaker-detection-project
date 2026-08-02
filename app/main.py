@@ -10,6 +10,8 @@ import urllib.parse
 import uuid
 from datetime import datetime
 
+from contextlib import asynccontextmanager
+
 import cv2
 import numpy as np
 import requests
@@ -32,7 +34,7 @@ seen_hashes = set()
 file_hash_cache = {}
 upload_lock = asyncio.Lock()
 
-app = FastAPI(title="PanelSafe: Breaker Detection & Analysis")
+# App instance created after get_unique_dataset_count and lifespan are defined below
 
 def get_unique_dataset_count():
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -108,10 +110,8 @@ def get_unique_dataset_count():
                 
     return total_count, current_hashes
 
-# FastAPI Gateway acts as a lightweight router to the GPU cluster
-
-@app.on_event("startup")
-async def startup_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     logger.info(f"PanelSafe Gateway ready. Connecting to K3s cluster at: {INFERENCE_URL}")
     
     # Initialize cache and populate seen_hashes on startup
@@ -119,6 +119,9 @@ async def startup_event():
     global seen_hashes
     seen_hashes = current_hashes
     logger.info(f"Loaded {count} unique dataset image hashes.")
+    yield
+
+app = FastAPI(title="PanelSafe: Breaker Detection & Analysis", lifespan=lifespan)
 
 @app.middleware("http")
 async def add_cache_control_header(request, call_next):

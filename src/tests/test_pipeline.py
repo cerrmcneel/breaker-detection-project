@@ -151,3 +151,53 @@ def test_two_stage_inference_routing(mock_yolo_class, mock_config):
                 os.remove(img_path)
     finally:
         os.remove(config_path)
+
+
+@patch('src.model.pipeline.YOLO')
+def test_pipeline_output_dictionary_schema(mock_yolo_class, mock_config):
+    with tempfile.NamedTemporaryFile(suffix=".json", delete=False, mode="w", encoding="utf-8") as f:
+        json.dump(mock_config, f)
+        config_path = f.name
+
+    mock_yolo = MagicMock()
+    mock_yolo_class.return_value = mock_yolo
+
+    mock_box = MagicMock()
+    mock_box.xyxy = [[15, 25, 120, 220]]
+    mock_box.conf = [0.88]
+    mock_box.cls = [0]
+
+    mock_result = MagicMock()
+    mock_result.boxes = [mock_box]
+    mock_result.names = {0: "MCB"}
+    mock_yolo.predict.return_value = [mock_result]
+
+    try:
+        with patch('torch.load'):
+            pipeline = PanelSafePipeline(config_path=config_path)
+            pipeline._get_ocr_reader = MagicMock(return_value=None)
+            pipeline.heuristic_engine.apply_logic = MagicMock(
+                side_effect=lambda preds, *args, **kwargs: preds
+            )
+
+            import numpy as np
+            mock_img = np.zeros((300, 300, 3), dtype=np.uint8)
+            with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as img_f:
+                img_path = img_f.name
+            cv2.imwrite(img_path, mock_img)
+
+            try:
+                results = pipeline.run_inference(img_path)
+                assert isinstance(results, list)
+                assert len(results) == 1
+                pred = results[0]
+                assert set(pred.keys()) == {"box", "class", "conf", "ocr_text"}
+                assert isinstance(pred["box"], list) and len(pred["box"]) == 4
+                assert isinstance(pred["class"], str)
+                assert isinstance(pred["conf"], float) and 0.0 <= pred["conf"] <= 1.0
+                assert isinstance(pred["ocr_text"], str)
+            finally:
+                os.remove(img_path)
+    finally:
+        os.remove(config_path)
+
