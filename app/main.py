@@ -12,12 +12,15 @@ from datetime import datetime
 
 from contextlib import asynccontextmanager
 
+from typing import List, Optional
+
 import cv2
 import numpy as np
 import requests
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, ConfigDict, Field
 
 # Load environment variables
 load_dotenv()
@@ -136,6 +139,7 @@ UPLOAD_DIR = os.getenv("UPLOAD_DIR", "data/images/raw_uploads")
 LOG_FILE = os.path.join(os.path.dirname(UPLOAD_DIR), "upload_log.json")
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif"}
+
 def validate_image_upload(file_bytes: bytes) -> None:
     """
     Raises HTTPException if file_bytes is not a valid, decodable image.
@@ -144,7 +148,30 @@ def validate_image_upload(file_bytes: bytes) -> None:
     if img is None:
         raise HTTPException(status_code=400, detail="Invalid image file")
 
-@app.post("/predict/")
+# --- PYDANTIC RESPONSE SCHEMAS ---
+
+
+class DetectionBox(BaseModel):
+    box: Optional[List[float]] = Field(default_factory=list, description="[x1, y1, x2, y2] bounding box coordinates")
+    class_name: str = Field(..., alias="class", description="Detected component class")
+    conf: float = Field(..., ge=0.0, le=1.0, description="Detection confidence score")
+    ocr_text: Optional[str] = Field(default="", description="Extracted label text")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class PanelSummary(BaseModel):
+    total_components: int
+    inference_engine: str
+
+
+class PredictionResponse(BaseModel):
+    status: str
+    panel_layout: List[DetectionBox]
+    summary: PanelSummary
+
+
+@app.post("/predict/", response_model=PredictionResponse)
 async def predict_panel(file: UploadFile = File(...)):
     # Build the temp name from a UUID + sanitized extension only; never trust the
     # client-supplied filename (it can contain path separators -> traversal).
