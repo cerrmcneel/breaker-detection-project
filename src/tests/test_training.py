@@ -35,3 +35,18 @@ def test_model_initialization():
     # Assert that it is indeed a YOLO object (from the ultralytics library)
     from ultralytics import YOLO
     assert isinstance(model, YOLO)
+
+
+def test_mlflow_tracking_setup(tmp_path):
+    import mlflow
+
+    db_path = tmp_path / "test_mlflow.db"
+    mlflow.set_tracking_uri(f"sqlite:///{db_path}")
+    exp = mlflow.set_experiment("Test-Experiment")
+    assert exp.name == "Test-Experiment"
+
+    with mlflow.start_run(run_name="test_run") as run:
+        mlflow.log_param("epochs", 10)
+        mlflow.log_metric("mAP50", 0.85)
+        assert run.info.run_id is not None
+

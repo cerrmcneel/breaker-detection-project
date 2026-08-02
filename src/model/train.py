@@ -1,4 +1,5 @@
 # src/model/train.py
+import mlflow
 from ultralytics import YOLO
 
 
@@ -15,9 +16,15 @@ def init_model():
 
 
 def run_training():
+    # Setup MLflow Experiment Tracking
+    mlflow.set_tracking_uri("sqlite:///mlflow.db")
+    mlflow.set_experiment("PanelSafe-YOLO-Breakers")
+    mlflow.autolog()
+
     model = init_model()
 
-    print("Starting YOLO26-Large Training Pipeline...")
+
+    print("Starting YOLO26-Large Training Pipeline with MLflow Tracking...")
 
     model.train(
         data="data.yaml",
