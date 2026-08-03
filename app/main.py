@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 # --- INFERENCE CONFIGURATION ---
 # The website now talks directly to the Windows GPU worker via the 'gpu-worker' Tailscale alias
 INFERENCE_URL = os.getenv("INFERENCE_URL", "http://gpu-worker:8088/predict")
+AZURE_FALLBACK_URL = os.getenv("AZURE_FALLBACK_URL", "https://api-cloud.panelsafe.cv/predict/")
 
 seen_hashes = set()
 file_hash_cache = {}
@@ -191,16 +192,26 @@ async def predict_panel(file: UploadFile = File(...)):
         logger.info("Forwarding image to K3s GPU Worker pipeline...")
         try:
             with open(temp_path, "rb") as f:
-                # 90s: leaves headroom for a cold-started scale-to-zero GPU backend
-                # (e.g. the Modal failover endpoint) to load the model before the
-                # gateway itself gives up and surfaces an error to the user.
                 response = requests.post(INFERENCE_URL, files={"file": f}, timeout=90)
                 response.raise_for_status()
                 cluster_data = response.json()
                 refined_predictions = cluster_data.get("predictions", [])
         except Exception as cluster_err:
-            logger.error(f"K3s Cluster Connection Failed: {cluster_err}")
-            raise HTTPException(status_code=503, detail=f"GPU Inference Cluster is unreachable at {INFERENCE_URL}")
+            logger.warning(f"Primary GPU Cluster ({INFERENCE_URL}) failed: {cluster_err}. Failing over to Azure Cloud!")
+            try:
+                with open(temp_path, "rb") as f:
+                    azure_response = requests.post(AZURE_FALLBACK_URL, files={"file": f}, timeout=30)
+                    azure_response.raise_for_status()
+                    cluster_data = azure_response.json()
+                    refined_predictions = cluster_data.get("predictions", cluster_data.get("panel_layout", []))
+                    logger.info("Successfully processed inference via Azure Cloud Failover!")
+            except Exception as azure_err:
+                logger.error(f"Both Primary and Azure Cloud Failover failed. Local: {cluster_err}, Azure: {azure_err}")
+                raise HTTPException(
+                    status_code=503,
+                    detail=f"All inference endpoints unreachable. Local: {cluster_err}, Azure: {azure_err}"
+                )
+
 
         os.remove(temp_path)
         return {
