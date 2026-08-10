@@ -3,7 +3,7 @@ import os
 import requests
 
 
-def test_predict_api():
+def run_predict_api_client():
     url = "http://localhost:8000/predict/"
     img_path = "data/dataset/val/images/SPAIN_66e65cb2-f410-4140-86c8-e11439746fc6.jpg"
     
@@ -25,4 +25,5 @@ def test_predict_api():
 
 if __name__ == "__main__":
     # Note: The FastAPI server must be running for this to work
-    test_predict_api()
+    run_predict_api_client()
+

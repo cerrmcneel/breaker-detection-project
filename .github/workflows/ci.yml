@@ -38,7 +38,13 @@ jobs:
           sudo apt-get install -y libgl1 libglib2.0-0 tesseract-ocr
 
       - name: Install Python dependencies
-        run: pip install -r requirements.txt
+        # requirements-training.txt, not requirements.txt: the Phase 3 split made
+        # requirements.txt a LEAN GATEWAY manifest (no torch/ultralytics/easyocr)
+        # so the deployed image stays small, but the test suite imports
+        # src.model.pipeline, which needs those. requirements-training.txt starts
+        # with `-r requirements.txt`, so this is a superset -- the Dockerfile still
+        # installs the lean file, so image size is unaffected.
+        run: pip install -r requirements-training.txt
 
       - name: Run tests
         run: pytest src/tests/ -v

@@ -5,22 +5,10 @@ python-dotenv
 pytest
 # Required by fastapi.testclient (src/tests/test_main.py). starlette >= 1.3 moved
 # its TestClient transport to httpx2; starlette 1.0.x used httpx, so an existing
-# local env may satisfy this already and hide the gap. Nothing here is pinned, so
-# a clean install resolves the newer starlette -- which is how CI caught this.
+# local env may satisfy this already and hide the gap.
 httpx2
-opencv-python
+opencv-python-headless
 numpy
-ultralytics
-# DELIBERATELY UNUSED -- do not wire back into src/model/pipeline.py.
-# SAHI was added to remediate poor real-world scoring before the actual root
-# cause was found (a classes.txt/data.yaml ordering mismatch that permuted all
-# six classes in every hand-labelled real image). Once the labels were fixed, a
-# controlled ablation showed slicing made results WORSE, so it was removed from
-# the live pipeline. Kept installed only so that ablation stays reproducible.
-# Re-run that ablation against corrected labels before re-adding it.
-sahi
-torch --index-url https://download.pytorch.org/whl/cpu
-easyocr
-pytesseract
 requests
 mlflow
+pydantic

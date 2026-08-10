@@ -1,49 +1,43 @@
-# Git
-.git
+# Git & IDE
+.git/
 .gitignore
-.github
-
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Virtual environments
-.venv
-.venv2
-venv/
-env/
-ENV/
-env.bak/
-venv.bak/
-
-# Data and Models
-data/images/raw_uploads/*
-!data/upload_log.json
-
-# IDE
+.claude/
 .vscode/
 .idea/
-*.swp
-*.swo
 
-# MacOS
-.DS_Store
+# Virtual Environments
+.venv/
+venv/
+env/
+
+# Python Cache & Tests
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Large Bloat & Media
+*.mp4
+*.avi
+*.mov
+*.pptx
+*.html
+*.log
+*.db
+
+# Model Weights in Root (Model weights live inside models/ directory)
+yolo*.pt
+
+# Exploratory / Scratch Scripts
+analyze_bing_html.py
+check_keywords.py
+clean_and_split.py
+deduplicate_dataset.py
+download_bing_search.py
+filter_images.py
+inspect_sbi.py
+inspect_script_tags.py
+scrape_images.py
+test_bing_reverse.py
+update_urls.py
+scratch_*.py
