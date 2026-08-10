@@ -209,3 +209,56 @@ def test_active_learning_save_blocks_cross_origin(client):
         headers={"origin": "https://evil.example.com", "host": "testserver"},
     )
     assert resp.status_code == 403
+
+
+# --- degraded-inference contract (found by external review 2026-08-09) ----------------
+# An empty prediction list is ambiguous: it means either "nothing detected" or
+# "inference failed". Grading the second case fabricates a safety verdict, so the
+# server must not produce a score at all when inference did not run.
+
+def test_upload_does_not_fabricate_a_score_when_inference_fails(client):
+    with patch("app.main.requests.post", side_effect=ConnectionError("cluster down")), \
+         patch("app.main.get_unique_dataset_count", return_value=(0, set())):
+        resp = client.post(
+            "/upload/",
+            files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
+            data={"country": "ES", "rcd_test_result": "Responsive"},
+        )
+
+    assert resp.status_code == 200          # the upload itself succeeded
+    body = resp.json()
+    assert body["status"] == "degraded"
+    assert body["inference_ok"] is False
+
+    # Omitted, not nulled: a client that forgets to check inference_ok must get
+    # `undefined` rather than a plausible-looking number it can render.
+    assert "score" not in body
+    assert "feedback" not in body
+
+    # The image is still kept -- a failed analysis is no reason to bin training data.
+    assert body["filename"] != "DUPLICATE"
+    for path in glob.glob(os.path.join("data", "images", "raw_uploads", body["filename"])):
+        os.remove(path)
+
+
+def test_upload_still_scores_normally_when_inference_succeeds(client):
+    fake = MagicMock()
+    fake.raise_for_status.return_value = None
+    fake.json.return_value = {"predictions": [{"class": "MCB", "conf": 0.9, "box": [0, 0, 1, 1]}]}
+
+    with patch("app.main.requests.post", return_value=fake), \
+         patch("app.main.get_unique_dataset_count", return_value=(0, set())):
+        resp = client.post(
+            "/upload/",
+            files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
+            data={"country": "ES", "rcd_test_result": "Responsive"},
+        )
+
+    body = resp.json()
+    assert body["status"] == "success"
+    assert body["inference_ok"] is True
+    assert isinstance(body["score"], int)
+    assert body["feedback"]
+
+    for path in glob.glob(os.path.join("data", "images", "raw_uploads", body["filename"])):
+        os.remove(path)

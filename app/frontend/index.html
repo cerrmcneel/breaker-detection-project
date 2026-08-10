@@ -1664,8 +1664,47 @@
                 if (response.ok) {
                     const result = await response.json();
 
+                    // The analysis backend can be down while the upload itself succeeds.
+                    // In that case the server deliberately omits score/feedback rather
+                    // than grading an empty detection list, because doing so fabricates
+                    // a verdict ("No RCD detected") for a panel nobody actually looked
+                    // at. Show an honest "not analysed" state instead of a number.
+                    if (result.inference_ok === false || result.status === "degraded") {
+                        const degradedText = {
+                            en: {
+                                title: "⚠️ Photo received — analysis unavailable",
+                                body: "Your photo was uploaded successfully, but our analysis service is temporarily unreachable, so we could not assess this panel. <strong>No safety score was produced.</strong> Please try again shortly — your tracking ID below stays valid."
+                            },
+                            es: {
+                                title: "⚠️ Foto recibida — análisis no disponible",
+                                body: "Tu foto se subió correctamente, pero nuestro servicio de análisis no está disponible temporalmente, así que no hemos podido evaluar este cuadro. <strong>No se ha generado ninguna puntuación de seguridad.</strong> Inténtalo de nuevo en unos minutos — tu ID de seguimiento sigue siendo válido."
+                            },
+                            fr: {
+                                title: "⚠️ Photo reçue — analyse indisponible",
+                                body: "Votre photo a bien été envoyée, mais notre service d'analyse est temporairement injoignable, nous n'avons donc pas pu évaluer ce tableau. <strong>Aucun score de sécurité n'a été produit.</strong> Réessayez dans quelques instants — votre identifiant de suivi reste valide."
+                            }
+                        };
+                        const d = degradedText[currentLang] || degradedText.en;
+                        statusDiv.className = "status-info";
+                        statusDiv.innerHTML = `
+                            <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.35); padding: 16px; border-radius: 12px; color: #fcd34d; font-size: 0.95rem; text-align: left;">
+                                <strong>${d.title}</strong>
+                                <p style="margin-top: 8px; font-size: 0.9rem;">${d.body}</p>
+                            </div>
+                            ${result.tracking_id ? `
+                            <div style="margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                                <span style="font-size: 1.25rem; font-weight: 800; color: var(--primary); font-family: monospace;">${result.tracking_id}</span>
+                                <button type="button" class="btn btn-outline" onclick="copyTrackingId('${result.tracking_id}')" style="width: auto; padding: 4px 10px; font-size: 12px; height: auto;">Copy</button>
+                            </div>` : ""}
+                        `;
+                        if (result.tracking_id) {
+                            localStorage.setItem('breakerTrackingId', result.tracking_id);
+                        }
+                        return;
+                    }
+
                     // Determine safety recommendation based on score and warnings
-                    const hasDanger = result.score < 85 || 
+                    const hasDanger = result.score < 85 ||
                                       result.feedback.includes("PELIGRO CRÍTICO") || 
                                       result.feedback.includes("ADVERTENCIA") || 
                                       result.feedback.includes("CRITICAL DANGER") || 

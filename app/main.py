@@ -356,10 +356,25 @@ async def upload_image(file: UploadFile = File(...), country: str = Form(default
             inference_detail = str(inf_err)
             logger.error(f"INFERENCE CALL FAILED ({INFERENCE_URL}): {inf_err}")
 
-        # Grade the panel
-        auto_score, auto_feedback = grade_panel_layout(predictions, rcd_test_result, country)
+        # Only grade when inference actually ran. An empty `predictions` list is
+        # ambiguous -- it means EITHER "the panel genuinely has no detectable
+        # components" OR "the inference call failed" -- and grade_panel_layout
+        # cannot tell the difference. Scoring the failure case fabricates a
+        # verdict: a fully compliant panel comes back as 45/100 with "No RCD
+        # detected" and "No MCBs detected", contradicting the user's own RCD test
+        # answer in the same report. On a safety product that is worse than no
+        # answer, because a homeowner may act on it.
+        #
+        # The score/feedback keys are OMITTED rather than nulled on failure, so a
+        # client that forgets to check `inference_ok` cannot silently render a
+        # fabricated number -- it gets `undefined` and has to handle it.
+        if inference_ok:
+            auto_score, auto_feedback = grade_panel_layout(predictions, rcd_test_result, country)
+        else:
+            auto_score, auto_feedback = None, None
 
-        # Log metadata
+        # Log metadata. The image itself is still kept either way -- a failed
+        # analysis is no reason to discard training data the user just gave us.
         entry = {
             "timestamp": datetime.now().isoformat(),
             "original_filename": file.filename,
@@ -368,6 +383,7 @@ async def upload_image(file: UploadFile = File(...), country: str = Form(default
             "hash": file_hash,
             "rcd_test_result": rcd_test_result,
             "tracking_id": tracking_id,
+            "inference_ok": inference_ok,
             "manual_score": auto_score,
             "manual_feedback": auto_feedback
         }
@@ -381,7 +397,17 @@ async def upload_image(file: UploadFile = File(...), country: str = Form(default
             entries.append(entry)
             with open(LOG_FILE, "w") as f: json.dump(entries, f, indent=4)
 
-        return {"status": "success", "filename": unique_filename, "tracking_id": tracking_id, "score": auto_score, "feedback": auto_feedback, "inference_ok": inference_ok, "inference_detail": inference_detail}
+        payload = {
+            "status": "success" if inference_ok else "degraded",
+            "filename": unique_filename,
+            "tracking_id": tracking_id,
+            "inference_ok": inference_ok,
+            "inference_detail": inference_detail,
+        }
+        if inference_ok:
+            payload["score"] = auto_score
+            payload["feedback"] = auto_feedback
+        return payload
     except HTTPException:
         raise
     except Exception as e:
