@@ -146,3 +146,33 @@ def test_empty_and_garbage_input_is_neutral(clean):
     assert clean("") == ""
     assert clean("   ") == ""
     assert clean("@#$ ~~~ ...") == ""
+
+
+# --- Regressions found by external review 2026-08-09 -----------------------------------
+# All three were real by construction but had ZERO occurrences in the 1,060-crop
+# sample, so they are guarded by tests rather than left to resurface.
+
+def test_300ma_rcd_is_not_read_as_30ma(clean):
+    """0.3A is a 300mA fire-protection RCD -- a different device from a 30mA one.
+
+    An earlier `0[.,]0?3` made the second zero optional and matched it.
+    """
+    assert clean("ID 40A 0.3A Type AC") != "30MA"
+    assert clean("ID 40A 0,3A Type AC") != "30MA"
+
+
+def test_genuine_30ma_still_matches_in_messy_ocr(clean):
+    """The lookarounds must not undo the leading-glyph tolerance."""
+    assert clean("BD62 InF404 Isn*0034 Ian-0,03A Un 230") == "30MA"
+    assert clean("40 A Ly ~ 8060 94 30 mAL Le Lu") == "30MA"
+
+
+def test_leakage_marker_does_not_match_inside_a_longer_number(clean):
+    """"130MA" is a model-number fragment, not a 30mA rating."""
+    assert clean("CHNT NXB 130MA 25") != "30MA"
+    assert clean("SERIES 2130 MA") != "30MA"
+
+
+def test_zero_padded_rating_is_canonicalised(clean):
+    """"C06" and "C6" are the same rating; emit one spelling."""
+    assert clean("SCHNEIDER C06 6000") == "C6"

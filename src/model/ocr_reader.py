@@ -128,10 +128,19 @@ class OCRReader:
     # yields a bogus "D62"; without the trailing one, "C1234" yields "C12".
     _RATING_RE = re.compile(r'\b([BCD])\s?(\d{1,2})\b')
 
-    # RCD residual-current marker. Deliberately NOT \b-anchored: real OCR output
-    # runs the marker into neighbouring glyphs ("IAN0,03A", "30 MAL"), and the old
-    # \b(...)\b form silently missed every one of those.
-    _LEAKAGE_RE = re.compile(r'30\s*M\s*A|0[.,]0?3\s*A')
+    # RCD residual-current marker for a 30 mA device. Deliberately NOT \b-anchored:
+    # real OCR output runs the marker into neighbouring glyphs ("IAN0,03A",
+    # "30 MAL"), and a \b(...)\b form silently missed every one of those.
+    #
+    # Digit lookarounds instead: they keep the leading-letter tolerance while
+    # refusing to match inside a longer number, so a model number like "130MA"
+    # no longer yields "30MA".
+    #
+    # The decimal branch requires BOTH zeros. An earlier `0[.,]0?3` also matched
+    # "0.3A" -- which is a 300 mA fire-protection RCD, a genuinely different
+    # device -- and would have emitted a 30 mA verdict for it at 19:1 odds.
+    # Not observed in the 1,060-crop sample, but wrong by construction.
+    _LEAKAGE_RE = re.compile(r'(?<!\d)(?:30\s*M\s*A|0[.,]03\s*A)(?!\d)')
 
     # "SI" = superinmunizado (nuisance-trip-immune RCD). Must be a STANDALONE token:
     # a bare substring test matches SIEMENS, Schneider RESI9, SIMON and a long tail
@@ -156,8 +165,12 @@ class OCRReader:
 
         rating = None
         for match in self._RATING_RE.finditer(text):
-            if int(match.group(2)) in self.VALID_RATINGS:
-                rating = f"{match.group(1)}{match.group(2)}"
+            amps = int(match.group(2))
+            if amps in self.VALID_RATINGS:
+                # Emit the parsed integer, not the raw digits, so a zero-padded
+                # OCR read ("C06") canonicalises to "C6" rather than leaking a
+                # second spelling of the same rating downstream.
+                rating = f"{match.group(1)}{amps}"
                 break
 
         # A superinmunizado device is still an RCD, so a standalone SI token
