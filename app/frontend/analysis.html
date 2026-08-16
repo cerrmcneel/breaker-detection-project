@@ -17,15 +17,19 @@
             --primary: #9137af;
             --primary-dark: #6c2583;
             --primary-light: rgba(145, 55, 175, 0.15);
+            --primary-border: rgba(145, 55, 175, 0.35);
             --secondary: #73c83c;
             --secondary-dark: #56972d;
             --secondary-light: rgba(115, 200, 60, 0.15);
             --bg: #0b0a0d;
             --card-bg: #141219;
+            --card-hover: #1c1824;
             --border: rgba(145, 55, 175, 0.2);
             --text: #ffffff;
             --text-dim: #a9a6b0;
+            --text-muted: #6f6c77;
             --accent: #ff4a4a;
+            --highlight: #00d2ff;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -42,7 +46,7 @@
             display: flex;
             flex-direction: row;
             overflow: hidden;
-            padding-top: 64px; /* Space for navbar */
+            padding-top: 60px; /* Space for navbar */
         }
 
         /* --- NAVBAR --- */
@@ -51,16 +55,17 @@
             top: 0;
             left: 0;
             width: 100%;
-            background: rgba(11, 10, 13, 0.8);
+            height: 60px;
+            background: rgba(11, 10, 13, 0.85);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            padding: 1rem 1.5rem;
+            padding: 0.75rem 1.5rem;
             z-index: 1000;
             display: flex;
             justify-content: space-between;
             align-items: center;
             box-sizing: border-box;
-            border-bottom: 1px solid rgba(145, 55, 175, 0.15);
+            border-bottom: 1px solid rgba(145, 55, 175, 0.18);
         }
 
         .nav-brand {
@@ -70,7 +75,7 @@
             text-decoration: none;
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
         }
 
         .nav-links {
@@ -83,7 +88,7 @@
             color: var(--text-dim);
             font-weight: 600;
             font-size: 0.875rem;
-            padding: 8px 12px;
+            padding: 7px 12px;
             border-radius: 8px;
             transition: all 0.2s;
         }
@@ -98,7 +103,7 @@
         .resize-handle {
             width: 8px;
             flex-shrink: 0;
-            height: calc(100vh - 64px);
+            height: calc(100vh - 60px);
             background: transparent;
             cursor: ew-resize;
             position: relative;
@@ -125,69 +130,194 @@
 
         /* --- SIDEBAR (LEFT) --- */
         .sidebar {
-            width: 30vw;
-            max-width: 900px;
+            width: 34vw;
+            max-width: 850px;
             min-width: 360px;
-            height: calc(100vh - 64px);
+            height: calc(100vh - 60px);
             background: var(--card-bg);
             border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
-            padding: 2rem;
+            padding: 0;
             z-index: 10;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+            box-shadow: 4px 0 20px rgba(0,0,0,0.4);
+            position: relative;
         }
 
-        .logo {
-            font-size: 2.5rem;
-            font-weight: 700;
-            background: linear-gradient(45deg, var(--primary), var(--secondary));
+        /* Sidebar Header (Slim & Compact) */
+        .sidebar-header {
+            padding: 1.25rem 1.5rem 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            background: rgba(20, 18, 25, 0.95);
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .sidebar-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(45deg, #c767e6, var(--secondary));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             display: flex;
             align-items: center;
-            gap: 1rem;
-            margin-bottom: 2rem;
+            gap: 0.5rem;
         }
 
-        .actions {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            margin-bottom: 2rem;
+        .lang-switcher {
+            display: flex;
+            gap: 4px;
+            background: rgba(0,0,0,0.25);
+            padding: 2px;
+            border-radius: 8px;
+            border: 1px solid rgba(145, 55, 175, 0.25);
         }
 
-        #export-btn {
-            grid-column: span 2;
+        .lang-btn {
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: none;
+            background: transparent;
+            color: var(--text-dim);
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
+        .lang-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Upload States */
         .upload-section {
-            padding-bottom: 2rem;
-            border-bottom: 2px solid var(--border);
-            margin-bottom: 1.5rem;
-            flex-shrink: 0;
+            transition: all 0.3s ease;
         }
 
+        /* Pre-upload: prominent drop box */
         .upload-zone {
             border: 2px dashed var(--primary);
-            border-radius: 16px;
-            padding: 2.5rem;
+            border-radius: 12px;
+            padding: 1.5rem 1rem;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.25s ease;
             background: rgba(145, 55, 175, 0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
         }
 
         .upload-zone:hover {
             border-color: var(--secondary);
-            background: rgba(145, 55, 175, 0.1);
+            background: rgba(145, 55, 175, 0.12);
+            transform: translateY(-1px);
         }
 
-        /* --- SCROLLABLE COMPONENT LIST --- */
+        /* Post-upload: sleek collapsed status strip */
+        .file-badge-strip {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(145, 55, 175, 0.1);
+            border: 1px solid var(--primary-border);
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 0;
+        }
+
+        .file-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 170px;
+        }
+
+        .btn-replace {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-replace:hover {
+            background: var(--primary-light);
+            color: var(--text);
+            border-color: var(--primary);
+        }
+
+        /* Secondary Toolbar (Add Box / Clear) */
+        .quick-toolbar {
+            display: none;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+
+        .tool-btn {
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: rgba(20, 18, 25, 0.8);
+            color: var(--text-dim);
+            font-weight: 600;
+            font-size: 0.82rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+        }
+
+        .tool-btn:hover {
+            background: var(--primary-light);
+            color: var(--text);
+            border-color: var(--primary);
+        }
+
+        .tool-btn.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(145, 55, 175, 0.4);
+        }
+
+        /* --- SCROLLABLE DETECTIONS LIST (FULL HEIGHT) --- */
         .scroll-area {
             flex: 1;
             overflow-y: auto;
-            padding-right: 0.5rem;
+            padding: 1.25rem 1.5rem;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
         }
 
         .scroll-area::-webkit-scrollbar { width: 6px; }
@@ -195,133 +325,249 @@
         .scroll-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
         .scroll-area::-webkit-scrollbar-thumb:hover { background: var(--secondary); }
 
-        h2 {
+        .list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .list-title {
             font-family: 'Outfit', sans-serif;
-            font-size: 1.5rem;
+            font-size: 0.95rem;
             font-weight: 700;
             color: var(--text-dim);
-            margin-bottom: 1.5rem;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 1.5px;
+        }
+
+        .comp-counter {
+            font-size: 0.8rem;
+            color: var(--primary);
+            font-weight: 800;
+            background: var(--primary-light);
+            border: 1px solid var(--primary-border);
+            padding: 3px 10px;
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+        }
+
+        .component-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            padding-bottom: 1rem;
         }
 
         .component-card {
             background: var(--bg);
-            border: 2px solid var(--border);
-            border-radius: 16px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            padding: 0.85rem 1rem;
             display: flex;
             flex-direction: column;
-            gap: 1.25rem;
-            transition: all 0.2s ease;
+            gap: 0.65rem;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
             position: relative;
+            cursor: pointer;
         }
 
         .component-card:hover {
             border-color: var(--primary);
-            background: #1c1924;
-            box-shadow: 0 4px 12px rgba(145, 55, 175, 0.15);
+            background: var(--card-hover);
+            box-shadow: 0 4px 14px rgba(145, 55, 175, 0.15);
+            transform: translateY(-1px);
         }
 
         .component-card.active {
-            border-color: var(--primary);
-            background: #1c1924;
-            box-shadow: 0 5px 15px rgba(145, 55, 175, 0.3);
+            border-color: #0088ff;
+            background: #151d2a;
+            box-shadow: 0 0 0 1px #0088ff, 0 6px 18px rgba(0, 136, 255, 0.2);
         }
 
-        .card-actions {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
+        .component-card.highlighted {
+            border-color: #f39c12;
+            background: #231e15;
+        }
+
+        .card-header {
             display: flex;
-            gap: 0.5rem;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.55rem;
+            border-radius: 6px;
+            text-transform: uppercase;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-mcb { background: #1e5ba8; color: #d8ecff; }
+        .badge-rcd { background: #b85d11; color: #ffe6cf; }
+        .badge-rcd_si { background: #962d85; color: #fce6fa; }
+        .badge-mainbreaker { background: #c29505; color: #111; font-weight: 900; }
+        .badge-oversurge { background: #3b7e47; color: #dff5e3; }
+        .badge-other { background: #4a4754; color: #e1dfe8; }
+
+        .card-number {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            font-weight: 800;
+        }
+
+        .confidence-badge {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 700;
+            margin-left: 2px;
+        }
+
+        .conf-high { background: rgba(46, 204, 113, 0.18); color: #2ecc71; }
+        .conf-med  { background: rgba(241, 196, 15, 0.18); color: #f1c40f; }
+        .conf-low  { background: rgba(231, 76, 60, 0.18); color: #e74c3c; }
+
+        .card-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 0.25rem;
         }
 
         .icon-btn {
-            background: none;
+            background: transparent;
             border: none;
-            color: var(--text-dim);
+            color: var(--text-muted);
             cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 8px;
-            transition: all 0.2s;
+            padding: 0.3rem;
+            border-radius: 6px;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .icon-btn:hover { color: var(--primary); background: var(--primary-light); }
         .icon-btn.delete:hover { color: var(--accent); background: rgba(255, 74, 74, 0.15); }
 
-        .card-header {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .badge {
-            font-size: 1rem;
-            padding: 0.4rem 0.8rem;
-            border-radius: 8px;
-            text-transform: uppercase;
-            font-weight: 800;
-        }
-
-        .badge-mcb { background: #4a90e2; }
-        .badge-rcd { background: #e67e22; }
-        .badge-main { background: #f1c40f; color: #000; }
-
-        .inputs {
+        .inputs-grid {
             display: grid;
-            /* Reflows automatically: narrow sidebar -> 1 column (each field full-width,
-               easy to hit), wide sidebar -> 2+ columns. Fixes fields becoming too
-               cramped to comfortably click/type into at the old rigid 30vw width. */
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 1rem;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
         }
 
         input, select {
-            background: #141219;
-            border: 2px solid var(--border);
+            background: #0d0c10;
+            border: 1px solid var(--border);
             color: var(--text);
-            padding: 1rem;
-            border-radius: 10px;
+            padding: 0.55rem 0.75rem;
+            border-radius: 8px;
             font-family: inherit;
-            font-size: 1.2rem;
+            font-size: 0.88rem;
             font-weight: 600;
             width: 100%;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
 
-        input:focus, select:focus { border-color: var(--primary); outline: none; }
-        select { color: var(--text); }
+        input:focus, select:focus {
+            border-color: #0088ff;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0, 136, 255, 0.25);
+            background: #11141c;
+        }
+
+        /* --- STICKY BOTTOM FOOTER BAR --- */
+        .sidebar-footer {
+            display: none;
+            flex-direction: column;
+            gap: 0.65rem;
+            padding: 1rem 1.5rem;
+            background: rgba(14, 12, 18, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border);
+            flex-shrink: 0;
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.3);
+        }
+
+        .footer-status {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+
+        .footer-status-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--secondary);
+            font-weight: 700;
+        }
+
+        .footer-status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--secondary);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--secondary);
+        }
+
+        .footer-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
 
         .btn {
-            padding: 1rem 1.5rem;
-            border-radius: 12px;
+            padding: 0.75rem 1.25rem;
+            border-radius: 10px;
             border: none;
             font-weight: 800;
-            font-size: 1.2rem;
+            font-size: 0.95rem;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.25s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 0.75rem;
+            gap: 0.5rem;
             flex: 1;
         }
 
-        .btn-primary { background: var(--primary); color: #fff; }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(145, 55, 175, 0.3); background: var(--primary-dark); }
-        .btn-secondary { background: rgba(20, 18, 25, 0.6); color: var(--text); border: 1px solid rgba(145, 55, 175, 0.2); }
-        .btn-secondary:hover { background: var(--primary-light); }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--secondary-dark), var(--secondary));
+            color: #0b0a0d;
+            box-shadow: 0 4px 14px rgba(115, 200, 60, 0.25);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(115, 200, 60, 0.4);
+            filter: brightness(1.08);
+        }
+
+        .btn-secondary {
+            background: rgba(145, 55, 175, 0.15);
+            color: #d8a7e8;
+            border: 1px solid var(--primary-border);
+        }
+        .btn-secondary:hover {
+            background: var(--primary);
+            color: #fff;
+            transform: translateY(-2px);
+        }
 
         /* --- VIEWPORT (RIGHT) --- */
         .viewport {
             flex: 1;
-            height: calc(100vh - 64px);
-            background: #0b0a0d; /* Matching site background */
+            height: calc(100vh - 60px);
+            background: #08070a;
             position: relative;
             overflow: hidden;
-            display: block; /* Removed flex centering to fix canvas offset */
+            display: block;
             cursor: grab;
         }
 
@@ -332,17 +578,66 @@
             top: 0;
             left: 0;
             transform-origin: 0 0;
-            box-shadow: 0 0 50px rgba(0,0,0,1);
-            /* No transform transition: wheel-zoom must track the cursor
-               instantly. Animating each wheel tick makes rapid scrolling
-               queue overlapping 100ms animations -> jumpy rubber-band feel. */
+            box-shadow: 0 0 60px rgba(0,0,0,0.9);
+        }
+
+        /* Floating Canvas HUD Toolbar */
+        .canvas-hud {
+            position: absolute;
+            top: 1.25rem;
+            right: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(18, 16, 23, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            padding: 6px 8px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            z-index: 30;
+        }
+
+        .hud-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-dim);
+            padding: 7px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+
+        .hud-btn:hover {
+            background: var(--primary-light);
+            color: var(--text);
+            border-color: var(--primary);
+        }
+
+        .hud-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .hud-divider {
+            width: 1px;
+            height: 20px;
+            background: var(--border);
+            margin: 0 2px;
         }
 
         .loading-overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(30, 41, 59, 0.8);
-            backdrop-filter: blur(5px);
+            background: rgba(11, 10, 13, 0.85);
+            backdrop-filter: blur(8px);
             display: none;
             flex-direction: column;
             align-items: center;
@@ -351,12 +646,13 @@
         }
 
         .spinner {
-            width: 50px;
-            height: 50px;
+            width: 48px;
+            height: 48px;
             border: 3px solid rgba(255,255,255,0.1);
             border-top-color: var(--primary);
+            border-right-color: var(--secondary);
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            animation: spin 0.8s linear infinite;
             margin-bottom: 1rem;
         }
 
@@ -369,63 +665,24 @@
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
-            color: rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.2);
             pointer-events: none;
         }
 
         .empty-state svg {
-            width: 80px;
-            height: 80px;
+            width: 72px;
+            height: 72px;
             margin-bottom: 1rem;
-            opacity: 0.3;
+            opacity: 0.35;
         }
 
         .empty-state p {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: 600;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
         }
 
-        .confidence-badge {
-            font-size: 0.75rem;
-            padding: 3px 8px;
-            border-radius: 6px;
-            font-weight: 700;
-            margin-left: auto;
-        }
-
-        .conf-high { background: rgba(46, 204, 113, 0.2); color: #2ecc71; }
-        .conf-med  { background: rgba(241, 196, 15, 0.2); color: #f1c40f; }
-        .conf-low  { background: rgba(231, 76, 60, 0.2); color: #e74c3c; }
-
-        .lang-switcher {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 1.5rem;
-        }
-
-        .lang-btn {
-            padding: 6px 14px;
-            border-radius: 8px;
-            border: 1px solid rgba(145, 55, 175, 0.3);
-            background: transparent;
-            color: var(--text-dim);
-            font-size: 13px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .lang-btn.active {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-
-        /* --- MOBILE / NARROW LAYOUT ---
-           Desktop keeps the exact side-by-side layout above; below 900px the
-           two panes stack vertically: image viewport on top (visual context
-           first), editing sidebar below it, page scrolls as one column. */
+        /* --- MOBILE / NARROW LAYOUT --- */
         @media (max-width: 900px) {
             body {
                 flex-direction: column;
@@ -434,15 +691,13 @@
                 min-height: 100vh;
             }
 
-            .navbar { padding: 0.75rem 1rem; flex-wrap: wrap; gap: 4px; }
-            .nav-links { flex-wrap: wrap; }
-            .nav-link { padding: 6px 8px; font-size: 0.8rem; }
+            .navbar { padding: 0.5rem 1rem; }
 
             .viewport {
                 order: 1;
                 width: 100%;
                 flex: none;
-                height: 55vh;
+                height: 50vh;
             }
 
             .sidebar {
@@ -453,14 +708,10 @@
                 height: auto;
                 border-right: none;
                 border-top: 1px solid var(--border);
-                padding: 1.25rem;
             }
 
-            /* The page itself scrolls on mobile; don't nest a second scroll area */
-            .scroll-area { overflow-y: visible; }
-
-            .logo { font-size: 1.75rem; margin-bottom: 1.25rem; }
-            .upload-zone { padding: 1.5rem; }
+            .scroll-area { overflow-y: visible; max-height: none; }
+            .sidebar-footer { position: sticky; bottom: 0; }
         }
     </style>
 </head>
@@ -469,8 +720,8 @@
     <!-- Top Navigation Bar -->
     <nav class="navbar">
         <a href="/" class="nav-brand" data-i18n="nav_brand">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 2px;">
-                <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
             PanelSafe
         </a>
@@ -484,48 +735,84 @@
 
     <!-- LEFT SIDEBAR -->
     <div class="sidebar">
-        <div class="logo">
-            <i data-lucide="shield-check"></i>
-            PanelSafe Analysis
-        </div>
-        
-        <div class="lang-switcher">
-            <button class="lang-btn" id="btn-en" onclick="setLanguage('en')">EN</button>
-            <button class="lang-btn" id="btn-es" onclick="setLanguage('es')">ES</button>
-            <button class="lang-btn" id="btn-fr" onclick="setLanguage('fr')">FR</button>
-        </div>
+        <!-- Slim Header -->
+        <div class="sidebar-header">
+            <div class="header-top">
+                <div class="sidebar-title">
+                    <i data-lucide="shield-check" style="width: 20px; height: 20px; color: var(--primary);"></i>
+                    <span>PanelSafe Analysis</span>
+                </div>
+                
+                <div class="lang-switcher">
+                    <button class="lang-btn" id="btn-en" onclick="setLanguage('en')">EN</button>
+                    <button class="lang-btn" id="btn-es" onclick="setLanguage('es')">ES</button>
+                    <button class="lang-btn" id="btn-fr" onclick="setLanguage('fr')">FR</button>
+                </div>
+            </div>
 
-        <div class="actions">
-            <button class="btn btn-secondary" id="clear-btn">
-                <i data-lucide="trash-2"></i> <span data-i18n="btn_clear">Clear</span>
-            </button>
-            <button class="btn btn-secondary" id="add-comp-btn">
-                <i data-lucide="plus-square"></i> <span data-i18n="btn_add_box">Add Box</span>
-            </button>
-            <button class="btn btn-primary" id="export-btn">
-                <i data-lucide="database"></i> <span data-i18n="btn_vault">Send to Vault</span>
-            </button>
-            <button class="btn btn-primary" id="generate-unifilar-btn" style="grid-column: span 2; display: none; background: var(--secondary);">
-                <i data-lucide="layout-template"></i> <span data-i18n="btn_generate">Generate Diagram</span>
-            </button>
-        </div>
+            <!-- Upload Zone (Pre-upload) -->
+            <div class="upload-section" id="upload-section">
+                <div class="upload-zone" id="drop-zone">
+                    <i data-lucide="upload-cloud" style="width: 28px; height: 28px; color: var(--primary);"></i>
+                    <p style="font-size: 0.88rem; font-weight: 600; color: var(--text);" data-i18n="drop_hint">Click or Drop Image</p>
+                    <input type="file" id="file-input" accept="image/*">
+                </div>
 
-        <div class="upload-section">
-            <div class="upload-zone" id="drop-zone">
-                <i data-lucide="upload-cloud" style="width: 32px; height: 32px; margin-bottom: 0.5rem; color: var(--primary);"></i>
-                <p style="font-size: 0.9rem; font-weight: 600; color: var(--text);" data-i18n="drop_hint">Click or Drop Image</p>
-                <input type="file" id="file-input" accept="image/*">
+                <!-- Collapsed File Badge Strip (Post-upload) -->
+                <div class="file-badge-strip" id="file-badge-strip">
+                    <div class="file-info">
+                        <i data-lucide="image" style="width: 16px; height: 16px; color: var(--secondary); flex-shrink:0;"></i>
+                        <span class="file-name" id="file-name-display">panel.jpg</span>
+                    </div>
+                    <button class="btn-replace" id="replace-photo-btn">
+                        <i data-lucide="refresh-cw" style="width: 12px; height: 12px;"></i>
+                        <span data-i18n="btn_replace">Replace</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Secondary Toolbar (Add Box / Clear) -->
+            <div class="quick-toolbar" id="quick-toolbar">
+                <button class="tool-btn" id="add-comp-btn">
+                    <i data-lucide="plus-square" style="width: 15px; height: 15px;"></i>
+                    <span data-i18n="btn_add_box">Add Box</span>
+                </button>
+                <button class="tool-btn" id="clear-btn">
+                    <i data-lucide="trash-2" style="width: 15px; height: 15px;"></i>
+                    <span data-i18n="btn_clear">Clear</span>
+                </button>
             </div>
         </div>
 
-        <!-- SCROLLABLE LIST -->
+        <!-- FULL-HEIGHT SCROLLABLE DETECTIONS LIST -->
         <div id="results-panel" style="display: none;" class="scroll-area">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <h2 data-i18n="detections_title">Detections</h2>
-                <span id="comp-count" style="font-size: 1rem; color: var(--primary); font-weight: 800; background: #E6F0FF; padding: 4px 12px; border-radius: 20px;">0 FOUND</span>
+            <div class="list-header">
+                <span class="list-title" data-i18n="detections_title">Detections</span>
+                <span class="comp-counter" id="comp-count">0 FOUND</span>
             </div>
             <div class="component-list" id="component-list">
-                <!-- Cards injected here -->
+                <!-- Detection cards injected here -->
+            </div>
+        </div>
+
+        <!-- STICKY BOTTOM FOOTER BAR -->
+        <div class="sidebar-footer" id="sidebar-footer">
+            <div class="footer-status">
+                <div class="footer-status-pill">
+                    <div class="footer-status-dot"></div>
+                    <span id="footer-count-text">Ready for export</span>
+                </div>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">Auto-saved</span>
+            </div>
+            <div class="footer-actions">
+                <button class="btn btn-secondary" id="export-btn">
+                    <i data-lucide="database" style="width: 16px; height: 16px;"></i>
+                    <span data-i18n="btn_vault">Vault</span>
+                </button>
+                <button class="btn btn-primary" id="generate-unifilar-btn">
+                    <i data-lucide="layout-template" style="width: 16px; height: 16px;"></i>
+                    <span data-i18n="btn_generate">Generate Diagram</span>
+                </button>
             </div>
         </div>
     </div>
@@ -535,9 +822,31 @@
 
     <!-- RIGHT VIEWPORT -->
     <div class="viewport" id="viewport-container">
+        <!-- Floating Canvas HUD Toolbar -->
+        <div class="canvas-hud" id="canvas-hud" style="display: none;">
+            <button class="hud-btn" id="hud-zoom-in" title="Zoom In">
+                <i data-lucide="zoom-in" style="width: 15px; height: 15px;"></i>
+            </button>
+            <button class="hud-btn" id="hud-zoom-out" title="Zoom Out">
+                <i data-lucide="zoom-out" style="width: 15px; height: 15px;"></i>
+            </button>
+            <button class="hud-btn" id="hud-fit" title="Fit to Screen">
+                <i data-lucide="maximize" style="width: 15px; height: 15px;"></i>
+                <span style="font-size: 11px;">Fit</span>
+            </button>
+            <button class="hud-btn" id="hud-reset" title="Reset View 100%">
+                <i data-lucide="rotate-ccw" style="width: 15px; height: 15px;"></i>
+            </button>
+            <div class="hud-divider"></div>
+            <button class="hud-btn" id="hud-draw-mode" title="Draw Box">
+                <i data-lucide="crop" style="width: 15px; height: 15px;"></i>
+                <span style="font-size: 11px;" data-i18n="btn_draw">Draw</span>
+            </button>
+        </div>
+
         <div class="loading-overlay" id="loading">
             <div class="spinner"></div>
-            <p data-i18n="loading_text">Analyzing Panel with AI...</p>
+            <p data-i18n="loading_text" style="font-weight: 600; font-size: 1rem; color: #fff;">Analyzing Panel with AI...</p>
         </div>
         <canvas id="panel-canvas"></canvas>
         <div class="empty-state" id="empty-state">
@@ -551,12 +860,12 @@
     <script>
         lucide.createIcons();
 
-        // --- I18N (shares the 'breakerLang' localStorage key with the portal
-        // page, so the chosen language follows the user across PanelSafe) ---
+        // --- I18N DICTIONARY ---
         const translations = {
             en: {
                 nav_home: "Home", nav_analysis: "AI Analyzer", nav_unifilar: "Diagram Generator", nav_blog: "Blog",
                 btn_clear: "Clear", btn_add_box: "Add Box", btn_vault: "Send to Vault", btn_generate: "Generate Diagram",
+                btn_replace: "Replace", btn_draw: "Draw Box",
                 drop_hint: "Click or Drop Image",
                 detections_title: "Detections",
                 found_suffix: "FOUND",
@@ -574,7 +883,8 @@
             },
             es: {
                 nav_home: "Inicio", nav_analysis: "Analizador IA", nav_unifilar: "Generador Unifilar", nav_blog: "Blog",
-                btn_clear: "Limpiar", btn_add_box: "Añadir Caja", btn_vault: "Enviar a la Bóveda", btn_generate: "Generar Esquema",
+                btn_clear: "Limpiar", btn_add_box: "Añadir Caja", btn_vault: "Enviar a Bóveda", btn_generate: "Generar Esquema",
+                btn_replace: "Cambiar", btn_draw: "Dibujar",
                 drop_hint: "Haz clic o arrastra una imagen",
                 detections_title: "Detecciones",
                 found_suffix: "ENCONTRADOS",
@@ -592,7 +902,8 @@
             },
             fr: {
                 nav_home: "Accueil", nav_analysis: "Analyseur IA", nav_unifilar: "Générateur de schéma", nav_blog: "Blog",
-                btn_clear: "Effacer", btn_add_box: "Ajouter une boîte", btn_vault: "Envoyer au coffre", btn_generate: "Générer le schéma",
+                btn_clear: "Effacer", btn_add_box: "Ajouter une boîte", btn_vault: "Envoyer au coffre", btn_generate: "Générer schéma",
+                btn_replace: "Remplacer", btn_draw: "Dessiner",
                 drop_hint: "Cliquez ou déposez une image",
                 detections_title: "Détections",
                 found_suffix: "TROUVÉS",
@@ -628,14 +939,15 @@
                 const key = el.getAttribute('data-i18n');
                 if (translations[lang][key]) el.textContent = translations[lang][key];
             });
-            // Re-render dynamic UI (cards use translated placeholders, count uses suffix)
             if (typeof components !== 'undefined' && components.length) populateSidebar();
         }
-        // NOTE: setLanguage(currentLang) is called at the END of this script --
-        // calling it here would touch `components` while that let-binding is
-        // still in its temporal dead zone, throwing and killing the whole script.
 
+        // DOM elements
         const dropZone = document.getElementById('drop-zone');
+        const fileBadgeStrip = document.getElementById('file-badge-strip');
+        const fileNameDisplay = document.getElementById('file-name-display');
+        const replacePhotoBtn = document.getElementById('replace-photo-btn');
+        const quickToolbar = document.getElementById('quick-toolbar');
         const fileInput = document.getElementById('file-input');
         const canvas = document.getElementById('panel-canvas');
         const ctx = canvas.getContext('2d');
@@ -643,9 +955,12 @@
         const resultsPanel = document.getElementById('results-panel');
         const componentList = document.getElementById('component-list');
         const compCount = document.getElementById('comp-count');
+        const sidebarFooter = document.getElementById('sidebar-footer');
+        const footerCountText = document.getElementById('footer-count-text');
         const viewport = document.querySelector('.viewport');
+        const canvasHud = document.getElementById('canvas-hud');
 
-        // --- SIDEBAR DRAG-TO-RESIZE ---
+        // Sidebar Drag Resize
         (function setupSidebarResize() {
             const sidebar = document.querySelector('.sidebar');
             const handle = document.getElementById('resize-handle');
@@ -664,7 +979,7 @@
 
             window.addEventListener('mousemove', (e) => {
                 if (!isResizing) return;
-                const min = 360, max = 900;
+                const min = 360, max = 850;
                 const newWidth = Math.min(max, Math.max(min, e.clientX));
                 sidebar.style.width = `${newWidth}px`;
             });
@@ -679,11 +994,13 @@
         })();
 
         let activeComponentIndex = -1;
+        let hoveredComponentIndex = -1;
         let draggingHandle = null;
         let isDrawingMode = false;
         let drawingStart = null;
         let tempBox = null;
         let originalImage = null;
+        let currentFile = null;
         let components = [];
         let scale = 1;
         let offsetX = 0;
@@ -691,22 +1008,15 @@
         let isDragging = false;
         let lastMouseX, lastMouseY;
 
-        // PAN & ZOOM LOGIC
+        // PAN & ZOOM
         viewport.onwheel = (e) => {
             e.preventDefault();
-            // Scale the zoom step by the wheel event's actual deltaY instead of a
-            // fixed 10% per event: notched mice fire one event per notch
-            // (deltaY ~100 -> ~10% step), while touchpads fire many small-delta
-            // events per gesture -- a fixed step made touchpad zooming ~10x too
-            // fast and mouse zooming jumpy. Clamp so a single event can never
-            // jump more than ~25%.
             const zoomFactor = Math.exp(-Math.max(-250, Math.min(250, e.deltaY)) * 0.001);
-
             const mouseX = e.clientX - viewport.offsetLeft;
             const mouseY = e.clientY - viewport.offsetTop;
 
             const newScale = scale * zoomFactor;
-            if (newScale < 0.1 || newScale > 10) return;
+            if (newScale < 0.05 || newScale > 15) return;
 
             offsetX = mouseX - (mouseX - offsetX) * zoomFactor;
             offsetY = mouseY - (mouseY - offsetY) * zoomFactor;
@@ -716,6 +1026,8 @@
         };
 
         viewport.onmousedown = (e) => {
+            if (e.target.closest('.canvas-hud')) return;
+
             const rect = viewport.getBoundingClientRect();
             const mouseX = e.clientX - rect.left;
             const mouseY = e.clientY - rect.top;
@@ -740,15 +1052,20 @@
 
             if (draggingHandle) return;
 
-            // Clicking directly on a bounding box selects it, same as clicking its
-            // card in the left panel. Iterate in reverse so the topmost-drawn
-            // (last) box wins when boxes overlap.
+            // Click bounding box on canvas
             for (let i = components.length - 1; i >= 0; i--) {
                 const [bx1, by1, bx2, by2] = components[i].box;
                 if (canvasMouseX >= bx1 && canvasMouseX <= bx2 && canvasMouseY >= by1 && canvasMouseY <= by2) {
-                    selectComponent(i);
+                    selectComponent(i, true);
                     return;
                 }
+            }
+
+            // Click outside to deselect
+            if (activeComponentIndex !== -1) {
+                activeComponentIndex = -1;
+                document.querySelectorAll('.component-card').forEach(c => c.classList.remove('active'));
+                drawPanel(-1);
             }
 
             isDragging = true;
@@ -756,8 +1073,25 @@
             lastMouseY = e.clientY;
         };
 
-        function selectComponent(index) {
-            document.querySelectorAll('.component-card').forEach((c, i) => c.classList.toggle('active', i === index));
+        function selectComponent(index, focusInput = false) {
+            if (index < 0 || index >= components.length) return;
+            activeComponentIndex = index;
+            
+            const cards = document.querySelectorAll('.component-card');
+            cards.forEach((c, i) => {
+                const isActive = (i === index);
+                c.classList.toggle('active', isActive);
+                if (isActive) {
+                    c.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    if (focusInput) {
+                        const input = c.querySelector('input');
+                        if (input) {
+                            setTimeout(() => input.focus(), 150);
+                        }
+                    }
+                }
+            });
+
             zoomToComponent(index);
         }
 
@@ -767,6 +1101,25 @@
             const mouseY = e.clientY - rect.top;
             const canvasMouseX = (mouseX - offsetX) / scale;
             const canvasMouseY = (mouseY - offsetY) / scale;
+
+            // Update hovered box when not dragging
+            if (!isDragging && !draggingHandle && !drawingStart && components.length > 0) {
+                let foundHover = -1;
+                for (let i = components.length - 1; i >= 0; i--) {
+                    const [bx1, by1, bx2, by2] = components[i].box;
+                    if (canvasMouseX >= bx1 && canvasMouseX <= bx2 && canvasMouseY >= by1 && canvasMouseY <= by2) {
+                        foundHover = i;
+                        break;
+                    }
+                }
+                if (foundHover !== hoveredComponentIndex) {
+                    hoveredComponentIndex = foundHover;
+                    drawPanel(activeComponentIndex);
+                    document.querySelectorAll('.component-card').forEach((card, idx) => {
+                        card.classList.toggle('highlighted', idx === hoveredComponentIndex && idx !== activeComponentIndex);
+                    });
+                }
+            }
 
             if (drawingStart) {
                 tempBox = [
@@ -780,19 +1133,12 @@
             }
 
             if (draggingHandle && activeComponentIndex !== -1) {
-                const rect = viewport.getBoundingClientRect();
-                const mouseX = e.clientX - rect.left;
-                const mouseY = e.clientY - rect.top;
-                const canvasMouseX = (mouseX - offsetX) / scale;
-                const canvasMouseY = (mouseY - offsetY) / scale;
-                
                 const comp = components[activeComponentIndex];
                 if (draggingHandle === 'tl') { comp.box[0] = canvasMouseX; comp.box[1] = canvasMouseY; }
                 else if (draggingHandle === 'tr') { comp.box[2] = canvasMouseX; comp.box[1] = canvasMouseY; }
                 else if (draggingHandle === 'bl') { comp.box[0] = canvasMouseX; comp.box[3] = canvasMouseY; }
                 else if (draggingHandle === 'br') { comp.box[2] = canvasMouseX; comp.box[3] = canvasMouseY; }
                 
-                // Enforce valid box
                 if (comp.box[2] < comp.box[0] + 10) comp.box[2] = comp.box[0] + 10;
                 if (comp.box[3] < comp.box[1] + 10) comp.box[3] = comp.box[1] + 10;
                 
@@ -821,13 +1167,10 @@
                 components.push(newComp);
                 drawingStart = null;
                 tempBox = null;
-                isDrawingMode = false;
-                document.getElementById('add-comp-btn').classList.remove('btn-primary');
-                document.getElementById('add-comp-btn').classList.add('btn-secondary');
-                viewport.style.cursor = 'grab';
+                setDrawingMode(false);
                 saveToLocalStorage();
                 populateSidebar();
-                zoomToComponent(components.length - 1);
+                selectComponent(components.length - 1, true);
             }
             drawingStart = null;
             isDragging = false;
@@ -837,8 +1180,25 @@
             }
         };
 
+        // KEYBOARD SHORTCUTS
+        window.addEventListener('keydown', (e) => {
+            const isTyping = ['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName);
+            if (e.key === 'Escape') {
+                if (isDrawingMode) setDrawingMode(false);
+                if (activeComponentIndex !== -1) {
+                    activeComponentIndex = -1;
+                    document.querySelectorAll('.component-card').forEach(c => c.classList.remove('active'));
+                    drawPanel(-1);
+                }
+            } else if ((e.key === 'Delete' || e.key === 'Backspace') && !isTyping && activeComponentIndex !== -1) {
+                deleteComponent(null, activeComponentIndex);
+            }
+        });
+
+        // FILE HANDLING & COLLAPSE TRANSITION
         async function handleFile(file) {
             if (!file) return;
+            currentFile = file;
             
             const draftKey = `panelsafe_draft_${file.name}_${file.size}`;
             const existingDraft = localStorage.getItem(draftKey);
@@ -856,7 +1216,6 @@
                 const response = await fetch('/predict/', { method: 'POST', body: formData });
                 const data = await response.json();
                 if (data.status === 'success' && data.panel_layout.length > 0) {
-                    // Map backend 'conf' key to frontend 'confidence'
                     components = data.panel_layout.map(c => ({
                         ...c,
                         confidence: c.conf || c.confidence || 0
@@ -866,13 +1225,12 @@
                     loading.style.display = 'none';
                     const emptyEl = document.getElementById('empty-state');
                     emptyEl.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:80px;height:80px;opacity:0.3;margin-bottom:1rem;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:72px;height:72px;opacity:0.35;margin-bottom:1rem;">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
                         </svg>
                         <p style="color:rgba(255,255,255,0.4)">${T('no_detections')}</p>
-                        <p style="font-size:0.9rem;color:rgba(255,255,255,0.2);margin-top:0.5rem">${T('no_detections_hint')}</p>
+                        <p style="font-size:0.85rem;color:rgba(255,255,255,0.25);margin-top:0.5rem">${T('no_detections_hint')}</p>
                     `;
-                    return;
                 }
             } catch (err) { alert("Error analyzing panel: " + err.message); }
             finally { loading.style.display = 'none'; }
@@ -885,22 +1243,36 @@
                 originalImage.onload = () => {
                     canvas.width = originalImage.width;
                     canvas.height = originalImage.height;
-                    scale = Math.min(viewport.clientWidth / canvas.width, viewport.clientHeight / canvas.height);
-                    offsetX = (viewport.clientWidth - canvas.width * scale) / 2;
-                    offsetY = (viewport.clientHeight - canvas.height * scale) / 2;
-                    drawPanel();
-                    populateSidebar();
+                    fitToScreen();
+                    
+                    // Switch dropzone to collapsed badge strip
+                    dropZone.style.display = 'none';
+                    fileBadgeStrip.style.display = 'flex';
+                    fileNameDisplay.textContent = file.name;
+                    quickToolbar.style.display = 'grid';
+                    canvasHud.style.display = 'flex';
                     resultsPanel.style.display = 'flex';
-                    resultsPanel.style.flexDirection = 'column';
-                    document.getElementById('generate-unifilar-btn').style.display = 'flex';
+                    sidebarFooter.style.display = 'flex';
                     document.getElementById('empty-state').style.display = 'none';
+
+                    populateSidebar();
+                    lucide.createIcons();
                 };
                 originalImage.src = e.target.result;
             };
             reader.readAsDataURL(file);
         }
 
+        function fitToScreen() {
+            if (!originalImage) return;
+            scale = Math.min((viewport.clientWidth - 40) / canvas.width, (viewport.clientHeight - 40) / canvas.height);
+            offsetX = (viewport.clientWidth - canvas.width * scale) / 2;
+            offsetY = (viewport.clientHeight - canvas.height * scale) / 2;
+            drawPanel(activeComponentIndex);
+        }
+
         function drawPanel(activeIndex = -1) {
+            if (!originalImage) return;
             ctx.setTransform(1, 0, 0, 1, 0, 0);
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
@@ -909,19 +1281,41 @@
 
             components.forEach((comp, index) => {
                 const [x1, y1, x2, y2] = comp.box;
-                const isActive = index === activeIndex;
-
-                ctx.strokeStyle = isActive ? '#0066FF' : 'rgba(0, 102, 255, 0.4)';
-                ctx.lineWidth = isActive ? 8 / scale : 4 / scale;
-                ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+                const isActive = (index === activeIndex);
+                const isHovered = (index === hoveredComponentIndex && !isActive);
 
                 if (isActive) {
-                    ctx.fillStyle = 'rgba(0, 102, 255, 0.2)';
-                    ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
-                    
-                    // Draw Drag Handles
-                    ctx.fillStyle = '#ff4b2b';
-                    const hs = 20 / scale; // handle size
+                    ctx.strokeStyle = '#0088ff';
+                    ctx.lineWidth = 6 / scale;
+                    ctx.fillStyle = 'rgba(0, 136, 255, 0.22)';
+                } else if (isHovered) {
+                    ctx.strokeStyle = '#f39c12';
+                    ctx.lineWidth = 4 / scale;
+                    ctx.fillStyle = 'rgba(243, 156, 18, 0.18)';
+                } else {
+                    ctx.strokeStyle = 'rgba(0, 150, 255, 0.45)';
+                    ctx.lineWidth = 3 / scale;
+                    ctx.fillStyle = 'transparent';
+                }
+
+                ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
+                ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+
+                // Label pill above box
+                const fontSize = Math.max(12, Math.min(22, 16 / scale));
+                ctx.font = `bold ${fontSize}px Inter, sans-serif`;
+                const label = `#${index + 1} ${comp.class}`;
+                const textWidth = ctx.measureText(label).width;
+                
+                ctx.fillStyle = isActive ? '#0088ff' : isHovered ? '#f39c12' : 'rgba(15, 12, 20, 0.85)';
+                ctx.fillRect(x1, y1 - fontSize - 6, textWidth + 8, fontSize + 6);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(label, x1 + 4, y1 - 4);
+
+                if (isActive) {
+                    // Drag handles
+                    ctx.fillStyle = '#ff4a4a';
+                    const hs = 18 / scale;
                     ctx.fillRect(x1 - hs/2, y1 - hs/2, hs, hs);
                     ctx.fillRect(x2 - hs/2, y1 - hs/2, hs, hs);
                     ctx.fillRect(x1 - hs/2, y2 - hs/2, hs, hs);
@@ -930,9 +1324,9 @@
             });
 
             if (tempBox) {
-                ctx.setLineDash([10/scale, 10/scale]);
-                ctx.strokeStyle = '#0066FF';
-                ctx.lineWidth = 4 / scale;
+                ctx.setLineDash([8/scale, 6/scale]);
+                ctx.strokeStyle = '#00ffcc';
+                ctx.lineWidth = 3 / scale;
                 ctx.strokeRect(tempBox[0], tempBox[1], tempBox[2] - tempBox[0], tempBox[3] - tempBox[1]);
                 ctx.setLineDash([]);
             }
@@ -945,8 +1339,8 @@
             const w = x2 - x1;
             const h = y2 - y1;
 
-            const targetScale = Math.min(viewport.clientWidth / w, viewport.clientHeight / h) * 0.4;
-            scale = Math.max(0.5, Math.min(targetScale, 2));
+            const targetScale = Math.min(viewport.clientWidth / w, viewport.clientHeight / h) * 0.45;
+            scale = Math.max(0.4, Math.min(targetScale, 2.5));
 
             offsetX = viewport.clientWidth / 2 - (x1 + w / 2) * scale;
             offsetY = viewport.clientHeight / 2 - (y1 + h / 2) * scale;
@@ -957,6 +1351,8 @@
         function populateSidebar() {
             componentList.innerHTML = '';
             compCount.innerText = `${components.length} ${T('found_suffix')}`;
+            if (footerCountText) footerCountText.innerText = `${components.length} Breakers Ready`;
+
             components.forEach((comp, index) => {
                 const card = document.createElement('div');
                 card.className = 'component-card';
@@ -978,20 +1374,20 @@
                 }
 
                 card.innerHTML = `
-                    <div class="card-actions">
-                        <button class="icon-btn" onclick="mergeComponents(event, ${index})"><i data-lucide="merge"></i></button>
-                        <button class="icon-btn delete" onclick="deleteComponent(event, ${index})"><i data-lucide="trash-2"></i></button>
-                    </div>
                     <div class="card-header">
-                        <span class="badge badge-${comp.class.toLowerCase().replace('_', '')}">${comp.class}</span>
-                        <span style="font-size: 1.1rem; color: var(--text-dim); font-weight: 800;">#${index+1}</span>
+                        <span class="badge badge-${comp.class.toLowerCase()}">${comp.class}</span>
+                        <span class="card-number">#${index+1}</span>
                         ${(() => {
                             const conf = Math.round((comp.confidence || 0) * 100);
                             const cls = conf >= 80 ? 'conf-high' : conf >= 50 ? 'conf-med' : 'conf-low';
                             return `<span class="confidence-badge ${cls}">${conf}%</span>`;
                         })()}
+                        <div class="card-actions">
+                            <button class="icon-btn" title="Merge with next" onclick="mergeComponents(event, ${index})"><i data-lucide="merge" style="width: 14px; height: 14px;"></i></button>
+                            <button class="icon-btn delete" title="Delete" onclick="deleteComponent(event, ${index})"><i data-lucide="trash-2" style="width: 14px; height: 14px;"></i></button>
+                        </div>
                     </div>
-                    <div class="inputs">
+                    <div class="inputs-grid">
                         <select onchange="updateComp(${index}, 'class', this.value)">
                             <option value="MCB" ${comp.class === 'MCB' ? 'selected' : ''}>MCB</option>
                             <option value="MAINBREAKER" ${comp.class === 'MAINBREAKER' ? 'selected' : ''}>IGA</option>
@@ -1003,7 +1399,20 @@
                         ${inputsHtml}
                     </div>
                 `;
-                card.onclick = () => selectComponent(index);
+                card.onclick = (e) => {
+                    if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT' && !e.target.closest('.card-actions')) {
+                        selectComponent(index, true);
+                    }
+                };
+                card.onmouseenter = () => {
+                    hoveredComponentIndex = index;
+                    drawPanel(activeComponentIndex);
+                };
+                card.onmouseleave = () => {
+                    hoveredComponentIndex = -1;
+                    drawPanel(activeComponentIndex);
+                };
+
                 componentList.appendChild(card);
             });
             lucide.createIcons();
@@ -1023,7 +1432,11 @@
             if (index >= components.length - 1) return;
             const c1 = components[index];
             const c2 = components[index + 1];
-            components[index] = { ...c1, box: [Math.min(c1.box[0], c2.box[0]), Math.min(c1.box[1], c2.box[1]), Math.max(c1.box[2], c2.box[2]), Math.max(c1.box[3], c2.box[3])], ocr_text: (c1.ocr_text + " " + c2.ocr_text).trim() };
+            components[index] = { 
+                ...c1, 
+                box: [Math.min(c1.box[0], c2.box[0]), Math.min(c1.box[1], c2.box[1]), Math.max(c1.box[2], c2.box[2]), Math.max(c1.box[3], c2.box[3])], 
+                ocr_text: (c1.ocr_text + " " + c2.ocr_text).trim() 
+            };
             components.splice(index + 1, 1);
             saveToLocalStorage();
             drawPanel(activeComponentIndex);
@@ -1034,37 +1447,57 @@
             components[index][field] = value;
             saveToLocalStorage();
             if (field === 'class') {
-                populateSidebar(); // Rerender dynamic inputs
+                populateSidebar();
             }
             drawPanel(activeComponentIndex);
         };
 
         function saveToLocalStorage() {
             if (!originalImage || !components.length) return;
-            const file = fileInput.files[0];
+            const file = currentFile || (fileInput.files && fileInput.files[0]);
             if (file) {
                 const draftKey = `panelsafe_draft_${file.name}_${file.size}`;
                 localStorage.setItem(draftKey, JSON.stringify(components));
             }
         }
 
-        document.getElementById('add-comp-btn').onclick = () => {
-            isDrawingMode = !isDrawingMode;
-            const btn = document.getElementById('add-comp-btn');
+        function setDrawingMode(active) {
+            isDrawingMode = active;
+            const addBtn = document.getElementById('add-comp-btn');
+            const hudDrawBtn = document.getElementById('hud-draw-mode');
             if (isDrawingMode) {
-                btn.classList.remove('btn-secondary');
-                btn.classList.add('btn-primary');
+                addBtn.classList.add('active');
+                hudDrawBtn.classList.add('active');
                 viewport.style.cursor = 'crosshair';
             } else {
-                btn.classList.remove('btn-primary');
-                btn.classList.add('btn-secondary');
+                addBtn.classList.remove('active');
+                hudDrawBtn.classList.remove('active');
                 viewport.style.cursor = 'grab';
             }
+        }
+
+        document.getElementById('add-comp-btn').onclick = () => setDrawingMode(!isDrawingMode);
+        document.getElementById('hud-draw-mode').onclick = () => setDrawingMode(!isDrawingMode);
+
+        document.getElementById('hud-zoom-in').onclick = () => {
+            scale = Math.min(scale * 1.3, 15);
+            drawPanel(activeComponentIndex);
+        };
+        document.getElementById('hud-zoom-out').onclick = () => {
+            scale = Math.max(scale / 1.3, 0.05);
+            drawPanel(activeComponentIndex);
+        };
+        document.getElementById('hud-fit').onclick = fitToScreen;
+        document.getElementById('hud-reset').onclick = () => {
+            scale = 1;
+            offsetX = (viewport.clientWidth - canvas.width) / 2;
+            offsetY = (viewport.clientHeight - canvas.height) / 2;
+            drawPanel(activeComponentIndex);
         };
 
         document.getElementById('clear-btn').onclick = () => {
             if (confirm(T('confirm_clear'))) {
-                const file = fileInput.files[0];
+                const file = currentFile || (fileInput.files && fileInput.files[0]);
                 if (file) {
                     const draftKey = `panelsafe_draft_${file.name}_${file.size}`;
                     localStorage.removeItem(draftKey);
@@ -1073,13 +1506,31 @@
             }
         };
 
+        replacePhotoBtn.onclick = () => fileInput.click();
+        dropZone.onclick = () => fileInput.click();
+        fileInput.onchange = (e) => handleFile(e.target.files[0]);
+
+        // Drag & drop on dropZone and viewport
+        [dropZone, viewport].forEach(target => {
+            target.ondragover = (e) => { e.preventDefault(); if (dropZone) dropZone.style.borderColor = '#0088ff'; };
+            target.ondragleave = () => { if (dropZone) dropZone.style.borderColor = 'var(--primary)'; };
+            target.ondrop = (e) => {
+                e.preventDefault();
+                if (dropZone) dropZone.style.borderColor = 'var(--primary)';
+                if (e.dataTransfer.files.length > 0) {
+                    handleFile(e.dataTransfer.files[0]);
+                }
+            };
+        });
+
+        // SEND TO VAULT
         document.getElementById('export-btn').onclick = async () => {
-            const file = fileInput.files[0];
+            const file = currentFile || (fileInput.files && fileInput.files[0]);
             if (!file || components.length === 0) return alert(T('alert_upload_first'));
 
             const btn = document.getElementById('export-btn');
             const originalHtml = btn.innerHTML;
-            btn.innerHTML = `<i data-lucide="loader"></i> ${T('saving_text')}`;
+            btn.innerHTML = `<i data-lucide="loader" style="width:16px;height:16px;"></i> ${T('saving_text')}`;
             lucide.createIcons();
             
             const formData = new FormData();
@@ -1089,8 +1540,8 @@
             try {
                 const response = await fetch('/active-learning/save', { method: 'POST', body: formData });
                 if (response.ok) {
-                    btn.innerHTML = `<i data-lucide="check-circle"></i> ${T('vaulted_text')}`;
-                    btn.style.background = 'rgba(46, 204, 113, 0.2)'; // conf-high colors
+                    btn.innerHTML = `<i data-lucide="check-circle" style="width:16px;height:16px;"></i> ${T('vaulted_text')}`;
+                    btn.style.background = 'rgba(46, 204, 113, 0.2)';
                     btn.style.color = '#2ecc71';
                     lucide.createIcons();
                     setTimeout(() => { 
@@ -1111,16 +1562,6 @@
             }
         };
 
-        dropZone.onclick = () => fileInput.click();
-        fileInput.onchange = (e) => handleFile(e.target.files[0]);
-        dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.borderColor = '#0066FF'; };
-        dropZone.ondragleave = () => { dropZone.style.borderColor = 'rgba(0, 102, 255, 0.05)'; };
-        dropZone.ondrop = (e) => {
-            e.preventDefault();
-            dropZone.style.borderColor = 'rgba(0, 102, 255, 0.05)';
-            handleFile(e.dataTransfer.files[0]);
-        };
-
         // --- UNIFILAR SERIALIZATION & REDIRECT ---
         function serializeToShorthand() {
             if (!components || components.length === 0) return '';
@@ -1136,7 +1577,7 @@
             
             let mainChain = [];
             
-            // IGA (Main Breaker)
+            // IGA
             if (igas.length > 0) {
                 const iga = igas[0];
                 const rating = iga.ocr_text || iga.amperage || '40A';
@@ -1146,12 +1587,12 @@
                 mainChain.push(`[IGA:40A:2P]`);
             }
             
-            // SPD (Overvoltage Protector)
+            // SPD
             if (spds.length > 0) {
                 mainChain.push(`[SPD]`);
             }
             
-            // First RCD (Residual Current Device)
+            // First RCD
             if (rcds.length > 0) {
                 const rcd = rcds[0];
                 const rcdType = rcd.class === 'RCD_SI' ? 'RCD_SI' : 'RCD';
@@ -1166,11 +1607,11 @@
             lines.push(mainChain.join(" -> "));
             lines.push("");
             
-            // Individual circuits (MCBs) with smart Spanish REBT auto-mapping
+            // MCBs
             lines.push("// Circuitos de protección individual (REBT)");
             mcbs.forEach((mcb, idx) => {
                 const rawVal = (mcb.ocr_text || '').toUpperCase().trim();
-                let amp = '16A'; // default fallback
+                let amp = '16A';
                 let label = `C${idx + 1}`;
                 
                 const numericMatch = rawVal.match(/(\d+)/);
@@ -1236,7 +1677,7 @@
             window.location.href = "/unifilar/";
         };
 
-        // Apply saved language once everything above is initialized
+        // Initialize language
         setLanguage(currentLang);
     </script>
 </body>
