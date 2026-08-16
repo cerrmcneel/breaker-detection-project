@@ -9,6 +9,15 @@ services:
     environment:
       - UPLOAD_DIR=data/images/raw_uploads
       - INFERENCE_URL=http://gpu-worker:8088/predict
+      # Inference failover: the Modal deployment in deploy/modal_failover.py
+      # (T4 GPU, scale-to-zero, ships the model weights via add_local_dir).
+      # Measured 2026-08-16: 16.1s cold, ~4s warm.
+      #
+      # This must NOT point at the Azure App Service. api-cloud.panelsafe.cv is a
+      # bound hostname on the app that runs this very gateway, so pointing here at
+      # Azure makes the failover call itself; and that app cannot serve inference
+      # anyway (no weights, lean requirements). See the roadmap.
+      - FAILOVER_URL=https://ericmcneel--panelsafe-failover-inference-asgi.modal.run/predict
     ports:
       - "8085:8000"
     volumes:

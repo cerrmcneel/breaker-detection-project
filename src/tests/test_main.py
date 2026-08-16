@@ -1,5 +1,6 @@
 import asyncio
 import glob
+import hashlib
 import json
 import os
 import time
@@ -145,7 +146,8 @@ def test_upload_rejects_invalid_image(client):
 
 def test_upload_detects_duplicate(client):
     payload = make_jpeg_bytes()
-    file_hash = __import__("hashlib").sha256(payload).hexdigest()
+    # Dedup is keyed on decoded pixels now, not the file bytes.
+    file_hash = main_module.image_content_hash(payload)
 
     with patch("app.main.get_unique_dataset_count", return_value=(0, {file_hash})):
         resp = client.post(
@@ -339,6 +341,11 @@ def test_dataset_scan_does_not_block_the_event_loop():
 # the homeowner-facing endpoint straight to the degraded no-score response even
 # while Azure was healthy.
 
+# Failover tests configure their own target rather than depending on the app's
+# default, which is deliberately empty (an unconfigured failover is no failover).
+FAILOVER_TEST_URL = "https://failover.test/predict"
+
+
 def _ok_response(payload):
     resp = MagicMock()
     resp.raise_for_status.return_value = None
@@ -356,6 +363,7 @@ def test_upload_fails_over_to_azure_when_primary_is_down(client):
         return _ok_response({"predictions": [{"class": "MCB", "conf": 0.9, "box": [0, 0, 1, 1]}]})
 
     with patch("app.main.requests.post", side_effect=route), \
+         patch("app.main.FAILOVER_URL", FAILOVER_TEST_URL), \
          patch("app.main.get_unique_dataset_count", return_value=(0, set())):
         resp = client.post(
             "/upload/",
@@ -364,7 +372,7 @@ def test_upload_fails_over_to_azure_when_primary_is_down(client):
         )
 
     body = resp.json()
-    assert calls == [main_module.INFERENCE_URL, main_module.AZURE_FALLBACK_URL]
+    assert calls == [main_module.INFERENCE_URL, FAILOVER_TEST_URL]
     # Azure served it, so this is a real analysis -- score present, not degraded.
     assert body["status"] == "success"
     assert body["inference_ok"] is True
@@ -408,6 +416,7 @@ def test_failover_is_skipped_when_the_time_budget_is_exhausted():
     async def scenario():
         # Pretend the primary already consumed the whole budget.
         with patch("app.main.requests.post", side_effect=route), \
+             patch("app.main.FAILOVER_URL", FAILOVER_TEST_URL), \
              patch("app.main.INFERENCE_BUDGET", 0):
             with pytest.raises(InferenceUnavailable) as exc:
                 await _run_inference(b"data", ".jpg")
@@ -430,11 +439,12 @@ def test_failover_still_attempted_when_budget_allows():
         return _ok_response({"predictions": []})
 
     async def scenario():
-        with patch("app.main.requests.post", side_effect=route):
+        with patch("app.main.requests.post", side_effect=route), \
+             patch("app.main.FAILOVER_URL", FAILOVER_TEST_URL):
             return await _run_inference(b"data", ".jpg")
 
     predictions, engine = asyncio.run(scenario())
-    assert calls == [main_module.INFERENCE_URL, main_module.AZURE_FALLBACK_URL]
+    assert calls == [main_module.INFERENCE_URL, FAILOVER_TEST_URL]
     assert engine == main_module.FAILOVER_ENGINE
     assert predictions == []
 
@@ -519,12 +529,13 @@ def test_failover_request_carries_the_marker_header():
         return _ok_response({"predictions": []})
 
     async def scenario():
-        with patch("app.main.requests.post", side_effect=route):
+        with patch("app.main.requests.post", side_effect=route), \
+             patch("app.main.FAILOVER_URL", FAILOVER_TEST_URL):
             return await _run_inference(b"data", ".jpg")
 
     asyncio.run(scenario())
     failover_url, failover_headers = seen[1]
-    assert failover_url == main_module.AZURE_FALLBACK_URL
+    assert failover_url == FAILOVER_TEST_URL
     assert failover_headers.get(main_module.FAILOVER_MARKER_HEADER) == "1"
 
 
@@ -536,7 +547,8 @@ def test_a_marked_request_does_not_fail_over_again(client):
         calls.append(url)
         raise ConnectionError("primary unreachable from here")
 
-    with patch("app.main.requests.post", side_effect=route):
+    with patch("app.main.requests.post", side_effect=route), \
+         patch("app.main.FAILOVER_URL", FAILOVER_TEST_URL):
         resp = client.post(
             "/predict/",
             files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
@@ -559,14 +571,15 @@ def test_an_unmarked_request_still_fails_over(client):
             raise ConnectionError("primary down")
         return _ok_response({"predictions": []})
 
-    with patch("app.main.requests.post", side_effect=route):
+    with patch("app.main.requests.post", side_effect=route), \
+         patch("app.main.FAILOVER_URL", FAILOVER_TEST_URL):
         resp = client.post(
             "/predict/",
             files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
         )
 
     assert resp.status_code == 200
-    assert calls == [main_module.INFERENCE_URL, main_module.AZURE_FALLBACK_URL]
+    assert calls == [main_module.INFERENCE_URL, FAILOVER_TEST_URL]
     assert resp.json()["summary"]["inference_engine"] == main_module.FAILOVER_ENGINE
 
 
@@ -590,3 +603,54 @@ def test_empty_failover_url_means_no_failover_leg():
     err = asyncio.run(scenario())
     assert calls == [main_module.INFERENCE_URL]
     assert "no failover endpoint configured" in str(err.failover_err)
+
+
+# --- pixel-level dedup (real case found 2026-08-11) -----------------------------------
+# A photo already in raw_uploads was re-exported with a rewritten EXIF header:
+# identical 4032x2268 pixels, identical byte LENGTH, byte-identical compressed scan
+# data, only the first 64 KB differed. The file hash changed, so the same panel
+# would have been stored twice.
+
+def _jpeg_with_trailing_metadata(base: bytes, blob: bytes) -> bytes:
+    """Same image, extra bytes appended -- decodes identically, hashes differently."""
+    return base + blob
+
+
+def test_metadata_only_change_yields_the_same_content_hash():
+    base = make_jpeg_bytes(40, 30)
+    altered = _jpeg_with_trailing_metadata(base, b"\xff\xfe" + b"COMMENT-PADDING" * 4)
+
+    assert hashlib.sha256(base).digest() != hashlib.sha256(altered).digest(), \
+        "fixture is wrong: the file bytes should differ"
+    assert main_module.image_content_hash(base) == main_module.image_content_hash(altered), \
+        "metadata-only difference changed the pixel fingerprint"
+
+
+def test_different_pictures_get_different_content_hashes():
+    a = make_jpeg_bytes(40, 30)
+    img = np.full((30, 40, 3), 200, dtype=np.uint8)
+    ok, buf = cv2.imencode(".jpg", img)
+    assert ok
+    assert main_module.image_content_hash(a) != main_module.image_content_hash(buf.tobytes())
+
+
+def test_content_hash_returns_none_for_undecodable_bytes():
+    assert main_module.image_content_hash(b"not an image at all") is None
+
+
+def test_upload_rejects_a_re_exported_copy_of_a_stored_photo(client):
+    """End-to-end: the same picture with different file bytes must be caught."""
+    base = make_jpeg_bytes(40, 30)
+    stored_hash = main_module.image_content_hash(base)
+    re_exported = _jpeg_with_trailing_metadata(base, b"\xff\xfe" + b"EXIF" * 8)
+    assert hashlib.sha256(re_exported).digest() != hashlib.sha256(base).digest()
+
+    with patch("app.main.get_unique_dataset_count", return_value=(0, {stored_hash})):
+        resp = client.post(
+            "/upload/",
+            files={"file": ("re_export.jpg", re_exported, "image/jpeg")},
+        )
+
+    body = resp.json()
+    assert body["duplicate"] is True, "a re-exported copy slipped past de-duplication"
+    assert body["filename"] == "DUPLICATE"

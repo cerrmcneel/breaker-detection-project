@@ -32,16 +32,41 @@ logger = logging.getLogger(__name__)
 # --- INFERENCE CONFIGURATION ---
 # The website now talks directly to the Windows GPU worker via the 'gpu-worker' Tailscale alias
 INFERENCE_URL = os.getenv("INFERENCE_URL", "http://gpu-worker:8088/predict")
-AZURE_FALLBACK_URL = os.getenv("AZURE_FALLBACK_URL", "https://api-cloud.panelsafe.cv/predict/")
+# Failover target. FAILOVER_URL is the current name; AZURE_FALLBACK_URL is kept as
+# a deprecated alias so existing deployments keep working.
+#
+# The default is deliberately EMPTY. It used to default to
+# https://api-cloud.panelsafe.cv/predict/ -- which is a bound hostname on the Azure
+# App Service that runs this very gateway, so any deployment that did not override
+# it inherited a failover pointing at itself. An unconfigured failover must be no
+# failover, never a self-reference.
+#
+# The real inference failover is the Modal deployment in deploy/modal_failover.py
+# (T4, scale-to-zero): its `inference_asgi` function serves POST /predict. The Azure
+# app cannot serve inference at all -- it has no model weights and installs the lean
+# requirements.txt -- so it was never a valid target.
+FAILOVER_URL = os.getenv("FAILOVER_URL") or os.getenv("AZURE_FALLBACK_URL", "")
+
+# Backwards-compatible alias; some code and tests still reference the old name.
+AZURE_FALLBACK_URL = FAILOVER_URL
 
 PRIMARY_ENGINE = "K3s-GPU-Cluster-Pipeline"
-FAILOVER_ENGINE = "Azure-Cloud-Failover"
+# Derived from the configured host rather than hardcoded, so the reported engine
+# cannot silently drift from the backend actually serving the request (it used to
+# say "Azure-Cloud-Failover" regardless of where the traffic really went).
+FAILOVER_ENGINE = os.getenv("FAILOVER_ENGINE") or (
+    f"Failover:{urllib.parse.urlparse(FAILOVER_URL).hostname}" if FAILOVER_URL else "Failover:none"
+)
 
 # The full pipeline (YOLO + OCR + HMM) is far slower than raw YOLO, and the
 # primary timeout also has to cover a cold-started scale-to-zero GPU backend
 # loading the model.
 INFERENCE_TIMEOUT = int(os.getenv("INFERENCE_TIMEOUT", "90"))
-FAILOVER_TIMEOUT = int(os.getenv("FAILOVER_TIMEOUT", "30"))
+# Measured 2026-08-16 against the Modal T4 endpoint: 16.1s cold (~12s spin-up +
+# ~4s inference), 3.9-4.1s warm. 60s is ~4x the observed cold path, which absorbs a
+# slower image pull or GPU contention while still fitting inside INFERENCE_BUDGET.
+# Raising a timeout costs nothing when the backend responds promptly.
+FAILOVER_TIMEOUT = int(os.getenv("FAILOVER_TIMEOUT", "60"))
 
 # Total wall-clock budget for primary + failover combined. Cloudflare terminates
 # a proxied request at ~100s with a 524, so an un-budgeted 90 + 30 could burn the
@@ -131,10 +156,16 @@ def get_unique_dataset_count():
                     file_hash = cached[2]
                 else:
                     with open(file_path, "rb") as f:
-                        file_hash = hashlib.sha256(f.read()).hexdigest()
+                        file_hash = image_content_hash(f.read())
+                    # (mtime, size) keyed, so each image is decoded once and the
+                    # per-file decode cost is paid only on first sight or change.
                     file_hash_cache[file_path] = (mtime, size, file_hash)
-                
-                current_hashes.add(file_hash)
+
+                # None means the file would not decode. It can never match an
+                # upload (uploads must decode to be accepted), so it is not a
+                # candidate duplicate and is left out of the set.
+                if file_hash is not None:
+                    current_hashes.add(file_hash)
             except Exception as e:
                 logger.warning(f"Failed to hash {file_path}: {e}")
                 
@@ -174,6 +205,35 @@ def validate_image_upload(file_bytes: bytes) -> None:
     img = cv2.imdecode(np.frombuffer(file_bytes, dtype=np.uint8), cv2.IMREAD_COLOR)
     if img is None:
         raise HTTPException(status_code=400, detail="Invalid image file")
+
+
+def image_content_hash(file_bytes: bytes):
+    """Fingerprint an image by its DECODED PIXELS, not its file bytes.
+
+    Hashing the raw file makes de-duplication trivially defeatable by anything
+    that rewrites metadata. Measured 2026-08-11 on a real case: a photo already
+    in raw_uploads was re-exported with a different EXIF header -- same
+    4032x2268 pixels, same 1,780,560 byte length, byte-identical compressed
+    scan data, and only the first 64 KB differed. The file hash changed, so the
+    same panel would have been stored twice.
+
+    Decoded at 1/4 scale on purpose. Metadata never affects pixels, so the
+    reduced image still collapses the metadata-rewrite case exactly, while
+    being ~4x cheaper than a full decode (20 ms vs 80 ms per photo here). That
+    matters because get_unique_dataset_count() fingerprints the whole dataset,
+    and the cost grows with it.
+
+    The image shape is folded in so two differently-sized images can never
+    collide on pixel bytes alone. Returns None if the bytes will not decode.
+    """
+    img = cv2.imdecode(np.frombuffer(file_bytes, dtype=np.uint8), cv2.IMREAD_REDUCED_COLOR_4)
+    if img is None:
+        return None
+    arr = np.ascontiguousarray(img)
+    digest = hashlib.sha256()
+    digest.update(str(arr.shape).encode())
+    digest.update(arr.tobytes())
+    return digest.hexdigest()
 
 
 UPLOAD_CHUNK_SIZE = 64 * 1024
@@ -307,7 +367,7 @@ async def _run_inference(data: bytes, ext: str, allow_failover: bool = True):
                 primary_err, "failover suppressed: request already carries the failover marker"
             ) from primary_err
 
-        if not AZURE_FALLBACK_URL:
+        if not FAILOVER_URL:
             logger.error("Primary failed and no failover endpoint is configured.")
             raise InferenceUnavailable(primary_err, "no failover endpoint configured") from primary_err
 
@@ -327,7 +387,7 @@ async def _run_inference(data: bytes, ext: str, allow_failover: bool = True):
 
         try:
             data_json = await _post_image_to(
-                AZURE_FALLBACK_URL, data, timeout=failover_timeout, ext=ext,
+                FAILOVER_URL, data, timeout=failover_timeout, ext=ext,
                 headers={FAILOVER_MARKER_HEADER: "1"},
             )
             predictions = data_json.get("predictions", data_json.get("panel_layout", []))
@@ -485,7 +545,9 @@ async def upload_image(request: Request, file: UploadFile = File(...), country: 
     try:
         file_bytes = await read_upload_limited(file)
         validate_image_upload(file_bytes)
-        file_hash = hashlib.sha256(file_bytes).hexdigest()
+        # Pixel fingerprint, so a re-exported copy with rewritten EXIF is still
+        # recognised as the panel we already have.
+        file_hash = image_content_hash(file_bytes)
         
         # Check against currently scanned hashes for up-to-date de-duplication.
         # This walks three directories and SHA-256s every image, so it goes to a
