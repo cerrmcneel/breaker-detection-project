@@ -19,6 +19,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
+from starlette.concurrency import run_in_threadpool
 
 # Load environment variables
 load_dotenv()
@@ -147,6 +148,69 @@ def validate_image_upload(file_bytes: bytes) -> None:
     if img is None:
         raise HTTPException(status_code=400, detail="Invalid image file")
 
+
+# --- BLOCKING WORK OFF THE EVENT LOOP ---
+#
+# This gateway is deployed as a SINGLE uvicorn worker, so anything that blocks
+# the event loop blocks every other visitor -- including the static file serving,
+# since StaticFiles is mounted on this same app. Upstream inference can take up
+# to 90s on a cold-started GPU backend, so a synchronous requests.post() here
+# meant one slow analysis froze the whole site for a minute and a half.
+#
+# `requests` is used rather than an async HTTP client on purpose: the only
+# httpx-family package this project installs is `httpx2` (pulled in by starlette
+# for TestClient), and `import httpx` is NOT available in CI or in the deployed
+# image even though it happens to exist in some local envs. run_in_threadpool
+# keeps the event loop free without betting on that resolving a particular way.
+#
+# Threads are bounded (anyio's default limiter, ~40), so this raises effective
+# concurrency from 1 to ~40 rather than to infinity. That is the right ceiling
+# for this traffic; revisit with a real async client if it is ever approached.
+
+
+def _write_bytes(path: str, data: bytes) -> None:
+    """Blocking file write, intended to be called via run_in_threadpool.
+
+    Creates the parent directory itself rather than relying on the side effect in
+    get_unique_dataset_count(), which is where /upload/ previously got its target
+    directory from -- an easy thing to break by reordering calls.
+    """
+    parent = os.path.dirname(path)
+    if parent:
+        os.makedirs(parent, exist_ok=True)
+    with open(path, "wb") as f:
+        f.write(data)
+
+
+def _append_log_entry(log_file: str, entry: dict) -> None:
+    """Blocking read-modify-write of the upload log. Callers must hold upload_lock."""
+    entries = []
+    if os.path.exists(log_file):
+        with open(log_file, "r", encoding="utf-8") as f:
+            entries = json.load(f)
+    entries.append(entry)
+    with open(log_file, "w", encoding="utf-8") as f:
+        json.dump(entries, f, indent=4)
+
+
+async def _post_image_to(url: str, data: bytes, timeout: int, ext: str = ".jpg"):
+    """POST image bytes to an upstream inference endpoint, off the event loop.
+
+    Sends a generated filename rather than the client-supplied one -- the caller's
+    filename is untrusted and nothing upstream needs it (the worker assigns its
+    own UUID name).
+    """
+    def _send():
+        response = requests.post(
+            url,
+            files={"file": (f"upload{ext}", data, "image/jpeg")},
+            timeout=timeout,
+        )
+        response.raise_for_status()
+        return response.json()
+
+    return await run_in_threadpool(_send)
+
 # --- PYDANTIC RESPONSE SCHEMAS ---
 
 
@@ -172,37 +236,32 @@ class PredictionResponse(BaseModel):
 
 @app.post("/predict/", response_model=PredictionResponse)
 async def predict_panel(file: UploadFile = File(...)):
-    # Build the temp name from a UUID + sanitized extension only; never trust the
-    # client-supplied filename (it can contain path separators -> traversal).
+    # The client-supplied filename is untrusted (it can contain path separators),
+    # so only its extension is used, and only to label the forwarded upload.
     safe_ext = os.path.splitext(file.filename or "")[1].lower()
     if safe_ext not in ALLOWED_EXTENSIONS:
         safe_ext = ".jpg"
-    temp_filename = f"temp_{uuid.uuid4()}{safe_ext}"
-    temp_path = os.path.join(UPLOAD_DIR, temp_filename)
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
     try:
         contents = await file.read()
         validate_image_upload(contents)
-        with open(temp_path, "wb") as f:
-            f.write(contents)
 
-        # Forward the image to K3s GPU Worker cluster for pipeline prediction
+        # No temp file: the bytes are already in memory, so the previous
+        # write-to-disk-then-reopen-twice round-trip bought nothing and added
+        # three blocking filesystem operations to every request.
         logger.info("Forwarding image to K3s GPU Worker pipeline...")
+        engine = "K3s-GPU-Cluster-Pipeline"
         try:
-            with open(temp_path, "rb") as f:
-                response = requests.post(INFERENCE_URL, files={"file": f}, timeout=90)
-                response.raise_for_status()
-                cluster_data = response.json()
-                refined_predictions = cluster_data.get("predictions", [])
+            cluster_data = await _post_image_to(INFERENCE_URL, contents, timeout=90, ext=safe_ext)
+            refined_predictions = cluster_data.get("predictions", [])
         except Exception as cluster_err:
             logger.warning(f"Primary GPU Cluster ({INFERENCE_URL}) failed: {cluster_err}. Failing over to Azure Cloud!")
             try:
-                with open(temp_path, "rb") as f:
-                    azure_response = requests.post(AZURE_FALLBACK_URL, files={"file": f}, timeout=30)
-                    azure_response.raise_for_status()
-                    cluster_data = azure_response.json()
-                    refined_predictions = cluster_data.get("predictions", cluster_data.get("panel_layout", []))
-                    logger.info("Successfully processed inference via Azure Cloud Failover!")
+                cluster_data = await _post_image_to(AZURE_FALLBACK_URL, contents, timeout=30, ext=safe_ext)
+                refined_predictions = cluster_data.get("predictions", cluster_data.get("panel_layout", []))
+                # Report the engine that actually served the request; hardcoding the
+                # primary here made audit logs attribute failover traffic to K3s.
+                engine = "Azure-Cloud-Failover"
+                logger.info("Successfully processed inference via Azure Cloud Failover!")
             except Exception as azure_err:
                 logger.error(f"Both Primary and Azure Cloud Failover failed. Local: {cluster_err}, Azure: {azure_err}")
                 raise HTTPException(
@@ -210,22 +269,18 @@ async def predict_panel(file: UploadFile = File(...)):
                     detail=f"All inference endpoints unreachable. Local: {cluster_err}, Azure: {azure_err}"
                 )
 
-
-        os.remove(temp_path)
         return {
             "status": "success",
             "panel_layout": refined_predictions,
             "summary": {
                 "total_components": len(refined_predictions),
-                "inference_engine": "K3s-GPU-Cluster-Pipeline"
+                "inference_engine": engine
             }
         }
     except HTTPException:
-        if os.path.exists(temp_path): os.remove(temp_path)
         raise
     except Exception as e:
         logger.error(f"Prediction Error: {e}")
-        if os.path.exists(temp_path): os.remove(temp_path)
         raise HTTPException(status_code=500, detail=str(e))
 
 def grade_panel_layout(predictions, rcd_test_result, country="Unknown"):
@@ -313,8 +368,10 @@ async def upload_image(file: UploadFile = File(...), country: str = Form(default
         validate_image_upload(file_bytes)
         file_hash = hashlib.sha256(file_bytes).hexdigest()
         
-        # Check against currently scanned hashes for up-to-date de-duplication
-        _, current_hashes = get_unique_dataset_count()
+        # Check against currently scanned hashes for up-to-date de-duplication.
+        # This walks three directories and SHA-256s every image, so it goes to a
+        # worker thread rather than stalling the event loop on disk I/O.
+        _, current_hashes = await run_in_threadpool(get_unique_dataset_count)
         global seen_hashes
         seen_hashes = current_hashes
         
@@ -329,8 +386,7 @@ async def upload_image(file: UploadFile = File(...), country: str = Form(default
         unique_filename = f"{safe_country}_{uuid.uuid4()}{safe_ext}"
         file_path = os.path.join(UPLOAD_DIR, unique_filename)
 
-        with open(file_path, "wb") as f:
-            f.write(file_bytes)
+        await run_in_threadpool(_write_bytes, file_path, file_bytes)
 
         tracking_id = "BKR-" + "".join(random.choices(string.ascii_uppercase + string.digits, k=5))
 
@@ -342,14 +398,10 @@ async def upload_image(file: UploadFile = File(...), country: str = Form(default
         inference_ok = False
         inference_detail = "ok"
         try:
-            files = {"file": (file.filename, file_bytes, file.content_type)}
-            # The full pipeline (YOLO + OCR + HMM) is far slower than raw YOLO; the old
-            # 5s ceiling caused silent timeouts. 90s also leaves headroom for a
-            # cold-started scale-to-zero GPU backend (e.g. Modal failover) to load
-            # the model before this gateway gives up and errors out to the user.
-            response = requests.post(INFERENCE_URL, files=files, timeout=90)
-            response.raise_for_status()
-            cluster_data = response.json()
+            # 90s: the full pipeline (YOLO + OCR + HMM) is far slower than raw
+            # YOLO, and this also leaves headroom for a cold-started scale-to-zero
+            # GPU backend to load the model before the gateway gives up.
+            cluster_data = await _post_image_to(INFERENCE_URL, file_bytes, timeout=90, ext=safe_ext)
             predictions = cluster_data.get("predictions", [])
             inference_ok = True
         except Exception as inf_err:
@@ -389,13 +441,13 @@ async def upload_image(file: UploadFile = File(...), country: str = Form(default
         }
         # Serialize the dedup-set mutation and the log read-modify-write so concurrent
         # uploads cannot clobber upload_log.json or drop a seen-hash entry.
+        # The lock is held across the threadpool call so the read-modify-write of
+        # upload_log.json stays atomic with respect to other requests in this
+        # process. NOTE: asyncio.Lock is process-local -- see the roadmap; running
+        # multiple uvicorn workers would reintroduce the clobbering it prevents.
         async with upload_lock:
             seen_hashes.add(file_hash)
-            entries = []
-            if os.path.exists(LOG_FILE):
-                with open(LOG_FILE, "r") as f: entries = json.load(f)
-            entries.append(entry)
-            with open(LOG_FILE, "w") as f: json.dump(entries, f, indent=4)
+            await run_in_threadpool(_append_log_entry, LOG_FILE, entry)
 
         payload = {
             "status": "success" if inference_ok else "degraded",
@@ -416,7 +468,7 @@ async def upload_image(file: UploadFile = File(...), country: str = Form(default
 
 @app.get("/count/")
 async def get_count():
-    count, current_hashes = get_unique_dataset_count()
+    count, current_hashes = await run_in_threadpool(get_unique_dataset_count)
     global seen_hashes
     seen_hashes = current_hashes
     return {"count": count}
@@ -455,12 +507,16 @@ async def save_active_learning(request: Request, file: UploadFile = File(...), a
             raise HTTPException(status_code=400, detail="annotations must be valid JSON.")
 
         active_learning_dir = "data/active_learning"
-        os.makedirs(active_learning_dir, exist_ok=True)
         base_name = f"correction_{int(datetime.now().timestamp())}_{uuid.uuid4()}"
-        with open(os.path.join(active_learning_dir, f"{base_name}{safe_ext}"), "wb") as f:
-            f.write(file_bytes)
-        with open(os.path.join(active_learning_dir, f"{base_name}.json"), "w") as f:
-            json.dump(parsed_annotations, f)
+
+        def _persist_correction():
+            os.makedirs(active_learning_dir, exist_ok=True)
+            with open(os.path.join(active_learning_dir, f"{base_name}{safe_ext}"), "wb") as f:
+                f.write(file_bytes)
+            with open(os.path.join(active_learning_dir, f"{base_name}.json"), "w", encoding="utf-8") as f:
+                json.dump(parsed_annotations, f)
+
+        await run_in_threadpool(_persist_correction)
         return {"status": "success"}
     except HTTPException:
         raise

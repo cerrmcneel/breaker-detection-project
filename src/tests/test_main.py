@@ -1,6 +1,8 @@
+import asyncio
 import glob
 import json
 import os
+import time
 from unittest.mock import MagicMock, patch
 
 import cv2
@@ -8,6 +10,7 @@ import numpy as np
 import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
+from starlette.concurrency import run_in_threadpool
 
 import app.main as main_module
 from app.main import MAX_FILE_SIZE, app, validate_image_upload
@@ -262,3 +265,69 @@ def test_upload_still_scores_normally_when_inference_succeeds(client):
 
     for path in glob.glob(os.path.join("data", "images", "raw_uploads", body["filename"])):
         os.remove(path)
+
+
+# --- event loop must stay responsive during slow upstream calls -----------------------
+# The gateway runs as a SINGLE uvicorn worker with StaticFiles mounted on the same
+# app, so a blocking upstream call froze the entire site (up to 90s on a cold GPU
+# backend). These tests assert the loop keeps running, not merely that the code
+# "looks async".
+
+def _slow_response(delay=0.4):
+    def _send(*args, **kwargs):
+        time.sleep(delay)                      # blocking, like a real slow upstream
+        resp = MagicMock()
+        resp.raise_for_status.return_value = None
+        resp.json.return_value = {"predictions": []}
+        return resp
+    return _send
+
+
+async def _count_ticks_during(coro_factory, window=0.4):
+    """Run coro_factory() while a 10ms ticker runs; return how many ticks landed."""
+    ticks = 0
+
+    async def ticker():
+        nonlocal ticks
+        while True:
+            await asyncio.sleep(0.01)
+            ticks += 1
+
+    task = asyncio.create_task(ticker())
+    try:
+        await coro_factory()
+    finally:
+        task.cancel()
+    return ticks
+
+
+def test_upstream_post_does_not_block_the_event_loop():
+    from app.main import _post_image_to
+
+    async def scenario():
+        with patch("app.main.requests.post", side_effect=_slow_response(0.4)):
+            await _post_image_to("http://upstream/predict", b"bytes", timeout=5)
+
+    ticks = asyncio.run(_count_ticks_during(scenario))
+    # ~40 ticks if the loop stayed free; ~0 if the thread blocked it.
+    assert ticks > 10, f"event loop stalled during upstream call (only {ticks} ticks)"
+
+
+def test_control_a_direct_blocking_call_would_stall_the_loop():
+    """Proves the test above has teeth: the same wait done inline DOES stall."""
+    async def scenario():
+        time.sleep(0.4)          # what the code used to do, effectively
+
+    ticks = asyncio.run(_count_ticks_during(scenario))
+    assert ticks <= 2, f"expected the blocking control to stall the loop, got {ticks} ticks"
+
+
+def test_dataset_scan_does_not_block_the_event_loop():
+    from app.main import get_unique_dataset_count  # noqa: F401  (patched by name below)
+
+    async def scenario():
+        with patch("app.main.get_unique_dataset_count", side_effect=lambda: (time.sleep(0.4), (0, set()))[1]):
+            await run_in_threadpool(main_module.get_unique_dataset_count)
+
+    ticks = asyncio.run(_count_ticks_during(scenario))
+    assert ticks > 10, f"event loop stalled during dataset scan (only {ticks} ticks)"
