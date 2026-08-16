@@ -6,6 +6,7 @@ import os
 import random
 import re
 import string
+import time
 import urllib.parse
 import uuid
 from contextlib import asynccontextmanager
@@ -32,6 +33,23 @@ logger = logging.getLogger(__name__)
 # The website now talks directly to the Windows GPU worker via the 'gpu-worker' Tailscale alias
 INFERENCE_URL = os.getenv("INFERENCE_URL", "http://gpu-worker:8088/predict")
 AZURE_FALLBACK_URL = os.getenv("AZURE_FALLBACK_URL", "https://api-cloud.panelsafe.cv/predict/")
+
+PRIMARY_ENGINE = "K3s-GPU-Cluster-Pipeline"
+FAILOVER_ENGINE = "Azure-Cloud-Failover"
+
+# The full pipeline (YOLO + OCR + HMM) is far slower than raw YOLO, and the
+# primary timeout also has to cover a cold-started scale-to-zero GPU backend
+# loading the model.
+INFERENCE_TIMEOUT = int(os.getenv("INFERENCE_TIMEOUT", "90"))
+FAILOVER_TIMEOUT = int(os.getenv("FAILOVER_TIMEOUT", "30"))
+
+# Total wall-clock budget for primary + failover combined. Cloudflare terminates
+# a proxied request at ~100s with a 524, so an un-budgeted 90 + 30 could burn the
+# whole allowance and hand the user a Cloudflare error page instead of our own
+# degraded response. The failover gets whatever is left of this budget, and is
+# skipped entirely if too little remains to be worth attempting.
+INFERENCE_BUDGET = int(os.getenv("INFERENCE_BUDGET", "95"))
+MIN_FAILOVER_TIMEOUT = 5
 
 seen_hashes = set()
 file_hash_cache = {}
@@ -211,6 +229,53 @@ async def _post_image_to(url: str, data: bytes, timeout: int, ext: str = ".jpg")
 
     return await run_in_threadpool(_send)
 
+
+class InferenceUnavailable(Exception):
+    """Raised when the primary cluster AND the Azure failover both failed."""
+
+    def __init__(self, primary_err, failover_err):
+        self.primary_err = primary_err
+        self.failover_err = failover_err
+        super().__init__(f"Local: {primary_err}, Azure: {failover_err}")
+
+
+async def _run_inference(data: bytes, ext: str):
+    """Run inference on the primary cluster, falling back to Azure.
+
+    Returns (predictions, engine_name). Raises InferenceUnavailable if both fail.
+
+    Shared by /predict/ and /upload/ deliberately: the failover previously existed
+    only on /predict/, which meant the Azure capacity did not protect the
+    homeowner-facing path that actually produces the safety score.
+    """
+    started = time.monotonic()
+    try:
+        data_json = await _post_image_to(INFERENCE_URL, data, timeout=INFERENCE_TIMEOUT, ext=ext)
+        return data_json.get("predictions", []), PRIMARY_ENGINE
+    except Exception as primary_err:
+        logger.warning(f"Primary GPU Cluster ({INFERENCE_URL}) failed: {primary_err}. Failing over to Azure Cloud!")
+
+        remaining = INFERENCE_BUDGET - (time.monotonic() - started)
+        failover_timeout = int(min(FAILOVER_TIMEOUT, remaining))
+        if failover_timeout < MIN_FAILOVER_TIMEOUT:
+            # The primary consumed the budget. Attempting Azure now would very
+            # likely be cut off by Cloudflare mid-flight anyway, and the caller
+            # can degrade far more usefully than a 524 page can.
+            logger.error(f"Skipping Azure failover: only {remaining:.0f}s of the {INFERENCE_BUDGET}s budget left.")
+            raise InferenceUnavailable(
+                primary_err,
+                f"skipped, {remaining:.0f}s of {INFERENCE_BUDGET}s budget remaining",
+            ) from primary_err
+
+        try:
+            data_json = await _post_image_to(AZURE_FALLBACK_URL, data, timeout=failover_timeout, ext=ext)
+            predictions = data_json.get("predictions", data_json.get("panel_layout", []))
+            logger.info("Successfully processed inference via Azure Cloud Failover!")
+            return predictions, FAILOVER_ENGINE
+        except Exception as failover_err:
+            logger.error(f"Both Primary and Azure Cloud Failover failed. Local: {primary_err}, Azure: {failover_err}")
+            raise InferenceUnavailable(primary_err, failover_err) from failover_err
+
 # --- PYDANTIC RESPONSE SCHEMAS ---
 
 
@@ -249,25 +314,15 @@ async def predict_panel(file: UploadFile = File(...)):
         # write-to-disk-then-reopen-twice round-trip bought nothing and added
         # three blocking filesystem operations to every request.
         logger.info("Forwarding image to K3s GPU Worker pipeline...")
-        engine = "K3s-GPU-Cluster-Pipeline"
         try:
-            cluster_data = await _post_image_to(INFERENCE_URL, contents, timeout=90, ext=safe_ext)
-            refined_predictions = cluster_data.get("predictions", [])
-        except Exception as cluster_err:
-            logger.warning(f"Primary GPU Cluster ({INFERENCE_URL}) failed: {cluster_err}. Failing over to Azure Cloud!")
-            try:
-                cluster_data = await _post_image_to(AZURE_FALLBACK_URL, contents, timeout=30, ext=safe_ext)
-                refined_predictions = cluster_data.get("predictions", cluster_data.get("panel_layout", []))
-                # Report the engine that actually served the request; hardcoding the
-                # primary here made audit logs attribute failover traffic to K3s.
-                engine = "Azure-Cloud-Failover"
-                logger.info("Successfully processed inference via Azure Cloud Failover!")
-            except Exception as azure_err:
-                logger.error(f"Both Primary and Azure Cloud Failover failed. Local: {cluster_err}, Azure: {azure_err}")
-                raise HTTPException(
-                    status_code=503,
-                    detail=f"All inference endpoints unreachable. Local: {cluster_err}, Azure: {azure_err}"
-                )
+            # engine is reported back rather than hardcoded, so audit logs stop
+            # attributing failover traffic to the primary cluster.
+            refined_predictions, engine = await _run_inference(contents, safe_ext)
+        except InferenceUnavailable as err:
+            raise HTTPException(
+                status_code=503,
+                detail=f"All inference endpoints unreachable. {err}",
+            ) from err
 
         return {
             "status": "success",
@@ -397,13 +452,18 @@ async def upload_image(file: UploadFile = File(...), country: str = Form(default
         predictions = []
         inference_ok = False
         inference_detail = "ok"
+        inference_engine = None
         try:
-            # 90s: the full pipeline (YOLO + OCR + HMM) is far slower than raw
-            # YOLO, and this also leaves headroom for a cold-started scale-to-zero
-            # GPU backend to load the model before the gateway gives up.
-            cluster_data = await _post_image_to(INFERENCE_URL, file_bytes, timeout=90, ext=safe_ext)
-            predictions = cluster_data.get("predictions", [])
+            # Same primary + Azure failover path as /predict/. This endpoint is the
+            # one that produces the homeowner-facing safety score, so it is the one
+            # that most needs the fallback -- without it, any GPU cluster outage
+            # dropped straight to the degraded no-score response even while Azure
+            # was healthy.
+            predictions, inference_engine = await _run_inference(file_bytes, safe_ext)
             inference_ok = True
+        except InferenceUnavailable as inf_err:
+            inference_detail = str(inf_err)
+            logger.error(f"ALL INFERENCE ENDPOINTS FAILED: {inf_err}")
         except Exception as inf_err:
             inference_detail = str(inf_err)
             logger.error(f"INFERENCE CALL FAILED ({INFERENCE_URL}): {inf_err}")
@@ -436,6 +496,7 @@ async def upload_image(file: UploadFile = File(...), country: str = Form(default
             "rcd_test_result": rcd_test_result,
             "tracking_id": tracking_id,
             "inference_ok": inference_ok,
+            "inference_engine": inference_engine,
             "manual_score": auto_score,
             "manual_feedback": auto_feedback
         }
@@ -455,6 +516,7 @@ async def upload_image(file: UploadFile = File(...), country: str = Form(default
             "tracking_id": tracking_id,
             "inference_ok": inference_ok,
             "inference_detail": inference_detail,
+            "inference_engine": inference_engine,
         }
         if inference_ok:
             payload["score"] = auto_score

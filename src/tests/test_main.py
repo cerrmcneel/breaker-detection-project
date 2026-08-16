@@ -331,3 +331,108 @@ def test_dataset_scan_does_not_block_the_event_loop():
 
     ticks = asyncio.run(_count_ticks_during(scenario))
     assert ticks > 10, f"event loop stalled during dataset scan (only {ticks} ticks)"
+
+
+# --- /upload/ Azure failover (review finding #2, fixed 2026-08-09) --------------------
+# The failover previously existed only on /predict/, so a GPU cluster outage dropped
+# the homeowner-facing endpoint straight to the degraded no-score response even
+# while Azure was healthy.
+
+def _ok_response(payload):
+    resp = MagicMock()
+    resp.raise_for_status.return_value = None
+    resp.json.return_value = payload
+    return resp
+
+
+def test_upload_fails_over_to_azure_when_primary_is_down(client):
+    calls = []
+
+    def route(url, *a, **k):
+        calls.append(url)
+        if url == main_module.INFERENCE_URL:
+            raise ConnectionError("gpu cluster down")
+        return _ok_response({"predictions": [{"class": "MCB", "conf": 0.9, "box": [0, 0, 1, 1]}]})
+
+    with patch("app.main.requests.post", side_effect=route), \
+         patch("app.main.get_unique_dataset_count", return_value=(0, set())):
+        resp = client.post(
+            "/upload/",
+            files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
+            data={"country": "ES", "rcd_test_result": "Responsive"},
+        )
+
+    body = resp.json()
+    assert calls == [main_module.INFERENCE_URL, main_module.AZURE_FALLBACK_URL]
+    # Azure served it, so this is a real analysis -- score present, not degraded.
+    assert body["status"] == "success"
+    assert body["inference_ok"] is True
+    assert body["inference_engine"] == main_module.FAILOVER_ENGINE
+    assert isinstance(body["score"], int)
+
+    for path in glob.glob(os.path.join("data", "images", "raw_uploads", body["filename"])):
+        os.remove(path)
+
+
+def test_upload_degrades_only_when_both_backends_fail(client):
+    with patch("app.main.requests.post", side_effect=ConnectionError("everything down")), \
+         patch("app.main.get_unique_dataset_count", return_value=(0, set())):
+        resp = client.post(
+            "/upload/",
+            files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
+            data={"country": "ES"},
+        )
+
+    body = resp.json()
+    assert body["status"] == "degraded"
+    assert body["inference_ok"] is False
+    assert body["inference_engine"] is None
+    assert "score" not in body          # still never fabricates one
+
+    for path in glob.glob(os.path.join("data", "images", "raw_uploads", body["filename"])):
+        os.remove(path)
+
+
+def test_failover_is_skipped_when_the_time_budget_is_exhausted():
+    """Cloudflare cuts a proxied request at ~100s; burning the budget on a doomed
+    Azure attempt would hand the user a 524 instead of our own degraded response."""
+    from app.main import InferenceUnavailable, _run_inference
+
+    calls = []
+
+    def route(url, *a, **k):
+        calls.append(url)
+        raise ConnectionError("primary down")
+
+    async def scenario():
+        # Pretend the primary already consumed the whole budget.
+        with patch("app.main.requests.post", side_effect=route), \
+             patch("app.main.INFERENCE_BUDGET", 0):
+            with pytest.raises(InferenceUnavailable) as exc:
+                await _run_inference(b"data", ".jpg")
+            return exc.value
+
+    err = asyncio.run(scenario())
+    assert calls == [main_module.INFERENCE_URL]          # Azure never attempted
+    assert "skipped" in str(err.failover_err)
+
+
+def test_failover_still_attempted_when_budget_allows():
+    from app.main import _run_inference
+
+    calls = []
+
+    def route(url, *a, **k):
+        calls.append(url)
+        if url == main_module.INFERENCE_URL:
+            raise ConnectionError("primary down")
+        return _ok_response({"predictions": []})
+
+    async def scenario():
+        with patch("app.main.requests.post", side_effect=route):
+            return await _run_inference(b"data", ".jpg")
+
+    predictions, engine = asyncio.run(scenario())
+    assert calls == [main_module.INFERENCE_URL, main_module.AZURE_FALLBACK_URL]
+    assert engine == main_module.FAILOVER_ENGINE
+    assert predictions == []
