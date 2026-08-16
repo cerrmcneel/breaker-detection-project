@@ -14,6 +14,7 @@ from starlette.concurrency import run_in_threadpool
 
 import app.main as main_module
 from app.main import MAX_FILE_SIZE, app, validate_image_upload
+from app.main import UPLOAD_CHUNK_SIZE as UPLOAD_CHUNK
 
 
 def make_jpeg_bytes(width=20, height=20):
@@ -436,3 +437,65 @@ def test_failover_still_attempted_when_budget_allows():
     assert calls == [main_module.INFERENCE_URL, main_module.AZURE_FALLBACK_URL]
     assert engine == main_module.FAILOVER_ENGINE
     assert predictions == []
+
+
+# --- upload size limit is enforced WHILE reading (review finding #3) ------------------
+# `await file.read()` then checking len() is too late: the whole attacker-chosen
+# payload is already resident before it can be refused.
+
+class _StubUpload:
+    """Minimal UploadFile stand-in that reports how much was actually consumed."""
+
+    def __init__(self, total_size, chunk=64 * 1024):
+        self.remaining = total_size
+        self.chunk = chunk
+        self.bytes_served = 0
+
+    async def read(self, size=-1):
+        if self.remaining <= 0:
+            return b""
+        n = self.remaining if size in (-1, None) else min(size, self.remaining)
+        self.remaining -= n
+        self.bytes_served += n
+        return b"\0" * n
+
+
+def test_read_upload_limited_stops_reading_once_the_limit_is_crossed():
+    from app.main import read_upload_limited
+
+    stub = _StubUpload(total_size=200 * 1024 * 1024)      # 200 MB "attack" payload
+    limit = 1 * 1024 * 1024                                # 1 MB ceiling
+
+    async def scenario():
+        with pytest.raises(HTTPException) as exc:
+            await read_upload_limited(stub, limit=limit)
+        return exc.value
+
+    err = asyncio.run(scenario())
+    assert err.status_code == 413
+    # The whole point: it must NOT have pulled all 200 MB in to find that out.
+    assert stub.bytes_served <= limit + main_module.UPLOAD_CHUNK_SIZE, (
+        f"consumed {stub.bytes_served} bytes to reject a {limit}-byte limit"
+    )
+    assert stub.remaining > 0, "stream was drained instead of aborted early"
+
+
+def test_read_upload_limited_returns_content_under_the_limit():
+    from app.main import read_upload_limited
+
+    payload_size = 3 * UPLOAD_CHUNK
+    stub = _StubUpload(total_size=payload_size)
+    data = asyncio.run(read_upload_limited(stub, limit=10 * 1024 * 1024))
+    assert len(data) == payload_size
+
+
+def test_predict_now_rejects_oversized_uploads(client):
+    """/predict/ previously had NO size ceiling and forwarded anything upstream."""
+    oversized = b"0" * (MAX_FILE_SIZE + 1)
+    with patch("app.main.requests.post") as mock_post:
+        resp = client.post(
+            "/predict/",
+            files={"file": ("panel.jpg", oversized, "image/jpeg")},
+        )
+    assert resp.status_code == 413
+    mock_post.assert_not_called()          # nothing forwarded to the GPU cluster

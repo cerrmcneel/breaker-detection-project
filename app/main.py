@@ -167,6 +167,34 @@ def validate_image_upload(file_bytes: bytes) -> None:
         raise HTTPException(status_code=400, detail="Invalid image file")
 
 
+UPLOAD_CHUNK_SIZE = 64 * 1024
+
+
+async def read_upload_limited(file: UploadFile, limit: int = MAX_FILE_SIZE) -> bytes:
+    """Read an upload in chunks, rejecting it as soon as it exceeds `limit`.
+
+    `await file.read()` followed by a length check is too late: by the time the
+    check runs the process has already materialised the entire payload as a
+    single bytes object. A handful of concurrent oversized uploads could then
+    OOM the container before any of them was refused -- and this is a public,
+    anonymous endpoint, so the size of the payload is entirely attacker-chosen.
+
+    Streaming caps peak memory at roughly `limit` plus one chunk, and stops
+    pulling from the stream at the moment the limit is crossed.
+    """
+    chunks = []
+    total = 0
+    while True:
+        chunk = await file.read(UPLOAD_CHUNK_SIZE)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > limit:
+            raise HTTPException(status_code=413, detail="File too large.")
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
 # --- BLOCKING WORK OFF THE EVENT LOOP ---
 #
 # This gateway is deployed as a SINGLE uvicorn worker, so anything that blocks
@@ -307,7 +335,10 @@ async def predict_panel(file: UploadFile = File(...)):
     if safe_ext not in ALLOWED_EXTENSIONS:
         safe_ext = ".jpg"
     try:
-        contents = await file.read()
+        # Previously this endpoint read the body with no size limit at all and
+        # forwarded whatever arrived to the GPU cluster. It is public and
+        # anonymous, so it gets the same ceiling as the other upload paths.
+        contents = await read_upload_limited(file)
         validate_image_upload(contents)
 
         # No temp file: the bytes are already in memory, so the previous
@@ -417,9 +448,7 @@ def grade_panel_layout(predictions, rcd_test_result, country="Unknown"):
 @app.post("/upload/")
 async def upload_image(file: UploadFile = File(...), country: str = Form(default="Unknown"), rcd_test_result: str = Form(default="Not Tested")):
     try:
-        file_bytes = await file.read()
-        if len(file_bytes) > MAX_FILE_SIZE:
-            raise HTTPException(status_code=413, detail="File too large.")
+        file_bytes = await read_upload_limited(file)
         validate_image_upload(file_bytes)
         file_hash = hashlib.sha256(file_bytes).hexdigest()
         
@@ -551,9 +580,7 @@ async def save_active_learning(request: Request, file: UploadFile = File(...), a
             if origin_host and origin_host != request_host:
                 raise HTTPException(status_code=403, detail="Cross-origin request blocked.")
 
-        file_bytes = await file.read()
-        if len(file_bytes) > MAX_FILE_SIZE:
-            raise HTTPException(status_code=413, detail="File too large.")
+        file_bytes = await read_upload_limited(file)
         validate_image_upload(file_bytes)
 
         # Build the on-disk name from a UUID + sanitized extension only; never trust
