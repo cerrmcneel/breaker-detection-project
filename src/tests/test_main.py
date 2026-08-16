@@ -499,3 +499,94 @@ def test_predict_now_rejects_oversized_uploads(client):
         )
     assert resp.status_code == 413
     mock_post.assert_not_called()          # nothing forwarded to the GPU cluster
+
+
+# --- failover loop guard (found 2026-08-09 auditing Azure App Service) ----------------
+# The deployed Azure gateway inherited AZURE_FALLBACK_URL pointing at
+# api-cloud.panelsafe.cv, which is one of its OWN bound hostnames. Its primary
+# (a Tailscale alias) can never resolve from Azure, so every /predict/ there
+# would fail over to itself and recurse. These lock the guard in.
+
+def test_failover_request_carries_the_marker_header():
+    from app.main import _run_inference
+
+    seen = []
+
+    def route(url, *a, **k):
+        seen.append((url, (k.get("headers") or {})))
+        if url == main_module.INFERENCE_URL:
+            raise ConnectionError("primary down")
+        return _ok_response({"predictions": []})
+
+    async def scenario():
+        with patch("app.main.requests.post", side_effect=route):
+            return await _run_inference(b"data", ".jpg")
+
+    asyncio.run(scenario())
+    failover_url, failover_headers = seen[1]
+    assert failover_url == main_module.AZURE_FALLBACK_URL
+    assert failover_headers.get(main_module.FAILOVER_MARKER_HEADER) == "1"
+
+
+def test_a_marked_request_does_not_fail_over_again(client):
+    """Second hop must terminate instead of recursing into itself."""
+    calls = []
+
+    def route(url, *a, **k):
+        calls.append(url)
+        raise ConnectionError("primary unreachable from here")
+
+    with patch("app.main.requests.post", side_effect=route):
+        resp = client.post(
+            "/predict/",
+            files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
+            headers={main_module.FAILOVER_MARKER_HEADER: "1"},
+        )
+
+    assert resp.status_code == 503
+    # Only the primary was tried; the failover leg was suppressed.
+    assert calls == [main_module.INFERENCE_URL]
+    assert "suppressed" in resp.json()["detail"]
+
+
+def test_an_unmarked_request_still_fails_over(client):
+    """The guard must not disable failover for ordinary traffic."""
+    calls = []
+
+    def route(url, *a, **k):
+        calls.append(url)
+        if url == main_module.INFERENCE_URL:
+            raise ConnectionError("primary down")
+        return _ok_response({"predictions": []})
+
+    with patch("app.main.requests.post", side_effect=route):
+        resp = client.post(
+            "/predict/",
+            files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
+        )
+
+    assert resp.status_code == 200
+    assert calls == [main_module.INFERENCE_URL, main_module.AZURE_FALLBACK_URL]
+    assert resp.json()["summary"]["inference_engine"] == main_module.FAILOVER_ENGINE
+
+
+def test_empty_failover_url_means_no_failover_leg():
+    """Unsetting AZURE_FALLBACK_URL is a supported way to disable the second hop."""
+    from app.main import InferenceUnavailable, _run_inference
+
+    calls = []
+
+    def route(url, *a, **k):
+        calls.append(url)
+        raise ConnectionError("primary down")
+
+    async def scenario():
+        with patch("app.main.requests.post", side_effect=route), \
+             patch("app.main.AZURE_FALLBACK_URL", ""):
+            with pytest.raises(InferenceUnavailable) as exc:
+                await _run_inference(b"data", ".jpg")
+            return exc.value
+
+    err = asyncio.run(scenario())
+    assert calls == [main_module.INFERENCE_URL]
+    assert "no failover endpoint configured" in str(err.failover_err)
