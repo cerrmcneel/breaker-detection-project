@@ -517,6 +517,22 @@ def grade_panel_layout(predictions, rcd_test_result, country="Unknown"):
             feedback_es.append("ℹ️ <strong>Sin protector contra sobretensiones:</strong> No detectamos un protector de sobretensiones. La normativa española actual (REBT) exige su instalación para proteger los electrodomésticos contra picos de tensión.")
             feedback_en.append("ℹ️ <strong>No Surge Protector (Sobretensiones) detected:</strong> Modern Spanish regulations require a surge protector to shield appliances from voltage spikes.")
 
+        # Installation-Era estimation (Catalog lookup + REBT baseline). Deliberately
+        # INSIDE is_spain: every string this module produces -- the composition
+        # rules and both feedback templates -- cites Spanish REBT law by name. Run
+        # it for a French or other-country panel and the report carries a Spanish
+        # regulatory citation that is simply wrong for that installation.
+        try:
+            from src.model.era_estimator import estimate_panel_era
+            ocr_texts = [p.get("ocr_text", "") for p in predictions if isinstance(p, dict)]
+            era_estimate = estimate_panel_era(predictions, ocr_texts=ocr_texts)
+            if era_estimate.feedback_es:
+                feedback_es.append(era_estimate.feedback_es)
+            if era_estimate.feedback_en:
+                feedback_en.append(era_estimate.feedback_en)
+        except Exception as era_err:
+            logger.warning(f"Era estimation skipped: {era_err}")
+
     # Bound score
     score = max(0, min(100, score))
     

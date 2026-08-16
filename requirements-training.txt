@@ -1,5 +1,7 @@
 # Full training and heavy ML inference requirements
 -r requirements.txt
+pytest
+mlflow
 ultralytics
 # DELIBERATELY UNUSED -- do not wire back into src/model/pipeline.py.
 # SAHI was added to remediate poor real-world scoring before the actual root

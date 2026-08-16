@@ -2,7 +2,6 @@ fastapi
 uvicorn
 python-multipart
 python-dotenv
-pytest
 # Required by fastapi.testclient (src/tests/test_main.py). starlette >= 1.3 moved
 # its TestClient transport to httpx2; starlette 1.0.x used httpx, so an existing
 # local env may satisfy this already and hide the gap.
@@ -10,5 +9,4 @@ httpx2
 opencv-python-headless
 numpy
 requests
-mlflow
 pydantic

@@ -654,3 +654,44 @@ def test_upload_rejects_a_re_exported_copy_of_a_stored_photo(client):
     body = resp.json()
     assert body["duplicate"] is True, "a re-exported copy slipped past de-duplication"
     assert body["filename"] == "DUPLICATE"
+
+
+# --- grade_panel_layout (found in review 2026-08-16) -----------------------------------
+# Two bugs from a frontend/era-estimation change: the English surge-protector warning
+# had been silently dropped (Spanish kept it -> asymmetric report), and era estimation
+# ran for every country even though it hardcodes Spanish REBT law citations into its
+# feedback -- a French installation's report would have carried a false Spanish legal
+# citation.
+
+def test_surge_protector_warning_present_in_both_languages():
+    from app.main import grade_panel_layout
+
+    # is_spain is inferred from country OR from Spain-shaped composition; force it via
+    # a MAINBREAKER present with no OVERSURGE, and country=ES to be unambiguous.
+    predictions = [
+        {"class": "MAINBREAKER", "box": [0, 0, 1, 1], "conf": 0.9},
+        {"class": "RCD", "box": [0, 0, 1, 1], "conf": 0.9},
+        {"class": "MCB", "box": [0, 0, 1, 1], "conf": 0.9},
+    ]
+    _score, report = grade_panel_layout(predictions, "Responsive", country="ES")
+
+    assert "Sin protector contra sobretensiones" in report   # Spanish half
+    assert "No Surge Protector" in report                    # English half -- was missing
+
+
+def test_era_estimation_feedback_only_appears_for_spain():
+    from app.main import grade_panel_layout
+
+    predictions = [
+        {"class": "MCB", "box": [0, 0, 1, 1], "conf": 0.9, "ocr_text": "LEGRAND DX3 C16"},
+    ]
+
+    _score_fr, report_fr = grade_panel_layout(predictions, "Not Tested", country="FR")
+    _score_es, report_es = grade_panel_layout(predictions, "Not Tested", country="ES")
+
+    assert "REBT" not in report_fr, "a French report must not carry a Spanish legal citation"
+    assert "Estimación de Época" not in report_fr
+    assert "Estimated Installation Era" not in report_fr
+
+    assert "REBT" in report_es
+    assert "Estimated Installation Era" in report_es
