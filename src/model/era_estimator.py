@@ -526,6 +526,23 @@ def estimate_panel_era(
         f"Applicable standard: <em>{rebt_std}</em>."
     )
 
+    # confidence == "low" means this call's own conflict check (above) found the
+    # catalog match and the panel's composition pointing at DIFFERENT eras. Without
+    # this, the user sees a clean, confident-looking one-liner with no hint that two
+    # signals disagreed and one was picked over the other -- the exact "smoothed-over
+    # certainty" this project has deliberately avoided everywhere else (the degraded-
+    # score fix, the OCR neutral fallback). Surface the ambiguity instead of hiding it.
+    if confidence == "low":
+        feedback_es += (
+            " ⚠️ <em>Confianza baja: la composición del cuadro sugiere una época distinta "
+            "a la indicada por el texto detectado en los dispositivos; este rango debe "
+            "tratarse como orientativo.</em>"
+        )
+        feedback_en += (
+            " ⚠️ <em>Low confidence: the panel's composition suggests a different era than "
+            "the text detected on its devices; treat this range as tentative.</em>"
+        )
+
     return EraEstimate(
         era_range=era_range,
         era_label=era_label,

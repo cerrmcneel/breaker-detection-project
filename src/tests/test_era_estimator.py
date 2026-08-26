@@ -279,3 +279,44 @@ def test_catalog_match_conflicting_with_modern_composition_downgrades_confidence
     assert result.composition_era.startswith("2020")
     assert result.confidence == "low"
     assert any("CONFLICTING EVIDENCE" in e for e in result.evidence)
+
+
+# --- confidence surfaced to the user (Ontological-framework audit, 2026-08-16) ---------
+# EraEstimate.confidence and the CONFLICTING EVIDENCE note were computed but never
+# reached feedback_es/feedback_en -- a low-confidence estimate looked identical to a
+# high-confidence one in the report a homeowner actually sees.
+
+def test_low_confidence_estimate_carries_a_visible_qualifier_in_both_languages():
+    preds = [{"class": "MCB"}, {"class": "MCB"}]  # composition -> Pre-1973
+    result = estimate_panel_era(preds, ["LEGRAND DX3 C16"], current_year=2026)  # catalog -> 2012-Present
+
+    assert result.confidence == "low"
+    assert "Confianza baja" in result.feedback_es
+    assert "Low confidence" in result.feedback_en
+
+
+def test_high_confidence_estimate_carries_no_qualifier():
+    preds = [
+        {"class": "MAINBREAKER"}, {"class": "RCD"}, {"class": "MCB"}, {"class": "MCB"},
+    ]
+    result = estimate_panel_era(
+        preds, ["SCHNEIDER Multi 9 C60N C16", "SCHNEIDER Multi 9 C60N C20"], current_year=2026
+    )
+
+    assert result.confidence == "high"
+    assert "Confianza baja" not in result.feedback_es
+    assert "Low confidence" not in result.feedback_en
+
+
+def test_medium_confidence_composition_only_carries_no_low_confidence_qualifier():
+    # No catalog match at all -> falls back to composition-only, which is "medium",
+    # not "low". The qualifier is specifically for the CONFLICT case, not every
+    # non-"high" result.
+    preds = [
+        {"class": "MAINBREAKER"}, {"class": "RCD"}, {"class": "MCB"}, {"class": "MCB"}, {"class": "MCB"},
+    ]
+    result = estimate_panel_era(preds, ocr_texts=[], current_year=2026)
+
+    assert result.confidence == "medium"
+    assert "Confianza baja" not in result.feedback_es
+    assert "Low confidence" not in result.feedback_en

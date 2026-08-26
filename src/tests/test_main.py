@@ -26,11 +26,19 @@ def make_jpeg_bytes(width=20, height=20):
 
 
 @pytest.fixture
-def client():
+def client(tmp_path):
     # Startup event scans real dataset dirs on disk; harmless (read-only) if they
     # exist, gracefully skipped if they don't (see get_unique_dataset_count).
-    with TestClient(app) as c:
-        yield c
+    #
+    # Also redirects the predictions audit trail (src/storage/predictions_store.py)
+    # to a throwaway path. Without this, every test run's lifespan startup calls
+    # init_db() against the real default (data/predictions.db) and every /predict/
+    # or /upload/ call writes real rows into it -- polluting the actual repo data
+    # directory with test noise on every `pytest` invocation. The default is bound
+    # at call time (not at import/def time) specifically so this patch works.
+    with patch("src.storage.predictions_store.PREDICTIONS_DB_PATH", str(tmp_path / "predictions.db")):
+        with TestClient(app) as c:
+            yield c
 
 
 @pytest.fixture(autouse=True)
@@ -695,3 +703,132 @@ def test_era_estimation_feedback_only_appears_for_spain():
 
     assert "REBT" in report_es
     assert "Estimated Installation Era" in report_es
+
+
+# --- predictions audit trail wiring (Ontological-framework audit, 2026-08-16) ----------
+# src/storage/predictions_store.py exists in isolation with its own test coverage
+# (test_predictions_store.py); these confirm the gateway actually calls it, with the
+# right data, on both the success and failure paths, and that a store failure never
+# breaks the HTTP response it's describing.
+
+def _predictions_db_path(tmp_path):
+    return tmp_path / "predictions.db"
+
+
+def _last_prediction_row(tmp_path):
+    import sqlite3
+    conn = sqlite3.connect(str(_predictions_db_path(tmp_path)))
+    try:
+        cur = conn.execute(
+            "SELECT source_endpoint, tracking_id, inference_ok, inference_engine, "
+            "country, rcd_test_result, raw_output, computed_score, computed_feedback "
+            "FROM predictions ORDER BY id DESC LIMIT 1"
+        )
+        row = cur.fetchone()
+        cols = [d[0] for d in cur.description]
+        return dict(zip(cols, row)) if row else None
+    finally:
+        conn.close()
+
+
+def test_predict_success_records_a_prediction_row(client, tmp_path):
+    fake_response = MagicMock()
+    fake_response.raise_for_status.return_value = None
+    fake_response.json.return_value = {"predictions": [{"class": "MCB", "conf": 0.9}]}
+
+    with patch("app.main.requests.post", return_value=fake_response):
+        resp = client.post(
+            "/predict/", files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
+        )
+    assert resp.status_code == 200
+
+    row = _last_prediction_row(tmp_path)
+    assert row is not None
+    assert row["source_endpoint"] == "/predict/"
+    assert row["inference_ok"] == 1
+    assert json.loads(row["raw_output"]) == [{"class": "MCB", "conf": 0.9}]
+
+
+def test_predict_failure_records_a_failed_prediction_row(client, tmp_path):
+    with patch("app.main.requests.post", side_effect=ConnectionError("both down")):
+        resp = client.post(
+            "/predict/", files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
+        )
+    assert resp.status_code == 503
+
+    row = _last_prediction_row(tmp_path)
+    assert row is not None
+    assert row["source_endpoint"] == "/predict/"
+    assert row["inference_ok"] == 0
+    assert json.loads(row["raw_output"]) == []
+
+
+def test_upload_success_records_tracking_id_and_score(client, tmp_path):
+    fake_response = MagicMock()
+    fake_response.raise_for_status.return_value = None
+    fake_response.json.return_value = {"predictions": []}
+
+    with patch("app.main.requests.post", return_value=fake_response), \
+         patch("app.main.get_unique_dataset_count", return_value=(0, set())):
+        resp = client.post(
+            "/upload/",
+            files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
+            data={"country": "ES", "rcd_test_result": "Responsive"},
+        )
+    body = resp.json()
+    assert resp.status_code == 200
+
+    row = _last_prediction_row(tmp_path)
+    assert row is not None
+    assert row["source_endpoint"] == "/upload/"
+    assert row["tracking_id"] == body["tracking_id"]
+    assert row["country"] == "ES"
+    assert row["rcd_test_result"] == "Responsive"
+    assert row["computed_score"] == body["score"]
+
+    for path in glob.glob(os.path.join("data", "images", "raw_uploads", body["filename"])):
+        os.remove(path)
+
+
+def test_upload_degraded_records_null_score(client, tmp_path):
+    with patch("app.main.requests.post", side_effect=ConnectionError("cluster down")), \
+         patch("app.main.get_unique_dataset_count", return_value=(0, set())):
+        resp = client.post(
+            "/upload/",
+            files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
+            data={"country": "ES"},
+        )
+    body = resp.json()
+    assert body["status"] == "degraded"
+
+    row = _last_prediction_row(tmp_path)
+    assert row is not None
+    assert row["inference_ok"] == 0
+    assert row["computed_score"] is None
+    assert row["computed_feedback"] is None
+
+    for path in glob.glob(os.path.join("data", "images", "raw_uploads", body["filename"])):
+        os.remove(path)
+
+
+def test_upload_still_succeeds_when_the_audit_trail_write_fails(client):
+    """record_prediction is a secondary audit trail; its failure must never surface
+    as an HTTP failure for the request it's describing."""
+    fake_response = MagicMock()
+    fake_response.raise_for_status.return_value = None
+    fake_response.json.return_value = {"predictions": []}
+
+    with patch("app.main.requests.post", return_value=fake_response), \
+         patch("app.main.get_unique_dataset_count", return_value=(0, set())), \
+         patch("app.main.record_prediction", return_value=None) as mock_record:
+        resp = client.post(
+            "/upload/",
+            files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
+            data={"country": "ES"},
+        )
+
+    assert resp.status_code == 200
+    mock_record.assert_called_once()
+    body = resp.json()
+    for path in glob.glob(os.path.join("data", "images", "raw_uploads", body["filename"])):
+        os.remove(path)

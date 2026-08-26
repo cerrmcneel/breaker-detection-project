@@ -22,6 +22,8 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 from starlette.concurrency import run_in_threadpool
 
+from src.storage.predictions_store import init_db, record_prediction
+
 # Load environment variables
 load_dotenv()
 
@@ -171,15 +173,36 @@ def get_unique_dataset_count():
                 
     return total_count, current_hashes
 
+def _load_local_model_version() -> Optional[str]:
+    """Best-effort model_version label for the predictions audit trail.
+
+    Reads the gateway's own local copy of pipeline_config.json. Inference itself
+    runs on a separate host over HTTP (INFERENCE_URL/FAILOVER_URL) and its
+    response carries no version tag, so this reflects what the gateway believes
+    is active -- not a verified guarantee of what actually served a given
+    request. See src/storage/predictions_store.py's record_prediction() docstring.
+    """
+    try:
+        config_path = os.path.join("src", "model", "pipeline_config.json")
+        with open(config_path, "r", encoding="utf-8") as f:
+            return json.load(f).get("model_version")
+    except Exception:
+        return None
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info(f"PanelSafe Gateway ready. Connecting to K3s cluster at: {INFERENCE_URL}")
-    
+
     # Initialize cache and populate seen_hashes on startup
     count, current_hashes = get_unique_dataset_count()
     global seen_hashes
     seen_hashes = current_hashes
     logger.info(f"Loaded {count} unique dataset image hashes.")
+
+    # Predictions audit trail (see src/storage/predictions_store.py). Additive,
+    # parallel to upload_log.json -- never a hard dependency of the request path.
+    init_db()
     yield
 
 app = FastAPI(title="PanelSafe: Breaker Detection & Analysis", lifespan=lifespan)
@@ -445,10 +468,28 @@ async def predict_panel(request: Request, file: UploadFile = File(...)):
                 contents, safe_ext, allow_failover=not is_failover_hop(request)
             )
         except InferenceUnavailable as err:
+            await run_in_threadpool(
+                record_prediction,
+                source_endpoint="/predict/",
+                predictions=[],
+                inference_ok=False,
+                image_hash=image_content_hash(contents),
+                model_version=_load_local_model_version(),
+            )
             raise HTTPException(
                 status_code=503,
                 detail=f"All inference endpoints unreachable. {err}",
             ) from err
+
+        await run_in_threadpool(
+            record_prediction,
+            source_endpoint="/predict/",
+            predictions=refined_predictions,
+            inference_ok=True,
+            image_hash=image_content_hash(contents),
+            model_version=_load_local_model_version(),
+            inference_engine=engine,
+        )
 
         return {
             "status": "success",
@@ -653,6 +694,25 @@ async def upload_image(request: Request, file: UploadFile = File(...), country: 
         async with upload_lock:
             seen_hashes.add(file_hash)
             await run_in_threadpool(_append_log_entry, LOG_FILE, entry)
+
+        # Predictions audit trail (see src/storage/predictions_store.py). Records
+        # the RAW detection output too, not just the derived score/feedback that
+        # upload_log.json above already has -- that raw output is otherwise gone
+        # the moment this request finishes.
+        await run_in_threadpool(
+            record_prediction,
+            source_endpoint="/upload/",
+            predictions=predictions,
+            inference_ok=inference_ok,
+            tracking_id=tracking_id,
+            image_hash=file_hash,
+            model_version=_load_local_model_version(),
+            country=country,
+            rcd_test_result=rcd_test_result,
+            inference_engine=inference_engine,
+            computed_score=auto_score,
+            computed_feedback=auto_feedback,
+        )
 
         payload = {
             "status": "success" if inference_ok else "degraded",
