@@ -49,21 +49,38 @@ INFERENCE_URL = os.getenv("INFERENCE_URL", "http://gpu-worker:8088/predict")
 # failover, never a self-reference.
 #
 # The real inference failover is the Modal deployment in deploy/modal_failover.py
-# (T4, scale-to-zero): its `inference_asgi` function serves POST /predict. The Azure
-# app cannot serve inference at all -- it has no model weights and installs the lean
-# requirements.txt -- so it was never a valid target.
+# (T4, scale-to-zero): its `inference_asgi` function serves POST /predict. This used
+# to also note "the Azure app cannot serve inference at all" -- true when this was
+# first written (2026-08-09), no longer true: as of 2026-08-26 the Azure App Service's
+# own INFERENCE_URL points directly at this same Modal endpoint, confirmed live, so
+# it now serves real inference through its own primary leg rather than failing over.
 FAILOVER_URL = os.getenv("FAILOVER_URL") or os.getenv("AZURE_FALLBACK_URL", "")
 
 # Backwards-compatible alias; some code and tests still reference the old name.
 AZURE_FALLBACK_URL = FAILOVER_URL
 
-PRIMARY_ENGINE = "K3s-GPU-Cluster-Pipeline"
-# Derived from the configured host rather than hardcoded, so the reported engine
-# cannot silently drift from the backend actually serving the request (it used to
-# say "Azure-Cloud-Failover" regardless of where the traffic really went).
-FAILOVER_ENGINE = os.getenv("FAILOVER_ENGINE") or (
-    f"Failover:{urllib.parse.urlparse(FAILOVER_URL).hostname}" if FAILOVER_URL else "Failover:none"
-)
+# Both engine labels are derived from the configured host rather than hardcoded, so
+# the reported engine cannot silently drift from the backend actually serving the
+# request. PRIMARY_ENGINE used to be the fixed string "K3s-GPU-Cluster-Pipeline" --
+# correct on the VM, where the primary really is the K3s cluster, but WRONG on Azure
+# once its INFERENCE_URL was pointed at Modal (see above): a successful Azure
+# /predict/ still reported "K3s-GPU-Cluster-Pipeline" even though Modal served it.
+# Found 2026-08-26 while verifying the Azure redeploy; FAILOVER_ENGINE already got
+# this fix on 7227941 and PRIMARY_ENGINE was missed at the time.
+
+
+def _derive_engine_label(env_override: Optional[str], prefix: str, url: str) -> str:
+    """An explicit env var wins outright; otherwise derive from the configured
+    URL's hostname so the label can never silently drift from the backend that
+    actually served the request. `url` empty/falsy -> "{prefix}:none"."""
+    if env_override:
+        return env_override
+    hostname = urllib.parse.urlparse(url).hostname if url else None
+    return f"{prefix}:{hostname}" if hostname else f"{prefix}:none"
+
+
+PRIMARY_ENGINE = _derive_engine_label(os.getenv("PRIMARY_ENGINE"), "Primary", INFERENCE_URL)
+FAILOVER_ENGINE = _derive_engine_label(os.getenv("FAILOVER_ENGINE"), "Failover", FAILOVER_URL)
 
 # The full pipeline (YOLO + OCR + HMM) is far slower than raw YOLO, and the
 # primary timeout also has to cover a cold-started scale-to-zero GPU backend

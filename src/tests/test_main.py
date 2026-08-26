@@ -952,3 +952,65 @@ def test_active_learning_save_still_succeeds_when_the_link_lookup_returns_none(c
 
     for path in glob.glob(os.path.join("data", "active_learning", "correction_*")):
         os.remove(path)
+
+
+# --- engine label derivation (PRIMARY_ENGINE mislabeling, found 2026-08-26) ------------
+# PRIMARY_ENGINE used to be the fixed string "K3s-GPU-Cluster-Pipeline" regardless of
+# what INFERENCE_URL actually pointed at -- correct on the VM, wrong on Azure once its
+# INFERENCE_URL was pointed at Modal. FAILOVER_ENGINE already derived from its URL
+# (see 7227941); PRIMARY_ENGINE was missed at the time. Both now share
+# _derive_engine_label().
+
+def test_derive_engine_label_uses_the_url_hostname_by_default():
+    from app.main import _derive_engine_label
+    assert _derive_engine_label(None, "Primary", "http://gpu-worker:8088/predict") == "Primary:gpu-worker"
+    assert _derive_engine_label(
+        None, "Primary", "https://ericmcneel--panelsafe-failover-inference-asgi.modal.run/predict"
+    ) == "Primary:ericmcneel--panelsafe-failover-inference-asgi.modal.run"
+
+
+def test_derive_engine_label_env_override_wins_outright():
+    from app.main import _derive_engine_label
+    assert _derive_engine_label(
+        "K3s-GPU-Cluster-Pipeline", "Primary", "http://gpu-worker:8088/predict"
+    ) == "K3s-GPU-Cluster-Pipeline"
+
+
+def test_derive_engine_label_falls_back_to_none_for_empty_or_malformed_url():
+    from app.main import _derive_engine_label
+    assert _derive_engine_label(None, "Primary", "") == "Primary:none"
+    assert _derive_engine_label(None, "Primary", "not-a-url") == "Primary:none"
+
+
+def test_predict_success_reports_the_configured_primary_engine(client):
+    """Wiring check: whatever main.py derived PRIMARY_ENGINE to be, that's what a
+    successful /predict/ actually reports -- not a hardcoded string that could
+    silently drift from it (this is exactly the bug that shipped to Azure)."""
+    fake_response = MagicMock()
+    fake_response.raise_for_status.return_value = None
+    fake_response.json.return_value = {"predictions": []}
+
+    with patch("app.main.requests.post", return_value=fake_response):
+        resp = client.post(
+            "/predict/", files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
+        )
+    assert resp.json()["summary"]["inference_engine"] == main_module.PRIMARY_ENGINE
+
+
+def test_upload_success_reports_the_configured_primary_engine(client):
+    fake_response = MagicMock()
+    fake_response.raise_for_status.return_value = None
+    fake_response.json.return_value = {"predictions": []}
+
+    with patch("app.main.requests.post", return_value=fake_response), \
+         patch("app.main.get_unique_dataset_count", return_value=(0, set())):
+        resp = client.post(
+            "/upload/",
+            files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
+            data={"country": "ES"},
+        )
+    body = resp.json()
+    assert body["inference_engine"] == main_module.PRIMARY_ENGINE
+
+    for path in glob.glob(os.path.join("data", "images", "raw_uploads", body["filename"])):
+        os.remove(path)

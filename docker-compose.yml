@@ -9,14 +9,20 @@ services:
     environment:
       - UPLOAD_DIR=data/images/raw_uploads
       - INFERENCE_URL=http://gpu-worker:8088/predict
+      # PRIMARY_ENGINE would otherwise be derived from INFERENCE_URL's hostname
+      # ("Primary:gpu-worker") -- pinned explicitly here to keep this VM's existing,
+      # friendlier audit-trail label unchanged. No override is set on Azure, so its
+      # label correctly derives from whatever INFERENCE_URL actually points at there.
+      - PRIMARY_ENGINE=K3s-GPU-Cluster-Pipeline
       # Inference failover: the Modal deployment in deploy/modal_failover.py
       # (T4 GPU, scale-to-zero, ships the model weights via add_local_dir).
       # Measured 2026-08-16: 16.1s cold, ~4s warm.
       #
       # This must NOT point at the Azure App Service. api-cloud.panelsafe.cv is a
       # bound hostname on the app that runs this very gateway, so pointing here at
-      # Azure makes the failover call itself; and that app cannot serve inference
-      # anyway (no weights, lean requirements). See the roadmap.
+      # Azure would make the failover call itself. (As of 2026-08-26 Azure's own
+      # INFERENCE_URL points directly at this same Modal endpoint below, so it now
+      # serves real inference itself rather than needing to be a failover target.)
       - FAILOVER_URL=https://ericmcneel--panelsafe-failover-inference-asgi.modal.run/predict
     ports:
       - "8085:8000"
