@@ -1002,6 +1002,12 @@
         let originalImage = null;
         let currentFile = null;
         let components = [];
+        // Set from /predict/'s response so a correction submitted later (SEND TO
+        // VAULT) can link back to it server-side. Only /predict/ generates one, and
+        // only on success -- reset whenever a new file starts a fresh analysis, and
+        // whenever a draft is resumed from localStorage (no tracking_id was saved
+        // with the draft, so there is nothing to link that submission to).
+        let currentTrackingId = null;
         let scale = 1;
         let offsetX = 0;
         let offsetY = 0;
@@ -1199,10 +1205,11 @@
         async function handleFile(file) {
             if (!file) return;
             currentFile = file;
-            
+            currentTrackingId = null;  // reset -- see declaration above
+
             const draftKey = `panelsafe_draft_${file.name}_${file.size}`;
             const existingDraft = localStorage.getItem(draftKey);
-            
+
             if (existingDraft && confirm(T('confirm_resume'))) {
                 components = JSON.parse(existingDraft);
                 renderAnalysis(file, components);
@@ -1215,6 +1222,7 @@
             try {
                 const response = await fetch('/predict/', { method: 'POST', body: formData });
                 const data = await response.json();
+                currentTrackingId = data.tracking_id || null;
                 if (data.status === 'success' && data.panel_layout.length > 0) {
                     components = data.panel_layout.map(c => ({
                         ...c,
@@ -1536,7 +1544,14 @@
             const formData = new FormData();
             formData.append('file', file);
             formData.append('annotations', JSON.stringify(components, null, 4));
-            
+            // Optional: lets the server link this correction back to the prediction
+            // it corrects (see src/storage/predictions_store.py). Absent when the
+            // photo was resumed from a saved draft, since no tracking_id exists for
+            // that case -- the correction still saves fine either way.
+            if (currentTrackingId) {
+                formData.append('tracking_id', currentTrackingId);
+            }
+
             try {
                 const response = await fetch('/active-learning/save', { method: 'POST', body: formData });
                 if (response.ok) {

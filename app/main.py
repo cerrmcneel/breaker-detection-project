@@ -22,7 +22,12 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 from starlette.concurrency import run_in_threadpool
 
-from src.storage.predictions_store import init_db, record_prediction
+from src.storage.predictions_store import (
+    find_prediction_id_by_tracking_id,
+    init_db,
+    record_correction,
+    record_prediction,
+)
 
 # Load environment variables
 load_dotenv()
@@ -306,6 +311,10 @@ async def read_upload_limited(file: UploadFile, limit: int = MAX_FILE_SIZE) -> b
 # for this traffic; revisit with a real async client if it is ever approached.
 
 
+def _generate_tracking_id() -> str:
+    return "BKR-" + "".join(random.choices(string.ascii_uppercase + string.digits, k=5))
+
+
 def _write_bytes(path: str, data: bytes) -> None:
     """Blocking file write, intended to be called via run_in_threadpool.
 
@@ -441,6 +450,9 @@ class PredictionResponse(BaseModel):
     status: str
     panel_layout: List[DetectionBox]
     summary: PanelSummary
+    # Only generated on the success path (see predict_panel): a failed analysis has
+    # no detections to correct later, so there is nothing for a tracking_id to link.
+    tracking_id: Optional[str] = None
 
 
 @app.post("/predict/", response_model=PredictionResponse)
@@ -481,11 +493,17 @@ async def predict_panel(request: Request, file: UploadFile = File(...)):
                 detail=f"All inference endpoints unreachable. {err}",
             ) from err
 
+        # Generated only here (success), so a later correction submitted from the
+        # HITL tool in analysis.html has something to link back to. /predict/ had
+        # no tracking_id concept before this -- only /upload/ did.
+        tracking_id = _generate_tracking_id()
+
         await run_in_threadpool(
             record_prediction,
             source_endpoint="/predict/",
             predictions=refined_predictions,
             inference_ok=True,
+            tracking_id=tracking_id,
             image_hash=image_content_hash(contents),
             model_version=_load_local_model_version(),
             inference_engine=engine,
@@ -494,6 +512,7 @@ async def predict_panel(request: Request, file: UploadFile = File(...)):
         return {
             "status": "success",
             "panel_layout": refined_predictions,
+            "tracking_id": tracking_id,
             "summary": {
                 "total_components": len(refined_predictions),
                 "inference_engine": engine
@@ -626,7 +645,7 @@ async def upload_image(request: Request, file: UploadFile = File(...), country: 
 
         await run_in_threadpool(_write_bytes, file_path, file_bytes)
 
-        tracking_id = "BKR-" + "".join(random.choices(string.ascii_uppercase + string.digits, k=5))
+        tracking_id = _generate_tracking_id()
 
         # Run model inference. Distinguish "inference failed" from "genuinely nothing
         # detected" — a silent empty-on-error is exactly how a model outage masquerades
@@ -740,7 +759,12 @@ async def get_count():
     return {"count": count}
 
 @app.post("/active-learning/save")
-async def save_active_learning(request: Request, file: UploadFile = File(...), annotations: str = Form(...)):
+async def save_active_learning(
+    request: Request,
+    file: UploadFile = File(...),
+    annotations: str = Form(...),
+    tracking_id: Optional[str] = Form(default=None),
+):
     try:
         # Lightweight same-origin check: this endpoint is anonymous/no-login by design
         # (any visitor reviewing their own analysis can submit a correction), so this is
@@ -781,7 +805,29 @@ async def save_active_learning(request: Request, file: UploadFile = File(...), a
                 json.dump(parsed_annotations, f)
 
         await run_in_threadpool(_persist_correction)
-        return {"status": "success"}
+
+        # Best-effort link into the predictions audit trail (see
+        # src/storage/predictions_store.py). tracking_id is optional and the lookup
+        # can miss (stale id, predictions.db reset, or a caller that never sends
+        # one) -- none of that affects the response. The correction is already
+        # safely on disk above regardless of whether this linking step succeeds.
+        linked_prediction_id = None
+        if tracking_id:
+            linked_prediction_id = await run_in_threadpool(
+                find_prediction_id_by_tracking_id, tracking_id
+            )
+            if linked_prediction_id is not None:
+                await run_in_threadpool(
+                    record_correction,
+                    prediction_id=linked_prediction_id,
+                    corrected_payload=parsed_annotations,
+                    source="active_learning_endpoint",
+                    note=base_name,
+                )
+            else:
+                logger.info(f"active-learning correction: tracking_id {tracking_id!r} did not resolve to a prediction row.")
+
+        return {"status": "success", "linked_prediction_id": linked_prediction_id}
     except HTTPException:
         raise
     except Exception as e:

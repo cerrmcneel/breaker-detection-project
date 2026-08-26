@@ -832,3 +832,123 @@ def test_upload_still_succeeds_when_the_audit_trail_write_fails(client):
     body = resp.json()
     for path in glob.glob(os.path.join("data", "images", "raw_uploads", body["filename"])):
         os.remove(path)
+
+
+# --- tracking_id linking for corrections (2026-08-26) -----------------------------------
+# /predict/ now generates a tracking_id on success so a correction submitted later
+# from the HITL tool in analysis.html can reference it; /active-learning/save resolves
+# it best-effort and never fails the request if linking doesn't happen.
+
+def test_predict_success_returns_a_tracking_id(client):
+    fake_response = MagicMock()
+    fake_response.raise_for_status.return_value = None
+    fake_response.json.return_value = {"predictions": [{"class": "MCB", "conf": 0.9}]}
+
+    with patch("app.main.requests.post", return_value=fake_response):
+        resp = client.post(
+            "/predict/", files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
+        )
+    body = resp.json()
+    assert body["tracking_id"].startswith("BKR-")
+
+
+def test_predict_failure_returns_no_tracking_id(client):
+    with patch("app.main.requests.post", side_effect=ConnectionError("down")):
+        resp = client.post(
+            "/predict/", files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
+        )
+    assert resp.status_code == 503  # no body to check a tracking_id against
+
+
+def test_active_learning_save_without_tracking_id_behaves_as_before(client):
+    resp = client.post(
+        "/active-learning/save",
+        files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
+        data={"annotations": json.dumps({"boxes": []})},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["status"] == "success"
+    assert body["linked_prediction_id"] is None
+
+    for path in glob.glob(os.path.join("data", "active_learning", "correction_*")):
+        os.remove(path)
+
+
+def test_active_learning_save_with_unresolvable_tracking_id_still_succeeds(client):
+    resp = client.post(
+        "/active-learning/save",
+        files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
+        data={"annotations": "{}", "tracking_id": "BKR-NOPE1"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["status"] == "success"
+    assert body["linked_prediction_id"] is None
+
+    for path in glob.glob(os.path.join("data", "active_learning", "correction_*")):
+        os.remove(path)
+
+
+def test_active_learning_save_links_a_correction_to_its_prediction(client, tmp_path):
+    fake_response = MagicMock()
+    fake_response.raise_for_status.return_value = None
+    fake_response.json.return_value = {"predictions": [{"class": "MCB", "conf": 0.9}]}
+
+    with patch("app.main.requests.post", return_value=fake_response):
+        predict_resp = client.post(
+            "/predict/", files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
+        )
+    tracking_id = predict_resp.json()["tracking_id"]
+
+    resp = client.post(
+        "/active-learning/save",
+        files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
+        data={"annotations": json.dumps({"boxes": [{"class": "RCD"}]}), "tracking_id": tracking_id},
+    )
+    body = resp.json()
+    assert resp.status_code == 200
+    assert body["linked_prediction_id"] is not None
+
+    import sqlite3
+    conn = sqlite3.connect(str(tmp_path / "predictions.db"))
+    try:
+        pred_row = conn.execute(
+            "SELECT id FROM predictions WHERE tracking_id=?", (tracking_id,)
+        ).fetchone()
+        corr_row = conn.execute(
+            "SELECT prediction_id, corrected_payload, source FROM corrections WHERE prediction_id=?",
+            (pred_row[0],),
+        ).fetchone()
+    finally:
+        conn.close()
+
+    assert corr_row is not None
+    assert corr_row[0] == pred_row[0] == body["linked_prediction_id"]
+    assert json.loads(corr_row[1]) == {"boxes": [{"class": "RCD"}]}
+    assert corr_row[2] == "active_learning_endpoint"
+
+    for path in glob.glob(os.path.join("data", "active_learning", "correction_*")):
+        os.remove(path)
+
+
+def test_active_learning_save_still_succeeds_when_the_link_lookup_returns_none(client):
+    """find_prediction_id_by_tracking_id already guarantees non-fatal internally
+    (see test_predictions_store.py's own failure-mode tests for that contract) --
+    this confirms the endpoint honours a None result the same way regardless of
+    WHY it was None. Follows the same patch(..., return_value=None) pattern already
+    used in test_upload_still_succeeds_when_the_audit_trail_write_fails, not
+    side_effect=Exception -- mocking the function to raise would bypass its own
+    non-fatal contract and test an unrelated, unrealistic scenario."""
+    with patch("app.main.find_prediction_id_by_tracking_id", return_value=None) as mock_find:
+        resp = client.post(
+            "/active-learning/save",
+            files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
+            data={"annotations": "{}", "tracking_id": "BKR-WHATEVER"},
+        )
+    assert resp.status_code == 200
+    assert resp.json()["linked_prediction_id"] is None
+    mock_find.assert_called_once()
+
+    for path in glob.glob(os.path.join("data", "active_learning", "correction_*")):
+        os.remove(path)

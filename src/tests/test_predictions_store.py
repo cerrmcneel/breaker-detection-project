@@ -152,3 +152,46 @@ def test_wal_mode_is_enabled(db_path):
     finally:
         conn.close()
     assert mode.lower() == "wal"
+
+
+# --- find_prediction_id_by_tracking_id (tracking_id linking, 2026-08-26) ---------------
+
+def test_find_prediction_id_by_tracking_id_returns_the_match(db_path):
+    init_db(db_path)
+    pred_id = record_prediction(
+        source_endpoint="/predict/",
+        predictions=[{"class": "MCB"}],
+        inference_ok=True,
+        tracking_id="BKR-ABCDE",
+        db_path=db_path,
+    )
+    from src.storage.predictions_store import find_prediction_id_by_tracking_id
+    found = find_prediction_id_by_tracking_id("BKR-ABCDE", db_path=db_path)
+    assert found == pred_id
+
+
+def test_find_prediction_id_by_tracking_id_returns_none_when_not_found(db_path):
+    init_db(db_path)
+    from src.storage.predictions_store import find_prediction_id_by_tracking_id
+    assert find_prediction_id_by_tracking_id("BKR-NOPE1", db_path=db_path) is None
+
+
+def test_find_prediction_id_by_tracking_id_returns_the_most_recent_on_collision(db_path):
+    init_db(db_path)
+    record_prediction(
+        source_endpoint="/predict/", predictions=[], inference_ok=True,
+        tracking_id="BKR-DUP01", db_path=db_path,
+    )
+    newest_id = record_prediction(
+        source_endpoint="/predict/", predictions=[], inference_ok=True,
+        tracking_id="BKR-DUP01", db_path=db_path,
+    )
+    from src.storage.predictions_store import find_prediction_id_by_tracking_id
+    assert find_prediction_id_by_tracking_id("BKR-DUP01", db_path=db_path) == newest_id
+
+
+def test_find_prediction_id_by_tracking_id_failure_is_non_fatal(db_path):
+    init_db(db_path)
+    from src.storage.predictions_store import find_prediction_id_by_tracking_id
+    with patch("src.storage.predictions_store.sqlite3.connect", side_effect=sqlite3.OperationalError("locked")):
+        assert find_prediction_id_by_tracking_id("BKR-ABCDE", db_path=db_path) is None

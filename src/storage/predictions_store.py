@@ -21,13 +21,15 @@ queryable record of the same events, split into what the model actually said
 (raw_output -- append-only, never mutated) versus what was derived from it
 (computed_score/computed_feedback -- recomputable later without re-inference).
 
-DELIBERATE SCOPE BOUNDARY: a `corrections` table is defined here, ready for a
-future active-learning correction to reference a prediction by id, but nothing
-currently WRITES to it. /active-learning/save's request contract does not carry
-a tracking_id or prediction reference today (checked 2026-08-16), so there is no
-reliable way to link a correction back to its parent prediction without also
-changing that endpoint's contract -- a separate, larger decision this module
-should not make silently as a side effect of "add a database."
+UPDATE 2026-08-26: /active-learning/save now accepts an optional tracking_id and
+looks it up via find_prediction_id_by_tracking_id() before calling
+record_correction(). /predict/ (the endpoint the HITL tool in analysis.html
+actually calls) generates and returns a tracking_id only on its success path,
+matching what /upload/ already did. The link is best-effort: a correction
+submitted without a tracking_id, or with one that doesn't resolve (e.g. the
+predictions.db was reset, or the correction is for an /upload/-sourced photo
+predating this change), still saves to disk exactly as before -- linking is a
+bonus, not a requirement, on an endpoint that is deliberately anonymous/no-auth.
 
 To query this DB directly (no Python API is provided for reads on purpose --
 that is the whole point of using a real, inspectable store instead of another
@@ -166,6 +168,38 @@ def record_prediction(
         return None
 
 
+def find_prediction_id_by_tracking_id(
+    tracking_id: str,
+    db_path: Optional[str] = None,
+) -> Optional[int]:
+    """Look up the most recent prediction row for a tracking_id, so a correction
+    submitted later can reference it. Blocking -- call via run_in_threadpool.
+
+    Not a security boundary: tracking_id is a short (~5 alphanumeric char),
+    non-secret, user-facing identifier already shown and copied by users elsewhere
+    in the product (see /upload/), not a credential. This lookup is the same trust
+    level as the endpoint it serves (/active-learning/save is deliberately
+    anonymous/no-auth) -- it improves audit-trail linkage, it does not gate access
+    to anything.
+
+    Returns None on no match OR on any query failure -- the caller (record a
+    correction) must treat this exactly like a miss, never raise.
+    """
+    try:
+        conn = _connect(db_path)
+        try:
+            row = conn.execute(
+                "SELECT id FROM predictions WHERE tracking_id = ? ORDER BY id DESC LIMIT 1",
+                (tracking_id,),
+            ).fetchone()
+            return row[0] if row else None
+        finally:
+            conn.close()
+    except Exception as e:
+        logger.warning(f"predictions_store: tracking_id lookup failed (non-fatal): {e}")
+        return None
+
+
 def record_correction(
     *,
     prediction_id: int,
@@ -174,9 +208,8 @@ def record_correction(
     note: Optional[str] = None,
     db_path: Optional[str] = None,
 ) -> Optional[int]:
-    """Not yet called from any endpoint -- see the scope-boundary note at the top
-    of this file. Provided so wiring a future correction flow is additive rather
-    than requiring a schema change."""
+    """Called from /active-learning/save when a submitted correction's tracking_id
+    resolves to a prediction row (see find_prediction_id_by_tracking_id above)."""
     try:
         conn = _connect(db_path)
         try:
