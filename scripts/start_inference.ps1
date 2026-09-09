@@ -15,7 +15,7 @@ Set-Location "C:\ironhack\labs\breaker-detection-project"
 if (-not $env:INFERENCE_PORT) { $env:INFERENCE_PORT = "8088" }
 while ($true) {
     Write-Host "[start_inference] launching src.model.inference_server on :$($env:INFERENCE_PORT)"
-    python -m src.model.inference_server
+    & ".\.venv\Scripts\python.exe" -m src.model.inference_server
     Write-Host "[start_inference] server exited (code $LASTEXITCODE). Restarting in 3s..."
     Start-Sleep -Seconds 3
 }
