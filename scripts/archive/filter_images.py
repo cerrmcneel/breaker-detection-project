@@ -271,7 +271,7 @@ def main():
     discarded_dir = os.path.join(project_root, "data", "scraped_discarded")
     
     root = tk.Tk()
-    app = ImageFilterApp(root, raw_dir, approved_dir, discarded_dir)
+    _ = ImageFilterApp(root, raw_dir, approved_dir, discarded_dir)
     
     # Run Tkinter mainloop
     root.mainloop()

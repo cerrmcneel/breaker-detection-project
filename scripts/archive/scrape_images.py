@@ -172,7 +172,6 @@ def main():
     with open(args.json, "r", encoding="utf-8") as f:
         urls_db = json.load(f)
         
-    session = get_session()
     total_downloaded = 0
     
     for query, urls in urls_db.items():

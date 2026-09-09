@@ -127,14 +127,12 @@ def deduplicate_cross_directories(source_dir, reference_dir, threshold=2):
         if not phash_val:
             continue
             
-        is_near_dup = False
         for ref_hash, ref_path in ref_phashes.items():
             if hamming_distance(phash_val, ref_hash) <= threshold:
                 print(f"Cross Perceptual Duplicate: {os.path.basename(filepath)} visually matches approved {os.path.basename(ref_path)}")
                 if os.path.exists(filepath):
                     os.rename(filepath, os.path.join(discard_dir, os.path.basename(filepath)))
                     removed_count += 1
-                is_near_dup = True
                 break
                 
     print(f"Cross-directory deduplication complete. Removed {removed_count} cross-duplicates.")
