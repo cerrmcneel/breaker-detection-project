@@ -23,6 +23,7 @@ model/*.onnx
 .DS_Store
 .vscode/
 .idea/
+.claude/
 *.log
 
 # --- Tableau Temp Files ---
@@ -36,6 +37,7 @@ result.txt
 *.mp4
 *.avi
 *.mov
+*.pptx
 
 # --- Caches ---
 .pytest_cache/
