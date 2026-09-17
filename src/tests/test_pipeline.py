@@ -201,3 +201,73 @@ def test_pipeline_output_dictionary_schema(mock_yolo_class, mock_config):
     finally:
         os.remove(config_path)
 
+
+
+# --- OCR gating -------------------------------------------------------------
+# OCR text reading used to be gated on `use_hmm`, so disabling the HMM silently
+# disabled text reading too (every ocr_text came back empty in production).
+# `use_ocr` now controls it, falling back to the old coupled value when absent.
+
+def _pipeline_with(config, tmp_path):
+    config_path = tmp_path / "pipeline_config.json"
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    with patch('src.model.pipeline.YOLO'), patch('torch.load'):
+        return PanelSafePipeline(config_path=str(config_path))
+
+
+@pytest.mark.parametrize("config,expected", [
+    ({"use_ocr": True, "use_hmm": False}, True),    # the production case after the split
+    ({"use_ocr": False, "use_hmm": True}, False),   # explicit opt-out wins over use_hmm
+    ({"use_hmm": True}, True),                      # legacy config: old coupled behaviour
+    ({"use_hmm": False}, False),                    # legacy config: old coupled behaviour
+    ({}, True),                                     # neither key: same default as before
+])
+def test_ocr_enabled_resolution(config, expected, mock_config, tmp_path):
+    pipeline = _pipeline_with({**mock_config, **config}, tmp_path)
+    assert pipeline.ocr_enabled() is expected
+
+
+def test_ocr_runs_when_enabled_with_hmm_off(mock_config, tmp_path):
+    """The whole point of the split: OCR reads text even though the HMM is off."""
+    pipeline = _pipeline_with({**mock_config, "use_ocr": True, "use_hmm": False}, tmp_path)
+
+    reader = MagicMock()
+    reader.readtext.return_value = [((0, 0, 0, 0), "C16", 0.9)]
+    pipeline._get_ocr_reader = MagicMock(return_value=reader)
+    pipeline.heuristic_engine.apply_logic = MagicMock(
+        side_effect=lambda preds, *args, **kwargs: preds
+    )
+
+    import numpy as np
+    mock_box = MagicMock()
+    mock_box.xyxy = [[10, 10, 60, 90]]
+    mock_box.conf = [0.90]
+    mock_box.cls = [0]
+    mock_result = MagicMock()
+    mock_result.boxes = [mock_box]
+    mock_result.names = {0: "MCB"}
+    pipeline.yolo_model.predict.return_value = [mock_result]
+
+    img_path = tmp_path / "panel.jpg"
+    cv2.imwrite(str(img_path), np.zeros((300, 300, 3), dtype=np.uint8))
+
+    results = pipeline.run_inference(str(img_path))
+
+    assert reader.readtext.called, "OCR should run with use_ocr=True even when use_hmm=False"
+    assert results[0]["ocr_text"] == "C16"
+
+
+def test_ocr_skipped_when_disabled(mock_config, tmp_path):
+    pipeline = _pipeline_with({**mock_config, "use_ocr": False, "use_hmm": False}, tmp_path)
+    pipeline._get_ocr_reader = MagicMock()
+    pipeline.heuristic_engine.apply_logic = MagicMock(
+        side_effect=lambda preds, *args, **kwargs: preds
+    )
+    pipeline.yolo_model.predict.return_value = []
+
+    import numpy as np
+    img_path = tmp_path / "panel.jpg"
+    cv2.imwrite(str(img_path), np.zeros((300, 300, 3), dtype=np.uint8))
+
+    pipeline.run_inference(str(img_path))
+    pipeline._get_ocr_reader.assert_not_called()

@@ -31,10 +31,19 @@ class PanelSafePipeline:
         if self.config["classifier_mode"] == "two_stage":
             self.load_crop_classifier()
 
-        # EasyOCR is heavy and only used when HMM/OCR is enabled. Lazy-load it so the
-        # server still starts (degrading to no-OCR) if easyocr is absent in the env.
+        # EasyOCR is heavy. Lazy-load it so the server still starts (degrading to
+        # no-OCR) if easyocr is absent in the env.
         self.reader = None
         self._ocr_unavailable = False
+
+        if self.config.get("use_hmm", False) and not self.ocr_enabled():
+            # The HMM's emission model weights OCR text at a 19:1 likelihood ratio
+            # against YOLO's own confidence, so running it with OCR off feeds it a
+            # permanently empty observation it was never calibrated for.
+            print(
+                "Warning: use_hmm is true but OCR is disabled. The HMM will run "
+                "without the text evidence its emission probabilities assume."
+            )
 
         # Local components
         self.heuristic_engine = SpatialHeuristicEngine()
@@ -43,6 +52,21 @@ class PanelSafePipeline:
     def load_config(self):
         with open(self.config_path, "r", encoding="utf-8") as f:
             self.config = json.load(f)
+
+    def ocr_enabled(self):
+        """Whether to read breaker text on this run.
+
+        OCR used to be gated on `use_hmm`, because OCR text was originally added
+        only as HMM emission evidence. Disabling the HMM on 2026-07-04 therefore
+        also silently disabled text reading, so `ocr_text` came back empty for
+        every device in production -- taking the rating/curve reads and the
+        era estimator's catalog lookup down with it.
+
+        `use_ocr` now controls it independently. It falls back to the old coupled
+        behaviour when absent, so a config written before this split (Modal ships
+        its own copy) keeps behaving exactly as it did.
+        """
+        return self.config.get("use_ocr", self.config.get("use_hmm", True))
 
     def load_crop_classifier(self):
         self.crop_classifier = BreakerCropClassifier()
@@ -124,8 +148,8 @@ class PanelSafePipeline:
                         pred["class"] = new_cls
                         pred["conf"] = new_conf
 
-            # 3. GPU-Native EasyOCR Reader (Strategy F Option B) - only run if HMM is enabled
-            ocr_reader = self._get_ocr_reader() if self.config.get("use_hmm", True) else None
+            # 3. GPU-Native EasyOCR Reader (Strategy F Option B) - see ocr_enabled()
+            ocr_reader = self._get_ocr_reader() if self.ocr_enabled() else None
             if ocr_reader is not None:
                 for pred in predictions:
                     if pred["class"] in ["MCB", "MAINBREAKER", "RCD", "RCD_SI", "OTHER"]:
