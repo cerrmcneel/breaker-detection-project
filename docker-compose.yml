@@ -10,10 +10,15 @@ services:
       - UPLOAD_DIR=data/images/raw_uploads
       - INFERENCE_URL=http://gpu-worker:8088/predict
       # PRIMARY_ENGINE would otherwise be derived from INFERENCE_URL's hostname
-      # ("Primary:gpu-worker") -- pinned explicitly here to keep this VM's existing,
-      # friendlier audit-trail label unchanged. No override is set on Azure, so its
-      # label correctly derives from whatever INFERENCE_URL actually points at there.
-      - PRIMARY_ENGINE=K3s-GPU-Cluster-Pipeline
+      # ("Primary:gpu-worker"). Pinned here to a friendlier audit-trail label. No
+      # override is set on Azure, so its label correctly derives from whatever
+      # INFERENCE_URL actually points at there.
+      #
+      # Was "K3s-GPU-Cluster-Pipeline" until 2026-09-17. That was inherited from the
+      # May 2026 setup and became wrong when the worker moved off K3s to a native
+      # Windows process (Scheduled Task PanelSafeInference). Old rows in the
+      # predictions store still carry the K3s label.
+      - PRIMARY_ENGINE=Local-GPU-RTX3060
       # Inference failover: the Modal deployment in deploy/modal_failover.py
       # (T4 GPU, scale-to-zero, ships the model weights via add_local_dir).
       # Measured 2026-08-16: 16.1s cold, ~4s warm.
