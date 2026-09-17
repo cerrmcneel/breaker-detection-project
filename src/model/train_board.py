@@ -127,7 +127,12 @@ def run_training(args):
     print(f"mAP50-95  {metrics.box.map:.4f}")
     print(f"precision {metrics.box.mp:.4f}")
     print(f"recall    {metrics.box.mr:.4f}")
-    print("\nWeights:", os.path.join("model/runs", args.name, "weights", "best.pt"))
+    # Ask the trainer where it actually saved. `project` is resolved against
+    # ultralytics' own runs_dir setting, not the working directory, so composing
+    # the path by hand prints a path that does not exist.
+    save_dir = getattr(getattr(model, "trainer", None), "save_dir", None)
+    print("\nWeights:", os.path.join(str(save_dir), "weights", "best.pt") if save_dir
+          else "see 'Results saved to' above")
 
 
 if __name__ == "__main__":
