@@ -62,7 +62,8 @@ AZURE_FALLBACK_URL = FAILOVER_URL
 # Both engine labels are derived from the configured host rather than hardcoded, so
 # the reported engine cannot silently drift from the backend actually serving the
 # request. PRIMARY_ENGINE used to be the fixed string "K3s-GPU-Cluster-Pipeline" --
-# correct on the VM, where the primary really is the K3s cluster, but WRONG on Azure
+# correct on the VM back when the primary really was the K3s cluster (it is now a
+# native Windows process on the GPU workstation, labelled Local-GPU-RTX3060), but WRONG on Azure
 # once its INFERENCE_URL was pointed at Modal (see above): a successful Azure
 # /predict/ still reported "K3s-GPU-Cluster-Pipeline" even though Modal served it.
 # Found 2026-08-26 while verifying the Azure redeploy; FAILOVER_ENGINE already got
@@ -214,7 +215,7 @@ def _load_local_model_version() -> Optional[str]:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info(f"PanelSafe Gateway ready. Connecting to K3s cluster at: {INFERENCE_URL}")
+    logger.info(f"PanelSafe Gateway ready. Primary inference endpoint: {INFERENCE_URL}")
 
     # Initialize cache and populate seen_hashes on startup
     count, current_hashes = get_unique_dataset_count()
@@ -489,7 +490,7 @@ async def predict_panel(request: Request, file: UploadFile = File(...)):
         # No temp file: the bytes are already in memory, so the previous
         # write-to-disk-then-reopen-twice round-trip bought nothing and added
         # three blocking filesystem operations to every request.
-        logger.info("Forwarding image to K3s GPU Worker pipeline...")
+        logger.info("Forwarding image to the primary GPU worker pipeline...")
         try:
             # engine is reported back rather than hardcoded, so audit logs stop
             # attributing failover traffic to the primary cluster.
