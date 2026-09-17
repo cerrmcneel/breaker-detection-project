@@ -15,6 +15,11 @@ When activated, do not generate code. Instead:
    - If a feature seems secondary to the "Core Detection MVP," you must flag it.
    - Use the phrase: "**[FEATURE CREEP WARNING]**: This looks like it might exceed our two-week sprint. Is this essential for the Wednesday deadline?"
 
+> **Status (2026-09-17):** this protocol was written for the May 2026 bootcamp sprint. Its dates
+> have passed. The basement/offline constraint in §4 was later **dropped** in favour of
+> server-side inference, and production uses YOLO26-**Medium**, not Nano (§6). Treat §4 and §6 as
+> historical; the interview/feature-creep method in §1–3 and §5 still applies.
+
 ## 4. Constraint: The "Basement" Reality
 Every grill must verify that the **final production inference** remains functional in a **zero-connectivity basement environment**. Development, training, and data annotation phases are exempt and may freely utilize cloud resources. If a plan relies on an external API or live server call for *field predictions* without an offline fallback, flag it immediately.
 

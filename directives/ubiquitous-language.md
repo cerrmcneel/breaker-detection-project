@@ -22,18 +22,18 @@ This document defines the shared vocabulary for the PanelSafe project. All code 
 🧠 2. YOLO26 & Edge Architecture Terms
 
 - **Inference**: The process of the model "predicting" or "detecting" breakers in a live image frame.
-- **Edge Compute**: Local execution on the smartphone browser (via ONNX/TF.js) with zero server dependency.
+- **Edge Compute**: Local execution on the device (e.g. phone browser via ONNX/TF.js) with zero server dependency. *Not implemented; all inference is server-side today.*
 - **NMS-free**: "Non-Maximum Suppression Free." A feature of YOLO26 that allows the model to output final detections without heavy post-processing.
 - **Quantization**: The process of compressing the model (e.g., from FP32 to INT8) to make it run faster on mobile CPUs.
 - **mAP50-95**: The primary metric for model accuracy (Mean Average Precision).
-- **MuSGD**: The advanced optimizer used for YOLO26 training.
+- **MuSGD**: An optimizer introduced with YOLO26. `src/model/train.py` sets `optimizer="auto"` and lets Ultralytics choose; check the run's logged params before claiming MuSGD was used.
 
 ---
 
 🏗️ 3. Project-Specific Logistics
 
-- **The Basement Problem**: Refers to the technical constraint of zero internet connectivity during field audits.
-- **Guided Viewfinder**: The UI overlay that tells the user to "Move Closer" or "Hold Still" before an image is captured.
-- **Deduplication**: The backend process using SHA-256 to ensure the same panel isn't uploaded twice.
+- **The Basement Problem**: Zero internet connectivity during field audits. *The original offline constraint was dropped in favour of "Push Once Connected" server-side inference.*
+- **Guided Viewfinder**: The UI overlay that told the user to "Move Closer" or "Hold Still" before capture. *Removed from the frontend in March 2026.*
+- **Deduplication**: The backend process that SHA-256-hashes an image's *decoded pixels* (not its file bytes), so the same photo re-saved with different metadata is still recognised.
 - **REBT**: Reglamento Electrotécnico para Baja Tensión. The Spanish electrical safety code this project aims to satisfy.
 

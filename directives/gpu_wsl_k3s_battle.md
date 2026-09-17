@@ -2,6 +2,12 @@
 
 > **TL;DR:** I connected a Proxmox Kubernetes server to my Windows gaming PC as a GPU worker node. The GPU part took 2 hours of brutal debugging. Here's every mistake I made so you don't have to.
 
+> **Status note (2026-09-17):** this is a May 2026 blog draft and describes that moment. Since
+> then, production inference moved off K3s to a native Windows process (Scheduled Task
+> `PanelSafeInference`), with Modal as failover. The production model is YOLO26-**Medium**; OCR in
+> the pipeline is EasyOCR (currently gated off with the HMM), not Tesseract. The "What's Next"
+> items for the unifilar generator and the Cloudflare Tunnel are done.
+
 ---
 
 ## The Goal

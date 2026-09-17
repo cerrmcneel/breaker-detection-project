@@ -9,7 +9,9 @@ Shallow Modules: These have complex interfaces relative to their small functiona
 
 Deep Modules: These are like icebergs. They provide a tiny, simple interface (the tip) while hiding massive complexity beneath the surface (the implementation).
 
-📸 2. Implementation: The DetectionModule
+📸 2. Example Design (never built): A Client-Side DetectionModule
+
+> Status (checked 2026-09-17): this section describes a planned in-browser design from May 2026. No `startDetection()` / `stopDetection()` module, WebWorker or in-browser YOLO exists. Inference runs server-side on the GPU worker, and the only frontend JS module is `app/frontend/js/modules/BootstrapModule.js`. The deep-module principle in §1 still applies; read §2 as an illustration of it, not a description of the code.
 Instead of 10 fragmented scripts for camera handling and AI processing, all logic is encapsulated within a single Deep Module.
 
 The Public Interface (The Tip of the Iceberg)
@@ -40,8 +42,8 @@ TDD Compatibility: By having a stable interface, we can write our tests first an
 ☸️ 4. Hybrid MLOps Strategy
 We don't just build models; we build the pipes that run them.
 
-Infrastructure as Code (IaC): The deployment is as important as the detection. We prioritize Kubernetes orchestration to ensure the model is resilient and scalable.
+Infrastructure as Code (IaC): The deployment is as important as the detection. Deployment is captured in files (docker-compose.yml, the Modal deployment script, the launcher scripts). Kubernetes (K3s) was used in May 2026; the GPU worker now runs as a Windows Scheduled Task, with Modal as failover.
 
-Hardware-Aware Inference: By leveraging a local GTX 3060 via GPU passthrough, we prioritize performance over the cost-constraints of cloud free-tiers.
+Hardware-Aware Inference: By leveraging a local RTX 3060 (on the Windows workstation, reached over Tailscale), we prioritize performance over the cost-constraints of cloud free-tiers.
 
 Secure Edge Access: Using Cloudflare Tunnels ensures that our high-performance local "brain" is safely accessible to field devices globally.

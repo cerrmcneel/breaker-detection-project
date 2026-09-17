@@ -147,6 +147,7 @@ recorded -- this is the first reproducible version of that result.
 | Mixup/scale augmentation tuning | Reverted | Regressed the exact confusion it targeted |
 | YOLO26-Medium (vs Nano/Large) | Shipped | Best real localization recall, no latency cost |
 | MAINBREAKER position heuristic | Not adopted | 36-42% precision/recall even in best case |
+| SAHI slicing | Removed | An earlier ablation, run after the label-permutation fix, showed it made results worse. Its numbers were not recorded in this file, so don't quote a figure (rationale kept in `requirements-training.txt`). |
 
 The throughline: every one of these was a plausible, well-reasoned idea.
 Three were wrong. The harness that tests against real held-out images,

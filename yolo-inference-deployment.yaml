@@ -1,3 +1,7 @@
+# K3s deployment of the GPU inference worker (May 2026, WSL2 GPU node "datainmind").
+# NOT the current serving path: production inference runs as a native Windows
+# process started by the PanelSafeInference Scheduled Task (scripts/start_inference.ps1).
+# Kept as the record of the working K3s + WSL2 GPU setup (see directives/gpu_wsl_k3s_battle.md).
 apiVersion: apps/v1
 kind: Deployment
 metadata:

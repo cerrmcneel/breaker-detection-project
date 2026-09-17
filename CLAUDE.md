@@ -62,8 +62,11 @@ top with uncommitted work, the deployment topology, and gotchas that will
 bite you (notably: `C:\ironhack\labs\marjal-website` is a stale,
 commit-less snapshot — pushing from it would destroy published work).
 
-`directives/` is **gitignored**, so it is local-only and won't appear in a
-fresh clone. Read it anyway if it's present; update the phase status and
+`directives/` is **gitignored**, so the roadmap, business plan, Hackshow prep
+and presentation notes are local-only and won't appear in a fresh clone. (Six
+older files, the principles/workflow/glossary/mentor docs and the K3s write-up,
+were committed before the ignore rule and are still tracked.) Read it anyway if
+it's present; update the phase status and
 the CURRENT STATE section whenever you finish a meaningful chunk, so the
 next session — human or agent — starts from the truth rather than from
 this file's aspirations.
@@ -71,7 +74,14 @@ this file's aspirations.
 Known-good invariants worth not rediscovering the hard way:
 - **Do not wire SAHI back into `src/model/pipeline.py`.** It is installed
   but deliberately unused; an ablation showed it hurt accuracy once the
-  label-permutation bug was fixed. See the comment in `requirements.txt`.
+  label-permutation bug was fixed. See the comment in
+  `requirements-training.txt` (it moved there with the Phase 3 requirements split).
+- **Production inference does not run on K3s today.** The GPU worker is a native
+  Windows process started by the `PanelSafeInference` Scheduled Task
+  (`scripts/start_inference.ps1`); `yolo-inference-deployment.yaml` is the May 2026
+  K3s setup. `curl http://localhost:8088/` shows what is actually being served.
+- **OCR is off in production as a side effect of `use_hmm: false`** (the OCR step
+  in `src/model/pipeline.py` is gated on that flag), so `ocr_text` is always empty.
 - The full test suite is expected to be **green** (`python -m pytest
   src/tests/ -q`). If something fails on arrival, it's a regression or
   rot, not the normal state.

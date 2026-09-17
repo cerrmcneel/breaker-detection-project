@@ -53,6 +53,11 @@ raw YOLO baseline:
 | YOLO Baseline | 61.73% | 92.3ms |
 | YOLO + HMM | 55.87% | 602.4ms |
 
+(Latencies come from a different run than the table in [ablation_study](/methodology/ablation_study.md), which reports 101.5 ms / 621.9 ms. The accuracy figures are identical.)
+
+**Side effect of disabling it:** `pipeline.py` only runs OCR when `use_hmm` is true, so turning
+HMM off also turned off breaker-text reading in production. See [yolo26](/models/yolo26.md).
+
 This holds even after recalibrating the HMM's empirical confusion matrix
 (`calibrate_hmm_confusion.py`) against the current model — recalibration alone did not
 fix the regression, ruling out a stale confusion matrix as the sole cause.

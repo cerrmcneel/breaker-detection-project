@@ -13,7 +13,7 @@ Welcome to the PanelSafe Open Knowledge Format (OKF) bundle. This documentation 
 ## Contents
 
 - **Models**: [models_index](/models/index.md)
-  - Specs for the YOLO26-Nano object detector and the Hidden Markov Model (HMM) Viterbi decoder.
+  - Specs for the YOLO26 object detector (Medium in production) and the Hidden Markov Model (HMM) Viterbi decoder (disabled in production).
 - **Datasets**: [datasets_index](/datasets/index.md)
   - Specs for the synthetic data generator and annotated real-world panel photos.
 - **Standards**: [standards_index](/standards/index.md)

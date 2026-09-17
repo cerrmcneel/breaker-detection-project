@@ -10,6 +10,15 @@ timestamp: 2026-06-22T16:50:00Z
 
 This concept formalizes Spain's *Reglamento Electrotécnico para Baja Tensión* (REBT), specifically for domestic *Cuadros Generales de Mando y Protección* (CGMP).
 
+> **Verification status (2026-09-17).** The circuit table (C1–C5, ITC-BT-25) matches common
+> practice. These statements have **not** been checked against the regulation text and should
+> be confirmed (ITC-BT-23 / ITC-BT-25 / ITC-BT-52) before being quoted:
+> - that a surge protection device is required in every modern panel (the ITC wording may make it conditional);
+> - the 440 V figure for permanent-overvoltage protection;
+> - that superimmunized (SI) RCDs are *required* for electronic loads. "Type A" (a standard
+>   category) and "superinmunizado" (a high-immunity product family) are not the same thing;
+> - the scope of the one-RCD-per-five-circuits rule (which electrification grade it applies to).
+
 ## Key Topological Regulations
 
 1. **IGA (Main Breaker) & DPS (Surge Protection):**

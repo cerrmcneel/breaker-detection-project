@@ -1,96 +1,165 @@
-# PanelSafe: Electrical Breaker Detection Beta
+# PanelSafe: From a Panel Photo to an Electrical Audit
 
-PanelSafe is a computer vision data ingestion and analysis platform designed to automate the auditing of residential and industrial electrical panels. Developed during an intensive bootcamp, this project bridges the gap between traditional electrical expertise and modern AI-driven safety inspections.
+PanelSafe turns a photo of a residential electrical panel (*cuadro eléctrico*) into a structured
+list of its protective devices, an REBT-based safety score, and a draft single-line diagram
+(*esquema unifilar*) that a human reviews and corrects. It was built during the Ironhack Data
+Science & ML bootcamp and has since been hardened into a small production service.
 
-## Project Evolution & Portfolio Milestones
-This repository has evolved through distinct professional phases, reflecting my growth from Data Analysis to Machine Learning Engineering:
+- **Live site:** [https://panelsafe.cv](https://panelsafe.cv) (analyzer, HITL workspace, unifilar tool; EN / ES / FR)
+- **Azure gateway:** [https://app-panelsafe-mcneel.azurewebsites.net](https://app-panelsafe-mcneel.azurewebsites.net)
+- **Knowledge base:** [`docs/okf/`](docs/okf/index.md), covering models, datasets, REBT rules and the evaluation methodology
+- **Frozen v1.0 (data-analysis phase):** [release tag](https://github.com/cerrmcneel/breaker-detection-project/releases/tag/v1.0-data-analysis)
 
-*   **[v1.0: Data Analysis Phase](https://github.com/cerrmcneel/breaker-detection-project/releases/tag/v1.0-data-analysis)**: Focus on EDA, data cleaning, and initial algorithmic logic. (Frozen for portfolio review).
-*   **[Current: Machine Learning & Edge Phase]**: Implementation of YOLO26 for real-time breaker detection and synthetic dataset generation.
+> PanelSafe produces *supporting documentation* and a consumer-facing indication. It does not
+> issue a CIE / boletín eléctrico; in Spain only an *instalador autorizado* can.
 
 ---
 
-## Project Vision & Phase 3 Trajectory
-PanelSafe is evolving from a standalone detection model into a two-tier Cloud/Edge platform:
+## What it does
 
-1. **For Consumers (Safety Score):** A free tool that generates a safety score based on panel photos, putting users in contact with certified local electricians. This crowdsources real-world images to continuously improve the model.
-2. **For Professionals (Human-in-the-Loop API):** An API that accelerates paperwork by automatically generating an *esquema unifilar* (single-line electrical diagram) using standard engineering symbols, with an electrician validating the AI's output.
+| Surface | What happens |
+|---|---|
+| **Consumer analyzer** (`/`, `/upload/`) | Photo → detected devices → REBT-based safety score and feedback. Refuses to invent a score when inference is unavailable. |
+| **HITL workspace** (`analysis.html`, `/predict/`) | An electrician corrects boxes, classes and ratings on a pan/zoom canvas. Corrections are saved via `/active-learning/save` and linked to the original prediction. |
+| **Unifilar generator** (`/unifilar/`) | A deterministic React/Vite app renders the corrected panel as an SVG single-line diagram (no LLM involved). |
 
-### Technical Evolution (Constraints)
-*   **Connectivity:** The initial "zero-connectivity basement" constraint has been officially dropped. To achieve maximum accuracy and support cloud-based OCR APIs (EasyOCR/PaddleOCR) for reading circuit diagrams, the system operates under a "Push Once Connected" asynchronous logic.
-*   **Detection Strategy:** Shifting from pure YOLO visual detection to a **Two-Stage Architecture** combining YOLO Object Detection with a Python Spatial Heuristic Engine to contextualize breaker relationships (e.g., Mainbreaker isolation logic).
+Detected classes (`data.yaml`): `MCB` (PIA), `RCD` (diferencial), `RCD_SI` (superinmunizado),
+`MAINBREAKER` (IGA), `OVERSURGE` (surge protection), `OTHER`.
 
-##  Features
-- **Guided Viewfinder:** Real-time client-side analysis of image brightness, blurriness, and crop variance to guide users into taking the perfect dataset image.
-- **Multi-Language Support:** Instant English/Spanish translation toggles for field workers across different regions.
-- **Smart Deduplication:** Backend SHA-256 fingerprinting that silently ignores multiple uploads of the exact same image to save NAS storage.
-- **Hidden Batch Upload:** Admin-only, password-protected batch upload utility to mass-ingest existing breaker datasets smoothly.
-- **Live Progress Tracking:** Dynamic goal-oriented visual badges matching current database ingest sizes against target milestones in real time.
+---
 
-## 🏗️ Hybrid MLOps Infrastructure
-PanelSafe leverages "Home-Lab Hybrid" architecture to provide high-performance AI inference without the cost of cloud GPUs.
+## Architecture (as deployed, verified 2026-09-17)
 
 ```mermaid
 graph TD
-    Client[📱 Field Device / Browser] -->|HTTPS / WSS| CF[☁️ Cloudflare Tunnel]
-    CF -->|Secure Proxy| PVE[🛡️ Proxmox VE]
-    PVE -->|Orchestration| K8s[☸️ Kubernetes Cluster]
-    K8s -->|GPU Passthrough| RTX[🎮 NVIDIA GTX 3060]
-    RTX -->|CUDA Acceleration| YOLO[🚀 YOLO Inference Service]
-    YOLO -->|Results| Client
+    Client[Browser / phone] -->|HTTPS| CF[Cloudflare Tunnel]
+    CF --> GW[FastAPI gateway<br/>Docker on VM 101, Proxmox]
+    GW -->|Tailscale| GPU[GPU inference worker<br/>Windows workstation, RTX 3060<br/>native Python process]
+    GW -.->|failover| Modal[Modal serverless T4<br/>same pipeline code]
+    AZ[Second gateway<br/>Azure App Service B1] --> Modal
+    GW --> DB[(SQLite predictions store)]
 ```
 
-### The Tech Stack
-*   **AI/ML:** YOLO26-Nano for real-time object detection and classification.
-*   **Inference Engine:** FastAPI-based inference server optimized for NVIDIA CUDA.
-*   **Orchestration:** **Kubernetes (K3s/K8s)** managing container lifecycle and scaling.
-*   **Hardware Acceleration:** **NVIDIA GTX 3060** utilizing PCIe passthrough via Proxmox.
-*   **Networking:** **Cloudflare Tunnels** providing secure, end-to-end encrypted public access to the local cluster without exposing home router ports.
-*   **Storage:** Distributed storage via **TrueNAS Core** (NFS/SMB) for massive image dataset persistence.
+- **Gateway** (`app/main.py`) runs no models. It validates uploads (decodes the image, enforces
+  a streamed size limit), forwards to the GPU worker, fails over to Modal inside a shared time
+  budget, grades the result, and records it.
+- **GPU worker** (`src/model/inference_server.py`) is a plain `http.server` running
+  `PanelSafePipeline`. It is started and auto-restarted by a Windows Scheduled Task
+  (`scripts/start_inference.ps1`). `GET /` reports the served model's MD5, classes and git commit.
+- **Failover:** Modal T4 (`deploy/modal_failover.py`). Measured 16.1 s cold, ~4 s warm.
+- **Azure:** a second copy of the gateway on App Service with TLS; its primary inference target
+  is the same Modal endpoint.
+- **K3s history:** in May 2026 the worker ran as a K3s pod on the same GPU via WSL2
+  (`yolo-inference-deployment.yaml`). It is **not** the current serving path.
+- **Observability:** Prometheus and Grafana on a separate VM (separate `monitoring-stack` repo),
+  scraping GPU, host and container metrics.
 
+---
 
-##  Project Structure
+## The model, and honest numbers
+
+**Production config** (`src/model/pipeline_config.json`): YOLO26-**Medium**, single-stage,
+confidence 0.20, HMM corrector **off**.
+
+Measured on **42 held-out real photos** (from ~121 real images in total). Every number traces
+to [`docs/okf/methodology/ablation_study.md`](docs/okf/methodology/ablation_study.md).
+
+| Model | Localization recall | Classification accuracy | Latency |
+|---|---|---|---|
+| Nano | 79.34% | 61.73% | 101.5 ms |
+| **Medium (production)** | **84.18%** | 60.71% | 108.1 ms |
+| Large | 82.65% | 62.76% | 120.6 ms |
+
+- Medium was chosen for recall. A missed device is invisible to the human reviewer; a
+  misclassified one can still be corrected.
+- The synthetic-validation mAP50 of **0.974** is a *synthetic* number. It is kept only to
+  illustrate the sim-to-real gap, not as real-world performance.
+- **Cut on evidence:** the HMM sequence corrector (61.73% → 55.87%), a second-stage crop
+  classifier, an augmentation change, SAHI slicing, and a "main breaker is leftmost" rule.
+- **Evaluation bugs found and fixed:** a filename-allowlist bug had inflated the headline from
+  a real **61.73%** to **81.08%**, and a `classes.txt` / `data.yaml` order mismatch had
+  silently permuted every real label. See
+  [`evaluation_rigor.md`](docs/okf/methodology/evaluation_rigor.md).
+
+### Known limitations
+- **The admin batch-upload UI is retired.** Its password prompt is still in the page but the
+  endpoint it calls no longer exists. Bulk ingest is handled from the command line
+  (`src/tools/sync_uploads.py`, `check_upload_batch.py`).
+- **Breaker text (ratings like `C16`, the `SI` marker) is not read in production.** The OCR step
+  in `pipeline.py` only runs when `use_hmm` is true, and HMM is disabled. The improved text
+  cleaning (`_clean_ocr_text`, precision 69.1% → 94.4% on 1,060 real crops) is measured offline
+  and tested, but does not reach production output until OCR is decoupled from the HMM flag.
+- **Installation-era estimation** uses REBT composition rules. Its manufacturer-catalog branch
+  needs OCR text, so it is currently inactive; its production-year table is also unverified.
+- **Data is scarce.** Some classes (`RCD_SI`, `OVERSURGE`) have very few real examples.
+  Automated retraining is deliberately deferred until every class has ≥100 real examples.
+
+---
+
+## Engineering
+
+- **CI** (`.github/workflows/ci.yml`): `ruff` lint → `pytest` → Docker build.
+- **Tests:** `python -m pytest src/tests/ -q` (203 passing on 2026-09-17).
+- **API contracts:** Pydantic response models for `/predict/`, published in OpenAPI.
+- **MLOps:** MLflow autologging (`src/model/train.py`); version registration and rollback
+  (`src/tools/manage_model_version.py`).
+- **Predictions store** (`src/storage/predictions_store.py`): SQLite. Raw model output is
+  append-only, computed scores can be recomputed, and corrections link back via `tracking_id`.
+- **De-duplication:** SHA-256 over *decoded pixels*, so a re-saved copy with different metadata
+  is still recognised.
+- **Two requirement sets:** `requirements.txt` is the lean gateway (Docker, Azure);
+  `requirements-training.txt` adds torch, ultralytics, OCR and tests.
+- **Synthetic data:** a REBT "grammar" panel generator with a compositor (`src/data_gen/`).
+
+## Project structure
+
 ```plaintext
-.
-├── app/
-│   ├── main.py            # FastAPI Logic, NAS Ingestion & Batch Deduplication
-│   └── frontend/
-│       ├── index.html     # SPA containing Guided Camera UI, i18n logic, and CSS styles
-│       └── assets/        # Stored media (banners, etc.)
-├── data/                  # Symlinked to TrueNAS Volume
-│   ├── images/            # Raw .jpg/.png uploads
-│   └── upload_log.json    # JSON Metadata (Timestamp, Country, SHA-256 Hash)
-├── .env                   # Local secrets file for Admin passcodes
-├── requirements.txt       # Python dependencies
-├── Dockerfile             # Multi-stage Python build
-└── docker-compose.yml     # App + Cloudflare Tunnel orchestration
+app/
+  main.py                 FastAPI gateway: validation, failover, grading, storage
+  frontend/               Analyzer, HITL workspace (analysis.html), blog (EN/ES/FR)
+panel-safe-unifilar/      React/Vite single-line diagram generator (served at /unifilar)
+src/
+  model/                  pipeline, inference server, training, heuristics, OCR cleaning, era estimator
+  data_gen/               synthetic panel grammar and compositor
+  storage/                SQLite predictions/corrections store
+  experiments/            A/B testing framework (work in progress)
+  tools/                  evaluation, labeling, calibration, versioning, sync utilities
+  tests/                  pytest suite
+deploy/modal_failover.py  Modal serverless GPU deployment
+scripts/                  inference-worker launchers (PowerShell / bash)
+docs/okf/                 knowledge base
+data.yaml                 class order (must match any external annotation tool)
+docker-compose.yml        gateway + Cloudflare tunnel (VM 101)
 ```
 
-## Deployment & Development
-To replicate this environment:
+## Running it
 
-**Clone and Configure:**
 ```bash
 git clone https://github.com/cerrmcneel/breaker-detection-project.git
 cd breaker-detection-project
+pip install -r requirements-training.txt
 ```
 
-**Set Environment Variables:**
-1. Ensure your `TUNNEL_TOKEN` and `UPLOAD_DIR` are configured in the `docker-compose.yml`.
-2. Create a `.env` file in the root directory to set your admin passcode for batch tools:
-```env
-ADMIN_PASSWORD=your_secure_password
-```
+Start the GPU worker, then the gateway:
 
-**Launch Stack:**
 ```bash
-docker-compose up -d --build
+INFERENCE_PORT=8088 ./scripts/start_inference.sh
 ```
 
-## 📈 Current Milestone: Production Ready (Phase 3)
-We have successfully transitioned to the production inference phase. The system is now powered by a YOLO26-Nano model trained for 100 epochs, achieving a **0.974 mAP50**.
+```bash
+INFERENCE_URL=http://localhost:8088/predict uvicorn app.main:app --port 8000
+```
 
-- **Live Portal:** [https://panelsafe.cv](https://panelsafe.cv)
+Model weights (`models/`) are not in the repository.
 
-## 👨‍💻 About the Developer
-With a professional background as an **Electrician** and **ESL teacher**, I am transitioning into **Data Science** and **MLOps** to build tools that solve real-world problems in the electrical industry. This project demonstrates a full-stack engineering approach: from hardware-level GPU orchestration to high-level computer vision modeling.
+**Gateway environment variables:** `INFERENCE_URL`, `FAILOVER_URL` (empty means no failover),
+`PRIMARY_ENGINE` / `FAILOVER_ENGINE` (optional labels), `INFERENCE_TIMEOUT`,
+`FAILOVER_TIMEOUT`, `INFERENCE_BUDGET`, `UPLOAD_DIR`, `PREDICTIONS_DB_PATH`.
+`docker-compose.yml` also needs `CLOUDFLARE_TUNNEL_TOKEN` in `.env`.
+
+## About the developer
+
+With a professional background as an **electrician** and **ESL teacher**, I am moving into
+**data science and MLOps** to build tools for real problems in the electrical trade. This project
+covers the whole path: data collection and labelling, model training and honest evaluation, and
+serving it on real infrastructure.

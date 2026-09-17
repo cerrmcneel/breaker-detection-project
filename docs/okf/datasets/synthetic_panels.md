@@ -24,8 +24,8 @@ Because annotated physical photos of domestic breaker boards are scarce, PanelSa
 - **Strategy C (Shadows & Specular Glare):** Superimposes linear shadow gradients (top cutout shadow) and radial glare highlights to simulate basement closet conditions.
 
 ## Mixed-Data Training Strategy
-- **Pre-training:** The YOLO network is first trained on thousands of synthetic panel configurations to learn general components and geometry.
-- **Bridged Transfer Learning:** The pre-trained weights are fine-tuned on the real-world dataset, now **121 Spanish breaker board images** (79 train / 42 val, as of 2026-07-04 — grown from an original 54-image baseline across two labeling/retraining rounds). This anchors the model's generalized knowledge to real-world aging plastic, glares, and real ambient settings.
-- **User-in-the-Loop Feedback:** Real-world uploads from the consumer-facing scoring application are saved to expand the training dataset dynamically, overcoming initial data scarcity.
+- **Synthetic share:** the current `data/dataset` split holds **425 synthetic train / 75 synthetic val** images (`synth_panel_*`) alongside the real ones (counted 2026-09-17).
+- **Real-world data:** **121 real breaker board images** (79 train / 42 val). Mostly Spanish, plus scraped images and a few French/German panels. This grew from an original 54-image baseline across two labeling/retraining rounds (as of 2026-07-04), and anchors the model to real aging plastic, glare and lighting.
+- **User-in-the-Loop Feedback:** consumer uploads and HITL corrections are *saved* (`data/images/raw_uploads`, `/active-learning/save`, the predictions/corrections store). They join the training set only after a human labels or reviews them and a retrain is run by hand. Nothing retrains automatically (see [yolo26](/models/yolo26.md)).
 
 See [yolo26](/models/yolo26.md) for training configurations.
