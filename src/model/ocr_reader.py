@@ -126,7 +126,20 @@ class OCRReader:
     # A curve letter immediately followed by a valid rating, as a standalone token.
     # Both \b anchors matter: without the leading one, the model number "BD62"
     # yields a bogus "D62"; without the trailing one, "C1234" yields "C12".
-    _RATING_RE = re.compile(r'\b([BCD])\s?(\d{1,2})\b')
+    #
+    # The negative lookahead (?![-\./]?\d) ensures that a rating token followed by
+    # a delimiter and more digits (e.g. "C4-1", "C4-2", "C16/2", "C4.1") is rejected
+    # as a circuit sub-branch index or model number rather than treated as a breaker rating.
+    _RATING_RE = re.compile(r'\b([BCD])\s?(\d{1,2})\b(?![-\./]?\d)')
+
+    # Spanish panel circuit identifier prefix (e.g. "PIA C1", "PIA C4-1", "PIA C4").
+    # In Spain (REBT), "PIA C1..C5" designate circuit branches, not breaker ratings.
+    _CIRCUIT_LABEL_RE = re.compile(r'\bPIA\s+[BCD]\d+')
+
+    # ICP utility control breaker marker (Interruptor de Control de Potencia).
+    # Mandatory utility breaker in pre-2002 Spanish installations.
+    # Matches "ICP", "ICP-M", "ICP - M", optionally with rated amperage (e.g. "ICP-M 20A", "ICP 25A").
+    _ICP_RE = re.compile(r'\bICP(?:[- ]?M)?(?:\s+(\d{1,2}(?:[.,]\d)?)\s*A)?\b')
 
     # RCD residual-current marker for a 30 mA device. Deliberately NOT \b-anchored:
     # real OCR output runs the marker into neighbouring glyphs ("IAN0,03A",
@@ -152,7 +165,8 @@ class OCRReader:
     def _clean_ocr_text(self, text):
         """
         Reduces raw OCR output to a single electrical verdict the HMM can consume:
-        "SI", a curve+rating like "C16", "30MA", or "" for no usable signal.
+        "SI", a curve+rating like "C16", "30MA", an ICP marker like "ICP-M 20A",
+        or "" for no usable signal.
 
         Resolves by STRENGTH of evidence, not by first match. Ordering matters
         because the verdict carries a 19:1 likelihood ratio in the HMM's emission
@@ -163,8 +177,23 @@ class OCRReader:
         si = bool(self._SI_RE.search(text))
         leakage = bool(self._LEAKAGE_RE.search(text))
 
+        # Check for ICP utility control breaker (Interruptor de Control de Potencia).
+        # An ICP is a distinct legacy main utility breaker with its own specific markings
+        # ("ICP-M 20A", "ICP-M 25A"). It must not be forced into a curve+rating shape.
+        icp_match = self._ICP_RE.search(text)
+        icp = None
+        if icp_match:
+            amps_group = icp_match.group(1)
+            if amps_group:
+                amps = amps_group.replace(",", ".")
+                icp = f"ICP-M {amps}A" if "M" in icp_match.group(0) else f"ICP {amps}A"
+            else:
+                icp = "ICP-M" if "M" in icp_match.group(0) else "ICP"
+
+        # Check for curve + rating, excluding circuit labels like "PIA C4"
         rating = None
-        for match in self._RATING_RE.finditer(text):
+        cleaned_for_rating = self._CIRCUIT_LABEL_RE.sub(" ", text)
+        for match in self._RATING_RE.finditer(cleaned_for_rating):
             amps = int(match.group(2))
             if amps in self.VALID_RATINGS:
                 # Emit the parsed integer, not the raw digits, so a zero-padded
@@ -186,6 +215,12 @@ class OCRReader:
         # crop carrying both markers was a true RCD.
         if leakage:
             return "30MA"
+
+        # ICP utility control breaker marker outranks curve+rating. European CE markings
+        # or multi-standard stamps on an ICP (e.g. "ce N" misread as "C6 N") must not
+        # override the device's explicit ICP identity.
+        if icp:
+            return icp
 
         # A curve LETTER is the MCB-specific discriminator. A bare amperage is not:
         # RCDs carry current ratings too ("40A"), which is why the old bare-amperage
