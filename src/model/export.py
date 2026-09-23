@@ -32,6 +32,7 @@ def export_model(
     half: bool = False,
     int8: bool = False,
     simplify: bool = True,
+    device: Optional[str] = None,
     **extra_kwargs,
 ) -> str:
     """Exports a trained YOLO model to the specified format.
@@ -57,6 +58,24 @@ def export_model(
 
     print(f"Loading weights from {weights_path}...")
     model = YOLO(weights_path)
+
+    # Prevent ultralytics from attempting to pip install onnxruntime-gpu if onnxruntime is available
+    orig_check_reqs = None
+    try:
+        import ultralytics.utils.checks as checks
+
+        orig_check_reqs = checks.check_requirements
+
+        def _patched_check_requirements(requirements=(), *args, **kwargs):
+            if requirements == "onnxruntime-gpu" or (
+                isinstance(requirements, (list, tuple)) and "onnxruntime-gpu" in requirements
+            ):
+                requirements = "onnxruntime"
+            return orig_check_reqs(requirements, *args, **kwargs)
+
+        checks.check_requirements = _patched_check_requirements
+    except Exception:
+        pass
 
     supported_args = get_supported_export_args(format)
     export_kwargs = {
@@ -84,12 +103,19 @@ def export_model(
     if "simplify" in supported_args:
         export_kwargs["simplify"] = simplify
 
+    if device is not None:
+        export_kwargs["device"] = device
+
     export_kwargs.update(extra_kwargs)
 
-    print(f"Exporting model to {format} (imgsz={imgsz}, kwargs={export_kwargs})...")
-    exported_path = model.export(**export_kwargs)
-    print(f"Exported model written to: {exported_path}")
-    return str(exported_path)
+    try:
+        print(f"Exporting model to {format} (imgsz={imgsz}, kwargs={export_kwargs})...")
+        exported_path = model.export(**export_kwargs)
+        print(f"Exported model written to: {exported_path}")
+        return str(exported_path)
+    finally:
+        if orig_check_reqs is not None:
+            checks.check_requirements = orig_check_reqs
 
 
 def export_to_onnx(
@@ -153,6 +179,12 @@ def parse_args(args: Optional[list] = None) -> argparse.Namespace:
         default=False,
         help="INT8 quantization (if supported by format).",
     )
+    parser.add_argument(
+        "--device",
+        type=str,
+        default=None,
+        help="Device to run export on, e.g. 'cpu' or '0' (default: None).",
+    )
     return parser.parse_args(args)
 
 
@@ -171,6 +203,7 @@ def main(args: Optional[list] = None) -> int:
             dynamic=parsed.dynamic,
             half=parsed.half,
             int8=parsed.int8,
+            device=parsed.device,
         )
         print(f"Export successful: {exported_path}")
         return 0

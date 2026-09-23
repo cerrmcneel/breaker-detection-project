@@ -15,7 +15,7 @@ datasets/
 # --- Model Weights (Too large for standard Git) ---
 model/*.pt
 model/*.h5
-model/*.onnx
+*.onnx
 *.pt
 *.pkl
 
@@ -38,6 +38,7 @@ result.txt
 *.avi
 *.mov
 *.pptx
+viewfinder_spike/samples/
 
 # --- Caches ---
 .pytest_cache/
