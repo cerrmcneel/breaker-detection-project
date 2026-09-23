@@ -1,0 +1,1 @@
+{"browser":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36","wasmThreads":1,"crossOriginIsolated":true,"fp32":{"runs":9,"meanMs":67,"medianMs":59.5,"minMs":58.8,"maxMs":97.9},"int8":{"runs":9,"meanMs":49.6,"medianMs":48.4,"minMs":48.1,"maxMs":53.3}}

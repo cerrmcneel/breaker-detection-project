@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PanelSafe Viewfinder ONNX Spike (T5)</title>
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0284c7;
+      --success: #22c55e;
+      --warning: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 24px;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    header {
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+    }
+    h1 { font-size: 1.6rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .subtitle { color: var(--muted); font-size: 0.95rem; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: #0284c7;
+      color: #fff;
+      vertical-align: middle;
+      margin-left: 8px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 24px;
+    }
+    @media (max-width: 860px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .control-group {
+      margin-bottom: 18px;
+    }
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    select, input[type="file"], input[type="range"] {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+    .range-val {
+      display: inline-block;
+      float: right;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    .btn {
+      display: inline-block;
+      width: 100%;
+      padding: 10px 16px;
+      background: var(--accent);
+      color: #0f172a;
+      font-weight: 600;
+      font-size: 0.95rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.15s;
+    }
+    .btn:hover { background: var(--accent-hover); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .sample-chips {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .chip {
+      background: #334155;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: border 0.15s;
+    }
+    .chip:hover { border-color: var(--accent); }
+
+    .metrics-box {
+      margin-top: 20px;
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+    }
+    .metric-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+    }
+    .metric-label { color: var(--muted); }
+    .metric-value { font-weight: 700; font-family: monospace; }
+    .metric-value.highlight { color: var(--success); }
+    .metric-value.time { color: var(--accent); }
+
+    .note-box {
+      margin-top: 16px;
+      padding: 10px 12px;
+      background: #172554;
+      border-left: 3px solid #3b82f6;
+      border-radius: 4px;
+      font-size: 0.78rem;
+      color: #bfdbfe;
+    }
+
+    .canvas-wrapper {
+      position: relative;
+      background: #020617;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      min-height: 440px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    #canvas {
+      max-width: 100%;
+      max-height: 70vh;
+      object-fit: contain;
+      display: block;
+    }
+    .placeholder-text {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .status-bar {
+      margin-top: 12px;
+      font-size: 0.85rem;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+    }
+    .legend {
+      display: flex;
+      gap: 16px;
+      margin-top: 12px;
+      font-size: 0.8rem;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-color { width: 14px; height: 14px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>PanelSafe Viewfinder <span class="badge">ONNX WASM SPIKE</span></h1>
+    <div class="subtitle">Client-side 1-Class BOARD Detector (YOLO26-Nano, 320x320 input, NMS-free)</div>
+  </header>
+
+  <div class="grid">
+    <!-- Controls Panel -->
+    <div class="panel">
+      <div class="control-group">
+        <label>Model Variant</label>
+        <select id="modelSelect">
+          <option value="board_viewfinder.onnx">ONNX FP32 (9.23 MB, baseline)</option>
+          <option value="board_viewfinder_int8.onnx">ONNX INT8 (2.62 MB, quantized)</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label>Pick Image</label>
+        <input type="file" id="imageInput" accept="image/*">
+        <div class="sample-chips">
+          <span class="chip" onclick="loadSample('samples/sample1.jpg')">Sample 1</span>
+          <span class="chip" onclick="loadSample('samples/sample2.jpg')">Sample 2</span>
+          <span class="chip" onclick="loadSample('samples/sample3.jpg')">Sample 3</span>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label>Confidence Threshold: <span class="range-val" id="confVal">0.25</span></label>
+        <input type="range" id="confThresh" min="0.05" max="0.95" step="0.05" value="0.25">
+      </div>
+
+      <button class="btn" id="runBtn" disabled>Run Inference</button>
+
+      <div class="metrics-box">
+        <label>Spike Telemetry</label>
+        <div class="metric-row">
+          <span class="metric-label">Model Status:</span>
+          <span class="metric-value" id="statusVal">Initializing...</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Inference Latency:</span>
+          <span class="metric-value time" id="timeVal">—</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Preprocess Time:</span>
+          <span class="metric-value" id="preVal">—</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Detected DIN Rows:</span>
+          <span class="metric-value highlight" id="countVal">—</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Top Box Score:</span>
+          <span class="metric-value" id="scoreVal">—</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Union Fill Fraction:</span>
+          <span class="metric-value" id="fillVal">—</span>
+        </div>
+      </div>
+
+      <div class="note-box">
+        <strong>Falsification Reminder:</strong><br>
+        Fill fraction is reported for telemetry only. The hypothesis that fill fraction predicts OCR legibility was falsified (correlation -0.07 with OCR success).
+      </div>
+    </div>
+
+    <!-- Canvas Preview Panel -->
+    <div>
+      <div class="canvas-wrapper">
+        <canvas id="canvas"></canvas>
+        <div id="placeholder" class="placeholder-text">Load or select an image to test viewfinder inference</div>
+      </div>
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-color" style="background: #22c55e;"></div>
+          <span>DIN Rail Rows (Individual Boxes)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: #f59e0b; border: 1px dashed #fff;"></div>
+          <span>Board Union (All Rows Enclosure)</span>
+        </div>
+      </div>
+      <div class="status-bar">
+        <span id="runtimeInfo">Runtime: ONNX Runtime Web (WASM)</span>
+        <span id="dimInfo">Dimensions: —</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let session = null;
+  let currentModelName = "";
+  let loadedImage = null;
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+  const placeholder = document.getElementById("placeholder");
+  const runBtn = document.getElementById("runBtn");
+  const statusVal = document.getElementById("statusVal");
+  const timeVal = document.getElementById("timeVal");
+  const preVal = document.getElementById("preVal");
+  const countVal = document.getElementById("countVal");
+  const scoreVal = document.getElementById("scoreVal");
+  const fillVal = document.getElementById("fillVal");
+  const dimInfo = document.getElementById("dimInfo");
+  const confSlider = document.getElementById("confThresh");
+  const confVal = document.getElementById("confVal");
+  const modelSelect = document.getElementById("modelSelect");
+
+  confSlider.addEventListener("input", (e) => {
+    confVal.textContent = parseFloat(e.target.value).toFixed(2);
+    if (loadedImage && session) {
+      runInference();
+    }
+  });
+
+  modelSelect.addEventListener("change", () => {
+    loadModel(modelSelect.value);
+  });
+
+  async function loadModel(modelPath) {
+    statusVal.textContent = "Loading " + modelPath + "...";
+    runBtn.disabled = true;
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has("threads")) {
+        ort.env.wasm.numThreads = parseInt(urlParams.get("threads"), 10);
+      } else {
+        ort.env.wasm.numThreads = Math.min(4, navigator.hardwareConcurrency || 2);
+      }
+      ort.env.wasm.simd = true;
+
+      const t0 = performance.now();
+      session = await ort.InferenceSession.create(modelPath, {
+        executionProviders: ["wasm"],
+        graphOptimizationLevel: "all"
+      });
+      const loadTime = (performance.now() - t0).toFixed(0);
+      currentModelName = modelPath;
+      statusVal.textContent = `Ready (${loadTime} ms load)`;
+      statusVal.style.color = "var(--success)";
+      if (loadedImage) runBtn.disabled = false;
+    } catch (err) {
+      console.error("Failed to load ONNX model:", err);
+      statusVal.textContent = "Error loading model";
+      statusVal.style.color = "#ef4444";
+    }
+  }
+
+  function handleImageUpload(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        loadedImage = img;
+        placeholder.style.display = "none";
+        dimInfo.textContent = `Dimensions: ${img.naturalWidth} x ${img.naturalHeight}`;
+        if (session) {
+          runBtn.disabled = false;
+          runInference();
+        }
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  document.getElementById("imageInput").addEventListener("change", (e) => {
+    if (e.target.files && e.target.files[0]) {
+      handleImageUpload(e.target.files[0]);
+    }
+  });
+
+  function loadSample(url) {
+    const img = new Image();
+    img.onload = () => {
+      loadedImage = img;
+      placeholder.style.display = "none";
+      dimInfo.textContent = `Dimensions: ${img.naturalWidth} x ${img.naturalHeight}`;
+      if (session) {
+        runBtn.disabled = false;
+        runInference();
+      }
+    };
+    img.src = url;
+  }
+
+  runBtn.addEventListener("click", () => {
+    if (loadedImage && session) runInference();
+  });
+
+  async function runInference() {
+    if (!loadedImage || !session) return;
+
+    const tPre0 = performance.now();
+    const targetSize = 320;
+    const w0 = loadedImage.naturalWidth;
+    const h0 = loadedImage.naturalHeight;
+
+    // Correct letterboxing matching Ultralytics YOLO square export
+    const scale = Math.min(targetSize / w0, targetSize / h0);
+    const nw = Math.round(w0 * scale);
+    const nh = Math.round(h0 * scale);
+    const padX = (targetSize - nw) / 2.0;
+    const padY = (targetSize - nh) / 2.0;
+
+    // Render letterboxed image to offscreen canvas
+    const offCanvas = document.createElement("canvas");
+    offCanvas.width = targetSize;
+    offCanvas.height = targetSize;
+    const offCtx = offCanvas.getContext("2d");
+    offCtx.fillStyle = "#727272"; // 114 gray padding
+    offCtx.fillRect(0, 0, targetSize, targetSize);
+    offCtx.drawImage(loadedImage, 0, 0, w0, h0, Math.round(padX), Math.round(padY), nw, nh);
+
+    const imgData = offCtx.getImageData(0, 0, targetSize, targetSize);
+    const pixels = imgData.data;
+    const channelSize = targetSize * targetSize;
+    const float32Data = new Float32Array(3 * channelSize);
+
+    // Normalize [0, 1] RGB and pack into NCHW format
+    for (let i = 0; i < channelSize; i++) {
+      float32Data[i] = pixels[i * 4] / 255.0;                   // R
+      float32Data[channelSize + i] = pixels[i * 4 + 1] / 255.0; // G
+      float32Data[2 * channelSize + i] = pixels[i * 4 + 2] / 255.0; // B
+    }
+
+    const inputTensor = new ort.Tensor("float32", float32Data, [1, 3, targetSize, targetSize]);
+    const tPre = (performance.now() - tPre0).toFixed(1);
+    preVal.textContent = `${tPre} ms`;
+
+    // Execute ONNX inference
+    const tInf0 = performance.now();
+    const feeds = {};
+    feeds[session.inputNames[0]] = inputTensor;
+    const results = await session.run(feeds);
+    const tInf = (performance.now() - tInf0).toFixed(1);
+    timeVal.textContent = `${tInf} ms`;
+
+    // Output shape is [1, 300, 6]
+    const outputData = results[session.outputNames[0]].data;
+    const numDetections = 300;
+    const confThresh = parseFloat(confSlider.value);
+
+    const validDetections = [];
+    for (let i = 0; i < numDetections; i++) {
+      const offset = i * 6;
+      const score = outputData[offset + 4];
+      if (score >= confThresh) {
+        // Map letterboxed coordinates back to original unpadded image
+        const x1 = (outputData[offset] - padX) / scale;
+        const y1 = (outputData[offset + 1] - padY) / scale;
+        const x2 = (outputData[offset + 2] - padX) / scale;
+        const y2 = (outputData[offset + 3] - padY) / scale;
+        validDetections.push({
+          box: [Math.max(0, x1), Math.max(0, y1), Math.min(w0, x2), Math.min(h0, y2)],
+          score: score
+        });
+      }
+    }
+
+    validDetections.sort((a, b) => b.score - a.score);
+
+    // Draw on display canvas
+    canvas.width = w0;
+    canvas.height = h0;
+    ctx.clearRect(0, 0, w0, h0);
+    ctx.drawImage(loadedImage, 0, 0);
+
+    countVal.textContent = validDetections.length;
+    scoreVal.textContent = validDetections.length > 0 ? validDetections[0].score.toFixed(3) : "—";
+
+    if (validDetections.length > 0) {
+      let uX1 = Infinity, uY1 = Infinity, uX2 = -Infinity, uY2 = -Infinity;
+
+      // 1. Draw individual DIN row boxes
+      ctx.lineWidth = Math.max(3, Math.round(w0 / 250));
+      ctx.strokeStyle = "#22c55e";
+      ctx.fillStyle = "#22c55e";
+      ctx.font = `bold ${Math.max(16, Math.round(w0 / 40))}px monospace`;
+
+      validDetections.forEach((det, idx) => {
+        const [x1, y1, x2, y2] = det.box;
+        uX1 = Math.min(uX1, x1);
+        uY1 = Math.min(uY1, y1);
+        uX2 = Math.max(uX2, x2);
+        uY2 = Math.max(uY2, y2);
+
+        ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+        const tag = `Row ${idx + 1}: ${(det.score * 100).toFixed(1)}%`;
+        ctx.fillText(tag, x1 + 6, Math.max(24, y1 - 8));
+      });
+
+      // 2. Draw Board Union Box (dashed border)
+      ctx.strokeStyle = "#f59e0b";
+      ctx.lineWidth = Math.max(4, Math.round(w0 / 200));
+      ctx.setLineDash([12, 8]);
+      ctx.strokeRect(uX1, uY1, uX2 - uX1, uY2 - uY1);
+      ctx.setLineDash([]);
+
+      const unionTag = `BOARD UNION`;
+      ctx.fillStyle = "#f59e0b";
+      ctx.fillText(unionTag, uX1 + 6, Math.max(48, uY1 - 10));
+
+      // Calculate fill fraction
+      const unionArea = (uX2 - uX1) * (uY2 - uY1);
+      const totalArea = w0 * h0;
+      const fillFraction = ((unionArea / totalArea) * 100).toFixed(1);
+      fillVal.textContent = `${fillFraction}%`;
+    } else {
+      fillVal.textContent = "0.0%";
+    }
+  }
+
+  // Benchmark runner for automated in-browser measurement
+  async function runAutomatedBenchmark() {
+    console.log("Starting automated in-browser benchmark...");
+    const benchmarkOutput = {};
+    const samples = ["samples/sample1.jpg", "samples/sample2.jpg", "samples/sample3.jpg"];
+    
+    // Benchmark FP32
+    console.log("Benchmarking FP32 model...");
+    await loadModel("board_viewfinder.onnx");
+    const fp32Times = [];
+    for (const sample of samples) {
+      await new Promise((resolve) => {
+        const img = new Image();
+        img.onload = async () => {
+          loadedImage = img;
+          placeholder.style.display = "none";
+          // Run 1 warmup + 3 timed
+          await runInference();
+          for (let i = 0; i < 3; i++) {
+            const t0 = performance.now();
+            await runInference();
+            fp32Times.push(parseFloat(timeVal.textContent));
+          }
+          resolve();
+        };
+        img.src = sample;
+      });
+    }
+
+    // Benchmark INT8
+    console.log("Benchmarking INT8 model...");
+    await loadModel("board_viewfinder_int8.onnx");
+    const int8Times = [];
+    for (const sample of samples) {
+      await new Promise((resolve) => {
+        const img = new Image();
+        img.onload = async () => {
+          loadedImage = img;
+          await runInference();
+          for (let i = 0; i < 3; i++) {
+            await runInference();
+            int8Times.push(parseFloat(timeVal.textContent));
+          }
+          resolve();
+        };
+        img.src = sample;
+      });
+    }
+
+    const mean = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length;
+    const median = (arr) => {
+      const s = [...arr].sort((a, b) => a - b);
+      const mid = Math.floor(s.length / 2);
+      return s.length % 2 !== 0 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+    };
+
+    const result = {
+      browser: navigator.userAgent,
+      wasmThreads: ort.env.wasm.numThreads,
+      crossOriginIsolated: window.crossOriginIsolated,
+      fp32: {
+        runs: fp32Times.length,
+        meanMs: parseFloat(mean(fp32Times).toFixed(1)),
+        medianMs: parseFloat(median(fp32Times).toFixed(1)),
+        minMs: Math.min(...fp32Times),
+        maxMs: Math.max(...fp32Times),
+      },
+      int8: {
+        runs: int8Times.length,
+        meanMs: parseFloat(mean(int8Times).toFixed(1)),
+        medianMs: parseFloat(median(int8Times).toFixed(1)),
+        minMs: Math.min(...int8Times),
+        maxMs: Math.max(...int8Times),
+      }
+    };
+
+    console.log("BENCHMARK_COMPLETE:" + JSON.stringify(result));
+    try {
+      await fetch("/api/benchmark", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(result)
+      });
+    } catch (postErr) {
+      console.warn("Failed to POST benchmark to server:", postErr);
+    }
+    const resultDiv = document.createElement("div");
+    resultDiv.id = "benchmarkResult";
+    resultDiv.textContent = JSON.stringify(result);
+    document.body.appendChild(resultDiv);
+  }
+
+  // Initial load
+  window.addEventListener("DOMContentLoaded", () => {
+    if (window.location.search.includes("benchmark=true")) {
+      runAutomatedBenchmark();
+    } else {
+      loadModel("board_viewfinder.onnx");
+    }
+  });
+</script>
+</body>
+</html>
