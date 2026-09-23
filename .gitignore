@@ -59,4 +59,5 @@ scrape_leads.py
 
 # --- MLflow Local Tracking ---
 mlflow.db
+mlflow.db.*
 mlruns/
