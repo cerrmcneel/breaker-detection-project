@@ -38,6 +38,24 @@ from ultralytics import YOLO
 # worktree this is run from.
 TRACKING_URI = "sqlite:///C:/ironhack/labs/breaker-detection-project/mlflow.db"
 PRETRAINED = r"C:\ironhack\labs\breaker-detection-project\yolo26n.pt"
+# Where run artifacts (weights, curves) are stored. MLflow fixes an experiment's
+# artifact location when the experiment is CREATED, and the default is
+# ./mlruns relative to the working directory. The first tracked run created
+# this experiment from a git worktree, so its weights landed inside a
+# directory that is meant to be deleted -- see ensure_experiment().
+ARTIFACT_ROOT = "file:C:/ironhack/labs/breaker-detection-project/mlruns"
+
+
+def ensure_experiment(name, artifact_root):
+    """Create the experiment with an explicit artifact location if it is new.
+
+    set_experiment() alone would create it with the cwd-relative default. An
+    existing experiment is left untouched: its location is already fixed, and
+    changing it after the fact means moving files and editing the store.
+    """
+    if mlflow.get_experiment_by_name(name) is None:
+        mlflow.create_experiment(name, artifact_location=f"{artifact_root}/{name}")
+    mlflow.set_experiment(name)
 
 
 def setup_tracking(fallback_dir):
@@ -45,11 +63,11 @@ def setup_tracking(fallback_dir):
 
     Two traps, both hit on the first run of this script:
 
-    1. `mlflow.db` was created by the MLflow pinned during Phase 2. The installed
-       client rejects its schema until someone runs `mlflow db upgrade` on it.
-       That is a backup-first decision about an existing experiment store, not
-       something a training script gets to make, so this falls back to a
-       self-contained file store beside the run instead of touching it.
+    1. `mlflow.db` was once on an older schema than the installed client
+       accepts (fixed 2026-09-23 by `mlflow db upgrade` plus a version pin).
+       Migrating a tracking store is a backup-first decision, not something a
+       training script gets to make, so if it happens again this falls back to
+       a fresh sqlite store beside the run instead of touching it.
     2. Ultralytics registers its own MLflow callback, which re-resolves the URI
        at `on_pretrain_routine_end` and raises there -- outside any try/except in
        this file -- killing training after setup "succeeded". Exporting
@@ -67,7 +85,7 @@ def setup_tracking(fallback_dir):
         try:
             Path(fallback_dir).mkdir(parents=True, exist_ok=True)
             mlflow.set_tracking_uri(uri)
-            mlflow.set_experiment(experiment)
+            ensure_experiment(experiment, ARTIFACT_ROOT)
             mlflow.autolog()
         except Exception as err:
             print(f"WARNING: MLflow store unusable at {uri}\n"
