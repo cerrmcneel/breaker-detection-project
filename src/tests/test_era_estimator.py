@@ -21,8 +21,8 @@ def test_schneider_multi9_signature():
     m = matches[0]
     assert m.brand == "Schneider Electric"
     assert "Multi9" in m.model_series
-    assert m.era_start == 1990
-    assert m.era_end == 2010
+    assert m.era_start == 1974
+    assert m.era_end == 2011
     assert m.confidence == "high"
 
 
@@ -33,7 +33,7 @@ def test_schneider_resi9_signature():
     m = matches[0]
     assert m.brand == "Schneider Electric"
     assert "Resi9" in m.model_series
-    assert m.era_start == 2015
+    assert m.era_start == 2016
     assert m.era_end is None  # Ongoing
 
 
@@ -46,56 +46,29 @@ def test_schneider_acti9_signature():
     assert m.era_start == 2011
 
 
-def test_siemens_5sn_vintage_signature():
-    text = "SIEMENS 5SN5 25A 380V~"
-    matches = match_catalog_signatures(text)
-    assert len(matches) >= 1
-    m = matches[0]
-    assert m.brand == "Siemens"
-    assert "5SN" in m.model_series
-    assert m.era_start == 1980
-    assert m.era_end == 1996
-
-
-def test_siemens_5sx_legacy_signature():
-    text = "SIEMENS 5SX2 116-7 C16"
-    matches = match_catalog_signatures(text)
-    assert len(matches) >= 1
-    m = matches[0]
-    assert "5SX" in m.model_series
-    assert m.era_start == 1996
-    assert m.era_end == 2008
-
-
-def test_siemens_sentron_modern_signature():
-    text = "SIEMENS SENTRON 5SL6 116-7 C16"
-    matches = match_catalog_signatures(text)
-    assert len(matches) >= 1
-    m = matches[0]
-    assert "SENTRON" in m.model_series
-    assert m.era_start == 2008
-
-
-def test_hager_modern_signature():
-    text = "Hager MBN116 C16 6kA"
-    matches = match_catalog_signatures(text)
-    assert len(matches) >= 1
-    assert any("MBN" in m.model_series for m in matches)
-
-
-def test_abb_s200_modern_signature():
-    text = "ABB S201-C16 System Pro M"
-    matches = match_catalog_signatures(text)
-    assert len(matches) >= 1
-    assert any("S200" in m.model_series for m in matches)
-
-
 def test_legrand_dx3_signature():
     text = "LEGRAND DX3 C16 407784"
     matches = match_catalog_signatures(text)
     assert len(matches) >= 1
     assert any("DX3" in m.model_series for m in matches)
-    assert matches[0].era_start == 2012
+    assert matches[0].era_start == 2011
+
+
+def test_removed_unverified_signatures_return_no_matches():
+    # Entries removed in T1 because manufacturer years were unverified/hallucinated
+    # must safely return no match and fall back to REBT composition rules.
+    unverified_texts = [
+        "SIEMENS 5SN5 25A 380V~",
+        "SIEMENS 5SX2 116-7 C16",
+        "SIEMENS SENTRON 5SL6 116-7 C16",
+        "Hager MBN116 C16 6kA",
+        "ABB S201-C16 System Pro M",
+        "LEGRAND 013 00 C16",
+        "GE REDLINE EP60 C16",
+        "CHINT NB1-63 C16",
+    ]
+    for text in unverified_texts:
+        assert match_catalog_signatures(text) == []
 
 
 def test_empty_or_garbled_ocr_returns_no_catalog_matches():
@@ -187,8 +160,8 @@ def test_unified_estimate_with_catalog_and_composition():
     result = estimate_panel_era(preds, ocr_texts, current_year=2026)
 
     assert isinstance(result, EraEstimate)
-    assert result.era_range == "1990–2010"
-    assert "16–36 years" in result.estimated_age_range
+    assert result.era_range == "1974–2011"
+    assert "15–52 years" in result.estimated_age_range
     assert result.confidence == "high"
     assert len(result.catalog_matches) == 1
     assert "Multi9" in result.catalog_matches[0].model_series
@@ -265,7 +238,7 @@ def test_catalog_match_consistent_with_composition_stays_high_confidence():
 
 def test_catalog_match_conflicting_with_modern_composition_downgrades_confidence():
     # Composition says modern (surge protector present -> 2020-Present), but the
-    # only catalog hit is an obsolete pre-1996 Siemens series -- the other
+    # only catalog hit is an obsolete legacy series (Multi 9: 1974-2011) -- the other
     # direction of conflict from the first test.
     preds = [
         {"class": "MAINBREAKER"},
@@ -273,7 +246,7 @@ def test_catalog_match_conflicting_with_modern_composition_downgrades_confidence
         {"class": "OVERSURGE"},
         {"class": "MCB"},
     ]
-    ocr_texts = ["SIEMENS 5SN2 C16"]
+    ocr_texts = ["SCHNEIDER Multi 9 C60N C16"]
     result = estimate_panel_era(preds, ocr_texts, current_year=2026)
 
     assert result.composition_era.startswith("2020")
