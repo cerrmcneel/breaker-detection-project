@@ -232,7 +232,7 @@ def test_ocr_runs_when_enabled_with_hmm_off(mock_config, tmp_path):
     pipeline = _pipeline_with({**mock_config, "use_ocr": True, "use_hmm": False}, tmp_path)
 
     reader = MagicMock()
-    reader.readtext.return_value = [((0, 0, 0, 0), "C16", 0.9)]
+    reader.readtext.return_value = [([[25, 25], [45, 25], [45, 35], [25, 35]], "C16", 0.9)]
     pipeline._get_ocr_reader = MagicMock(return_value=reader)
     pipeline.heuristic_engine.apply_logic = MagicMock(
         side_effect=lambda preds, *args, **kwargs: preds
@@ -254,6 +254,43 @@ def test_ocr_runs_when_enabled_with_hmm_off(mock_config, tmp_path):
     results = pipeline.run_inference(str(img_path))
 
     assert reader.readtext.called, "OCR should run with use_ocr=True even when use_hmm=False"
+    assert results[0]["ocr_text"] == "C16"
+
+
+def test_ocr_token_attribution_filters_margin_bleed(mock_config, tmp_path):
+    """Tokens whose centre lies outside the unpadded box (margin bleed) are dropped."""
+    pipeline = _pipeline_with({**mock_config, "use_ocr": True, "use_hmm": False}, tmp_path)
+
+    # Box is [20, 20, 80, 100]. Crop expands by margin 12 -> [8, 8, 92, 112].
+    # Relative original box in crop: x in [12, 72], y in [12, 92].
+    # Token 1: inside box (center x=40, y=50) -> "C16"
+    # Token 2: in margin bleed (center x=4, y=4, which is outside [12, 72]) -> "C32"
+    reader = MagicMock()
+    reader.readtext.return_value = [
+        ([[2, 2], [6, 2], [6, 6], [2, 6]], "C32", 0.9),
+        ([[35, 45], [45, 45], [45, 55], [35, 55]], "C16", 0.9),
+    ]
+    pipeline._get_ocr_reader = MagicMock(return_value=reader)
+    pipeline.heuristic_engine.apply_logic = MagicMock(
+        side_effect=lambda preds, *args, **kwargs: preds
+    )
+
+    import numpy as np
+    mock_box = MagicMock()
+    mock_box.xyxy = [[20, 20, 80, 100]]
+    mock_box.conf = [0.90]
+    mock_box.cls = [0]
+    mock_result = MagicMock()
+    mock_result.boxes = [mock_box]
+    mock_result.names = {0: "MCB"}
+    pipeline.yolo_model.predict.return_value = [mock_result]
+
+    img_path = tmp_path / "panel.jpg"
+    cv2.imwrite(str(img_path), np.zeros((300, 300, 3), dtype=np.uint8))
+
+    results = pipeline.run_inference(str(img_path))
+
+    # C32 from margin bleed is dropped; only C16 is read
     assert results[0]["ocr_text"] == "C16"
 
 
