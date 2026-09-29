@@ -418,9 +418,13 @@
             }
         }
 
+        /* Only used for the upload result, whose content is styled for the dark theme
+           (white heading, muted filename, pale red/green recommendation text). A light
+           mint background here made all of that nearly unreadable. */
         .status-success {
-            background: #ECFDF5;
-            color: #065F46;
+            background: rgba(115, 200, 60, 0.08);
+            border: 1px solid rgba(115, 200, 60, 0.35);
+            color: var(--text);
             display: block !important;
         }
 
