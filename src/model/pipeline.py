@@ -168,7 +168,32 @@ class PanelSafePipeline:
                             # Read text using EasyOCR
                             try:
                                 ocr_results = ocr_reader.readtext(crop_rgb)
-                                raw_text = " ".join([res[1] for res in ocr_results])
+                                # Attributing only text regions whose centre falls inside the original box.
+                                # This prevents bleed from neighbouring breakers and enclosure label strips.
+                                orig_box_x1 = int(pred["box"][0]) - x1
+                                orig_box_y1 = int(pred["box"][1]) - y1
+                                orig_box_x2 = int(pred["box"][2]) - x1
+                                orig_box_y2 = int(pred["box"][3]) - y1
+
+                                inside_tokens = []
+                                for res in ocr_results:
+                                    pts = res[0]
+                                    if pts and hasattr(pts[0], "__len__") and len(pts[0]) >= 2:
+                                        xs = [p[0] for p in pts]
+                                        ys = [p[1] for p in pts]
+                                        token_cx = sum(xs) / len(xs)
+                                        token_cy = sum(ys) / len(ys)
+                                    elif pts and isinstance(pts[0], (int, float)) and len(pts) >= 4:
+                                        token_cx = (pts[0] + pts[2]) / 2.0
+                                        token_cy = (pts[1] + pts[3]) / 2.0
+                                    else:
+                                        token_cx = (orig_box_x1 + orig_box_x2) / 2.0
+                                        token_cy = (orig_box_y1 + orig_box_y2) / 2.0
+
+                                    if (orig_box_x1 <= token_cx <= orig_box_x2) and (orig_box_y1 <= token_cy <= orig_box_y2):
+                                        inside_tokens.append(res[1])
+
+                                raw_text = " ".join(inside_tokens)
                                 # Clean text using existing regex patterns in ocr_reader
                                 pred["ocr_text"] = self.ocr_reader._clean_ocr_text(raw_text)
                             except Exception as ocr_err:

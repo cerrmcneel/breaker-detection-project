@@ -176,3 +176,53 @@ def test_leakage_marker_does_not_match_inside_a_longer_number(clean):
 def test_zero_padded_rating_is_canonicalised(clean):
     """"C06" and "C6" are the same rating; emit one spelling."""
     assert clean("SCHNEIDER C06 6000") == "C6"
+
+
+# --- T4 Regressions: ICP Utility Breakers and Circuit Labels -----------------------
+
+ICP_CASES = [
+    # The holdout Moeller ICP failure: ce N misread as C6 N must NOT emit C6!
+    ("MoELER_ C6 N 204 Id V- BOL A6in3 ICP-M 20A", "ICP-M 20A"),
+    ("MoELLER 3 ce N 25A 230/400 V- Bo00 BOE19/03/03 ICP-M 25A", "ICP-M 25A"),
+    ("MERLIN GERIN multi9 CGON Cc ICP-M 50A Voo 4OoV~ 50 Hz [6o0] BOLE 1 I Oh On", "ICP-M 50A"),
+    ("@IMERUN GERIN multi9 CSON ICP-M 30A 4OV~ 50 Hz [6000] 8.0 F 1 On On", "ICP-M 30A"),
+    ("simon Lt 63225-30 ICP-M 25 A Joo - [oo 057734", "ICP-M 25A"),
+    ("Ce N MEDEX ICP-M 45A IZ0/e0v ~ Boe 1/05/92 e000", "ICP-M 45A"),
+    ("MBLER (e N 3,5A 220/400 V~ 6000 BOE 23/12/98 ICP-M 3,5A", "ICP-M 3.5A"),
+    ("DIASAD ICP Ead", "ICP"),
+    ("ICP E 2 egrend;", "ICP"),
+]
+
+
+@pytest.mark.parametrize("raw,expected", ICP_CASES)
+def test_icp_utility_breakers_recognized_and_not_forced_to_curve_rating(clean, raw, expected):
+    assert clean(raw) == expected
+
+
+def test_icp_never_produces_bogus_c6_verdict(clean):
+    """Specific regression for holdout failure: Moeller ICP-M must not be read as C6."""
+    raw = "MoELER_ C6 N 204 Id V- BOL A6in3 ICP-M 20A"
+    assert clean(raw) != "C6"
+    assert clean(raw) == "ICP-M 20A"
+
+
+CIRCUIT_LABEL_AND_DELIMITER_CASES = [
+    # Spanish panel circuit identifier prefixes ("PIA C1", "PIA C4-1", etc.)
+    ("PIA C1", ""),
+    ("PIA C4-1", ""),
+    ("PIA C4-2", ""),
+    ("PIA C4-3 02", ""),
+    ("PIA C2", ""),
+    ("PIA C3", ""),
+    # Ratings followed by delimiters and more digits are circuit indices or part numbers
+    ("C4-1", ""),
+    ("C4-2", ""),
+    ("C16-1", ""),
+    ("C16.3", ""),
+    ("D25-01", ""),
+]
+
+
+@pytest.mark.parametrize("raw,expected", CIRCUIT_LABEL_AND_DELIMITER_CASES)
+def test_circuit_labels_and_delimited_digits_not_treated_as_ratings(clean, raw, expected):
+    assert clean(raw) == expected
