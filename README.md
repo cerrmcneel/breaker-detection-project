@@ -82,9 +82,6 @@ to [`docs/okf/methodology/ablation_study.md`](docs/okf/methodology/ablation_stud
   [`evaluation_rigor.md`](docs/okf/methodology/evaluation_rigor.md).
 
 ### Known limitations
-- **The admin batch-upload UI is retired.** Its password prompt is still in the page but the
-  endpoint it calls no longer exists. Bulk ingest is handled from the command line
-  (`src/tools/sync_uploads.py`, `check_upload_batch.py`).
 - **Breaker text (ratings like `C16`, the `SI` marker) is not read in production.** The OCR step
   in `pipeline.py` only runs when `use_hmm` is true, and HMM is disabled. The improved text
   cleaning (`_clean_ocr_text`, precision 69.1% → 94.4% on 1,060 real crops) is measured offline
