@@ -1,7 +1,8 @@
 import json
 import os
 import shutil
-from typing import Optional
+from pathlib import Path
+from typing import Optional, Union
 
 import mlflow
 from mlflow.tracking import MlflowClient
@@ -24,11 +25,23 @@ def register_model_version(
     yolo_weight_path: str,
     crop_weight_path: Optional[str] = None,
     config_path: str = "src/model/pipeline_config.json",
-    run_id: Optional[str] = None
+    run_id: Optional[str] = None,
+    models_dir: Union[str, Path] = "models",
+    model_name: Optional[str] = None,
 ) -> dict:
     """
     Registers a new model version tag in config and MLflow Model Registry.
-    Copies weight files to version-tagged paths in models/ directory.
+    Copies weight files to version-tagged paths in models_dir.
+
+    Args:
+        version_tag: Release version string, e.g. "v1.1.0".
+        yolo_weight_path: Path to YOLO model weights file.
+        crop_weight_path: Optional path to crop classifier weights file.
+        config_path: Path to pipeline config JSON file.
+        run_id: Optional MLflow run ID for Model Registry tagging.
+        models_dir: Destination directory for versioned weight copies (default: "models").
+        model_name: Optional family/model stem name (e.g. "yolo26m"). If None,
+            derived from yolo_weight_path filename stem.
     """
     config = load_config(config_path)
 
@@ -37,21 +50,31 @@ def register_model_version(
     config["previous_version"] = old_version
     config["model_version"] = version_tag
 
+    dest_dir = Path(models_dir)
+
     # 2. Store versioned weight file
     if os.path.exists(yolo_weight_path):
-        target_yolo = f"models/yolo26l_{version_tag}.pt"
-        os.makedirs("models", exist_ok=True)
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        yolo_stem = model_name or Path(yolo_weight_path).stem
+        yolo_ext = Path(yolo_weight_path).suffix or ".pt"
+        target_yolo = str(dest_dir / f"{yolo_stem}_{version_tag}{yolo_ext}")
         if os.path.abspath(yolo_weight_path) != os.path.abspath(target_yolo):
             shutil.copy(yolo_weight_path, target_yolo)
         config["yolo_model_path"] = target_yolo
     else:
         config["yolo_model_path"] = yolo_weight_path
 
-    if crop_weight_path and os.path.exists(crop_weight_path):
-        target_crop = f"models/crop_classifier_{version_tag}.pth"
-        if os.path.abspath(crop_weight_path) != os.path.abspath(target_crop):
-            shutil.copy(crop_weight_path, target_crop)
-        config["crop_model_path"] = target_crop
+    if crop_weight_path:
+        if os.path.exists(crop_weight_path):
+            dest_dir.mkdir(parents=True, exist_ok=True)
+            crop_stem = Path(crop_weight_path).stem
+            crop_ext = Path(crop_weight_path).suffix or ".pth"
+            target_crop = str(dest_dir / f"{crop_stem}_{version_tag}{crop_ext}")
+            if os.path.abspath(crop_weight_path) != os.path.abspath(target_crop):
+                shutil.copy(crop_weight_path, target_crop)
+            config["crop_model_path"] = target_crop
+        else:
+            config["crop_model_path"] = crop_weight_path
 
     # 3. Optional MLflow Model Registry Tagging
     if run_id:
