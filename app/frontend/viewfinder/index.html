@@ -1066,8 +1066,9 @@
   window.getExifOrientation = getExifOrientation;
 
   // --- Step 5: Capture Full-Resolution Still / Analysis Handoff ---
-  captureBtn.addEventListener("click", async () => {
-    if (!isVideoReady || video.videoWidth === 0) return;
+  // Returns true only when it has started navigating to the analysis page.
+  async function handleCapture() {
+    if (!isVideoReady || video.videoWidth === 0) return false;
 
     if (isReturnToAnalysis) {
       // Offline fallback in return mode: if offline, the audit cannot run (needs /predict/)
@@ -1239,6 +1240,7 @@
 
         stopCurrentStream();
         window.location.assign("/analysis.html?source=viewfinder");
+        return true;
       } catch (err) {
         console.error("[Viewfinder] IndexedDB handoff failed:", err);
         isInferring = false;
@@ -1267,6 +1269,33 @@
     link.download = `panelsafe_viewfinder_${timestamp}.jpg`;
     link.href = capCanvas.toDataURL("image/jpeg", 0.95);
     link.click();
+    return false;
+  }
+
+  // A full-resolution takePhoto() plus decode and IndexedDB write can take a second
+  // or more on a phone. Grey the button out meanwhile so the user sees it working and
+  // a second tap can't start a second capture. It is restored on every outcome except
+  // a successful handoff, where the page is already navigating away.
+  captureBtn.addEventListener("click", async () => {
+    if (captureBtn.disabled) return;
+    const idleLabel = captureBtn.textContent;
+    if (isReturnToAnalysis) {
+      captureBtn.disabled = true;
+      captureBtn.textContent = "Capturing…";
+    }
+    let navigating = false;
+    try {
+      navigating = await handleCapture();
+    } catch (err) {
+      console.error("[Viewfinder] Capture failed:", err);
+      isInferring = false;
+      showError("Capture Error", `Could not capture the photo (${err.message || err}). Please try again.`);
+    } finally {
+      if (!navigating) {
+        captureBtn.disabled = false;
+        captureBtn.textContent = idleLabel;
+      }
+    }
   });
 
   // Source Toggle Listener

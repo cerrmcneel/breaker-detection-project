@@ -55,10 +55,13 @@ export async function savePendingCapture(captureData) {
             board: captureData.board || null,
             exifOrientation: captureData.exifOrientation ?? null
         };
-        const req = store.put(record, PENDING_KEY);
-        req.onsuccess = () => resolve();
-        req.onerror = () => reject(req.error);
-        tx.oncomplete = () => db.close();
+        store.put(record, PENDING_KEY);
+        // Resolve on COMMIT, not on the request's success: the viewfinder navigates away
+        // as soon as this resolves, and a page being discarded aborts any transaction
+        // that hasn't committed yet -- which a multi-MB still on phone storage can hit.
+        tx.oncomplete = () => { db.close(); resolve(); };
+        tx.onerror = () => { db.close(); reject(tx.error); };
+        tx.onabort = () => { db.close(); reject(tx.error || new Error('IndexedDB transaction aborted')); };
     });
 }
 
@@ -100,9 +103,10 @@ export async function deletePendingCapture() {
     return new Promise((resolve, reject) => {
         const tx = db.transaction(STORE_NAME, 'readwrite');
         const store = tx.objectStore(STORE_NAME);
-        const req = store.delete(PENDING_KEY);
-        req.onsuccess = () => resolve();
-        req.onerror = () => reject(req.error);
-        tx.oncomplete = () => db.close();
+        store.delete(PENDING_KEY);
+        // Same reason as savePendingCapture: only report success once it's committed.
+        tx.oncomplete = () => { db.close(); resolve(); };
+        tx.onerror = () => { db.close(); reject(tx.error); };
+        tx.onabort = () => { db.close(); reject(tx.error || new Error('IndexedDB transaction aborted')); };
     });
 }
