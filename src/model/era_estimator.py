@@ -72,26 +72,30 @@ class EraEstimate:
         }
 
 
-# Curated catalog database for major European/Spanish residential & commercial brands
+# Curated catalog of manufacturer product lines with SOURCED launch years.
+#
+# Rule: no strong source -> no entry. The original 16 LLM-generated entries were
+# audited in 2026-09 (Antigravity task T1, then re-checked by Claude because two of
+# the audit's cited URLs did not exist). What survives, with sources fetched and
+# confirmed on 2026-09-24:
+#   Acti9  2011   construible.es, 2011-05-13: "Schneider Electric lanza al mercado
+#                 su nuevo sistema de distribucion electrica Acti 9"
+#   Resi9  2016   Schneider press release dated 23/05/2016, "Schneider Electric lance
+#                 Resi9, le tableau electrique esthetique et personnalisable..."
+#   DX3    2011   Legrand DX3 datasheets created Feb/Apr 2011 (assets.legrand.com)
+#
+# Every remaining entry is open-ended ("-Present"): a LAUNCH year only bounds how
+# old a device can be, which is defensible. END years are deliberately absent --
+# discontinuation is rarely documented, and the launch of a successor is not the
+# end of sales (Multi 9 was removed for exactly that: "replaced by Acti9 in 2011"
+# was taken as an end date, but Schneider still sells Multi 9).
+#
+# NOTE: this lookup is currently unreachable. The era estimator receives cleaned
+# ocr_text ("C16", "30MA", ...), which never contains brand tokens. It only becomes
+# live if raw OCR text is ever routed here. Review record:
+# directives/antigravity/reports/REVIEW-2026-09-24.md
 CATALOG_SERIES_DB = [
-    # --- Schneider Electric / Merlin Gerin / Telemecanique ---
-    {
-        "brand": "Schneider Electric",
-        "model_series": "Multi9 (C60N / C60H / C32N)",
-        "patterns": [
-            r"\bMULTI\s*9\b",
-            r"\bMULTI9\b",
-            r"\bC60N\b",
-            r"\bC60H\b",
-            r"\bC32N\b",
-            r"\bC45N\b",
-            r"\bMERLIN\s+GERIN\b",
-        ],
-        "era_start": 1990,
-        "era_end": 2010,
-        "era_label": "1990–2010 (Legacy / Discontinued)",
-        "notes": "Classic Merlin Gerin / Schneider modular line; replaced by Acti9 in 2011.",
-    },
+    # --- Schneider Electric ---
     {
         "brand": "Schneider Electric",
         "model_series": "Acti9 (iC60 / iID)",
@@ -105,7 +109,7 @@ CATALOG_SERIES_DB = [
         "era_start": 2011,
         "era_end": None,
         "era_label": "2011–Present (Modern Modular)",
-        "notes": "Current flagship commercial/residential platform introduced in 2011.",
+        "notes": "Flagship commercial/residential platform introduced globally in 2011.",
     },
     {
         "brand": "Schneider Electric",
@@ -116,146 +120,12 @@ CATALOG_SERIES_DB = [
             r"\bR9F\d{5}\b",
             r"\bR9R\d{5}\b",
         ],
-        "era_start": 2015,
+        "era_start": 2016,
         "era_end": None,
-        "era_label": "2015–Present (Modern Residential)",
-        "notes": "Schneider residential modular line launched in 2015.",
-    },
-    {
-        "brand": "Schneider Electric",
-        "model_series": "Domae",
-        "patterns": [
-            r"\bDOMAE\b",
-            r"\bDOM\d{2,}\b",
-        ],
-        "era_start": 2002,
-        "era_end": 2018,
-        "era_label": "2002–2018 (Legacy Residential)",
-        "notes": "Standard domestic builder line throughout the 2000s and 2010s.",
-    },
-    # --- Siemens ---
-    {
-        "brand": "Siemens",
-        "model_series": "5SN / 5SZ (Vintage)",
-        "patterns": [
-            r"\b5SN\d?\b",
-            r"\b5SZ\d?\b",
-            r"\b5SM\d?\b",
-        ],
-        "era_start": 1980,
-        "era_end": 1996,
-        "era_label": "1980–1996 (Obsolete / Vintage)",
-        "notes": "Early Siemens modular series; predates REBT 2002.",
-    },
-    {
-        "brand": "Siemens",
-        "model_series": "5SX / 5SM3 (Legacy)",
-        "patterns": [
-            r"\b5SX\d?\b",
-            r"\b5SM3\b",
-        ],
-        "era_start": 1996,
-        "era_end": 2008,
-        "era_label": "1996–2008 (Legacy)",
-        "notes": "Dominant Siemens DIN-rail series across Europe in late 90s/early 2000s.",
-    },
-    {
-        "brand": "Siemens",
-        "model_series": "SENTRON (5SL / 5SY / 5SV)",
-        "patterns": [
-            r"\b5SL\d?\b",
-            r"\b5SY\d?\b",
-            r"\b5SV\d?\b",
-            r"\bSENTRON\b",
-        ],
-        "era_start": 2008,
-        "era_end": None,
-        "era_label": "2008–Present (Modern SENTRON)",
-        "notes": "Modern Siemens SENTRON platform.",
-    },
-    # --- Hager ---
-    {
-        "brand": "Hager",
-        "model_series": "MW / ML (Legacy)",
-        "patterns": [
-            r"\bMW\d{3}\b",
-            r"\bML\d{3}\b",
-        ],
-        "era_start": 1985,
-        "era_end": 2000,
-        "era_label": "1985–2000 (Legacy)",
-        "notes": "Earlier Hager modular range with screw clamp terminals.",
-    },
-    {
-        "brand": "Hager",
-        "model_series": "MBN / NBN / CDA (SanVis / Modern)",
-        "patterns": [
-            r"\bMBN\d{3}\b",
-            r"\bNBN\d{3}\b",
-            r"\bCDA\d{3}\b",
-            r"\bCDC\d{3}\b",
-            r"\bHAGER\b",
-        ],
-        "era_start": 2000,
-        "era_end": None,
-        "era_label": "2000–Present (Modern Hager)",
-        "notes": "Standard Hager modular line with QuickConnect/SanVis technology.",
-    },
-    # --- ABB ---
-    {
-        "brand": "ABB",
-        "model_series": "S250 / S260 / S270 / S280 (Vintage)",
-        "patterns": [
-            r"\bS25\d\b",
-            r"\bS26\d\b",
-            r"\bS27\d\b",
-            r"\bS28\d\b",
-            r"\bBBC\b",
-        ],
-        "era_start": 1982,
-        "era_end": 2000,
-        "era_label": "1982–2000 (Legacy ABB/BBC)",
-        "notes": "Classic Brown Boveri / ABB modular breakers.",
-    },
-    {
-        "brand": "ABB",
-        "model_series": "System Pro M Compact (S200 / SN201)",
-        "patterns": [
-            r"\bS20[1-4]\b",
-            r"\bS200\b",
-            r"\bSN201\b",
-            r"\bF20[24]\b",
-        ],
-        "era_start": 2000,
-        "era_end": None,
-        "era_label": "2000–Present (Modern System Pro M)",
-        "notes": "Current ABB System Pro M compact line.",
+        "era_label": "2016–Present (Modern Residential)",
+        "notes": "Schneider residential modular line launched in May 2016.",
     },
     # --- Legrand ---
-    {
-        "brand": "Legrand",
-        "model_series": "Rex / 013 / 014 (Vintage)",
-        "patterns": [
-            r"\bREX\b",
-            r"\bLEGRAND\s+01[34]\b",
-        ],
-        "era_start": 1975,
-        "era_end": 1995,
-        "era_label": "1975–1995 (Obsolete / Vintage)",
-        "notes": "Pre-DX Legrand modular equipment.",
-    },
-    {
-        "brand": "Legrand",
-        "model_series": "Lexic / DX",
-        "patterns": [
-            r"\bLEXIC\b",
-            r"\bDX\b(?!\d)",
-        ],
-        "era_start": 1995,
-        "era_end": 2012,
-        "era_label": "1995–2012 (Legacy Lexic/DX)",
-        "notes": "Predecessor to DX3 series.",
-    },
     {
         "brand": "Legrand",
         "model_series": "DX3 / TX3 / RX3",
@@ -265,40 +135,10 @@ CATALOG_SERIES_DB = [
             r"\bRX3\b",
             r"\bDX\^3\b",
         ],
-        "era_start": 2012,
+        "era_start": 2011,
         "era_end": None,
-        "era_label": "2012–Present (Modern DX3)",
-        "notes": "Current Legrand commercial and residential range.",
-    },
-    # --- General Electric ---
-    {
-        "brand": "General Electric",
-        "model_series": "Redline (EP60 / EP100)",
-        "patterns": [
-            r"\bREDLINE\b",
-            r"\bEP60\b",
-            r"\bEP100\b",
-            r"\bDMS\b",
-        ],
-        "era_start": 1995,
-        "era_end": 2018,
-        "era_label": "1995–2018 (Legacy GE Redline)",
-        "notes": "General Electric industrial solutions series before ABB acquisition in 2018.",
-    },
-    # --- Chint ---
-    {
-        "brand": "Chint",
-        "model_series": "eBG / NB1 / DZ47",
-        "patterns": [
-            r"\bCHINT\b",
-            r"\bEBG\b",
-            r"\bNB1\b",
-            r"\bDZ47\b",
-        ],
-        "era_start": 2005,
-        "era_end": None,
-        "era_label": "2005–Present (Modern Chint)",
-        "notes": "Standard Chint modular breaker lines in European distribution.",
+        "era_label": "2011–Present (Modern DX3)",
+        "notes": "Current Legrand modular range; flagship DX3 launched in 2011 (TX3/RX3 added in 2014).",
     },
 ]
 
