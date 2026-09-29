@@ -9,7 +9,7 @@ This directory contains the standalone live camera viewfinder demo page running 
   - `vendor/ort-wasm-simd-threaded.wasm`: 11,246,032 bytes (v1.20.1)
   - `vendor/ort-wasm-simd-threaded.mjs`: 24,618 bytes (v1.20.1)
 - **Live Camera Pipeline:** Connects via `navigator.mediaDevices.getUserMedia` (`facingMode: "environment"`, 1280x720 ideal resolution).
-- **Video Fallback Mode (`?src=video`):** If no physical webcam is attached or permission is denied, seamlessly falls back to `test_board_feed.mp4` (stitched from real validation panels in `data/board_dataset/val`).
+- **Test Feed Mode (`?src=video`):** If no physical webcam is attached or permission is denied, falls back to a simulated feed: the three validation panels in `samples/` cycled with light hand-shake jitter via `canvas.captureStream`. (`test_board_feed.mp4` exists in the folder but is not used.)
 - **Overlay & Coordinate Mapping:** Accurately maps 320x320 letterbox coordinates back to native video coordinates, and displays them on a synchronized overlay canvas.
 - **Stability & Smoothing:**
   - Smoothed via Exponential Moving Average (EMA, $\alpha = 0.5$) across frames.
@@ -27,6 +27,10 @@ Run `serve.py` using Python (serves on port 8095 by default with COOP and COEP c
 ```powershell
 python viewfinder_live/serve.py --port 8095
 ```
+
+The self-test POST endpoints (`/api/benchmark`, `/api/mobile_test`, `/api/offline_test`) are
+**off by default** and return 404. They write files into this folder, so enable them with
+`--dev` only for local self-tests, **never while Tailscale Serve is on**.
 
 ### 2. Open in Browser
 - Open `http://localhost:8095/` in Chrome, Edge, Safari, or Firefox.

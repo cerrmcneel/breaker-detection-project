@@ -28,11 +28,25 @@ class ViewfinderLiveHTTPRequestHandler(SimpleHTTPRequestHandler):
         self.send_header("Cache-Control", "no-cache")
         super().end_headers()
 
+    # The POST routes below are Gemini's self-test hooks: they write files into the
+    # served folder. They stay OFF unless --dev is given, because once Tailscale
+    # Serve proxies this server, every device on the tailnet can reach it.
+    dev_endpoints = False
+
+    # /api/mobile_test used to build filenames from the request's "orientation"
+    # field, so a crafted value could write outside this folder. Only these
+    # values are accepted now.
+    ALLOWED_ORIENTATIONS = {"portrait", "landscape"}
+
     def do_OPTIONS(self):
         self.send_response(200)
         self.end_headers()
 
     def do_POST(self):
+        if not self.dev_endpoints:
+            self.send_response(404)
+            self.end_headers()
+            return
         if self.path == "/api/benchmark":
             length = int(self.headers.get("Content-Length", 0))
             body = self.rfile.read(length)
@@ -53,7 +67,11 @@ class ViewfinderLiveHTTPRequestHandler(SimpleHTTPRequestHandler):
             body = self.rfile.read(length)
             data = json.loads(body.decode("utf-8"))
 
-            orientation = data.get("orientation", "unknown")
+            orientation = data.get("orientation")
+            if orientation not in self.ALLOWED_ORIENTATIONS:
+                self.send_response(400)
+                self.end_headers()
+                return
             # If screenshot image data provided, decode and save to file
             if "screenshot" in data and data["screenshot"].startswith("data:image/"):
                 header, b64data = data["screenshot"].split(",", 1)
@@ -100,14 +118,16 @@ class ViewfinderLiveHTTPRequestHandler(SimpleHTTPRequestHandler):
             self.end_headers()
 
 
-def run_server(host: str = "127.0.0.1", port: int = 8095, directory: str = "."):
+def run_server(host: str = "127.0.0.1", port: int = 8095, directory: str = ".", dev: bool = False):
     os.chdir(directory)
+    ViewfinderLiveHTTPRequestHandler.dev_endpoints = dev
     server_address = (host, port)
     httpd = HTTPServer(server_address, ViewfinderLiveHTTPRequestHandler)
     print("\n=======================================================")
     print("PanelSafe Live Viewfinder HTTP Server Running")
     print(f"URL: http://{host}:{port}/")
     print("Headers: COOP (same-origin), COEP (require-corp) enabled")
+    print(f"Self-test POST endpoints: {'ENABLED (--dev)' if dev else 'disabled'}")
     print(f"Serving directory: {Path(directory).resolve()}")
     print("Press Ctrl+C to stop.")
     print("=======================================================\n")
@@ -128,8 +148,13 @@ def main():
         default=str(Path(__file__).parent),
         help="Directory to serve static files from.",
     )
+    parser.add_argument(
+        "--dev",
+        action="store_true",
+        help="Enable the self-test POST endpoints (/api/*). Never use with Tailscale Serve on.",
+    )
     args = parser.parse_args()
-    run_server(host=args.host, port=args.port, directory=args.dir)
+    run_server(host=args.host, port=args.port, directory=args.dir, dev=args.dev)
 
 
 if __name__ == "__main__":
