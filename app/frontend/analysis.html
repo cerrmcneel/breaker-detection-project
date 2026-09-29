@@ -224,6 +224,31 @@
             transform: translateY(-1px);
         }
 
+        .btn-viewfinder-audit {
+            margin-top: 0.65rem;
+            width: 100%;
+            padding: 0.7rem 1rem;
+            background: rgba(115, 200, 60, 0.12);
+            border: 1px solid var(--secondary);
+            border-radius: 10px;
+            color: var(--secondary);
+            font-size: 0.88rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-viewfinder-audit:hover {
+            background: var(--secondary);
+            color: #0b0a0d;
+            box-shadow: 0 4px 14px rgba(115, 200, 60, 0.3);
+            transform: translateY(-1px);
+        }
+
         /* Post-upload: sleek collapsed status strip */
         .file-badge-strip {
             display: none;
@@ -757,6 +782,10 @@
                     <p style="font-size: 0.88rem; font-weight: 600; color: var(--text);" data-i18n="drop_hint">Click or Drop Image</p>
                     <input type="file" id="file-input" accept="image/*">
                 </div>
+                <button type="button" class="btn-viewfinder-audit" id="viewfinder-audit-btn">
+                    <i data-lucide="camera" style="width: 18px; height: 18px;"></i>
+                    <span data-i18n="btn_viewfinder">Use camera viewfinder</span>
+                </button>
 
                 <!-- Collapsed File Badge Strip (Post-upload) -->
                 <div class="file-badge-strip" id="file-badge-strip">
@@ -764,10 +793,16 @@
                         <i data-lucide="image" style="width: 16px; height: 16px; color: var(--secondary); flex-shrink:0;"></i>
                         <span class="file-name" id="file-name-display">panel.jpg</span>
                     </div>
-                    <button class="btn-replace" id="replace-photo-btn">
-                        <i data-lucide="refresh-cw" style="width: 12px; height: 12px;"></i>
-                        <span data-i18n="btn_replace">Replace</span>
-                    </button>
+                    <div class="file-badge-actions" style="display: flex; gap: 6px;">
+                        <button type="button" class="btn-replace" id="viewfinder-replace-btn" title="Use camera viewfinder">
+                            <i data-lucide="camera" style="width: 12px; height: 12px;"></i>
+                            <span data-i18n="btn_viewfinder">Use camera viewfinder</span>
+                        </button>
+                        <button class="btn-replace" id="replace-photo-btn">
+                            <i data-lucide="refresh-cw" style="width: 12px; height: 12px;"></i>
+                            <span data-i18n="btn_replace">Replace</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -865,7 +900,7 @@
             en: {
                 nav_home: "Home", nav_analysis: "AI Analyzer", nav_unifilar: "Diagram Generator", nav_blog: "Blog",
                 btn_clear: "Clear", btn_add_box: "Add Box", btn_vault: "Send to Vault", btn_generate: "Generate Diagram",
-                btn_replace: "Replace", btn_draw: "Draw Box",
+                btn_replace: "Replace", btn_draw: "Draw Box", btn_viewfinder: "Use camera viewfinder",
                 drop_hint: "Click or Drop Image",
                 detections_title: "Detections",
                 found_suffix: "FOUND",
@@ -884,7 +919,7 @@
             es: {
                 nav_home: "Inicio", nav_analysis: "Analizador IA", nav_unifilar: "Generador Unifilar", nav_blog: "Blog",
                 btn_clear: "Limpiar", btn_add_box: "Añadir Caja", btn_vault: "Enviar a Bóveda", btn_generate: "Generar Esquema",
-                btn_replace: "Cambiar", btn_draw: "Dibujar",
+                btn_replace: "Cambiar", btn_draw: "Dibujar", btn_viewfinder: "Usar visor de cámara",
                 drop_hint: "Haz clic o arrastra una imagen",
                 detections_title: "Detecciones",
                 found_suffix: "ENCONTRADOS",
@@ -903,7 +938,7 @@
             fr: {
                 nav_home: "Accueil", nav_analysis: "Analyseur IA", nav_unifilar: "Générateur de schéma", nav_blog: "Blog",
                 btn_clear: "Effacer", btn_add_box: "Ajouter une boîte", btn_vault: "Envoyer au coffre", btn_generate: "Générer schéma",
-                btn_replace: "Remplacer", btn_draw: "Dessiner",
+                btn_replace: "Remplacer", btn_draw: "Dessiner", btn_viewfinder: "Utiliser le viseur de l'appareil photo",
                 drop_hint: "Cliquez ou déposez une image",
                 detections_title: "Détections",
                 found_suffix: "TROUVÉS",
@@ -947,6 +982,8 @@
         const fileBadgeStrip = document.getElementById('file-badge-strip');
         const fileNameDisplay = document.getElementById('file-name-display');
         const replacePhotoBtn = document.getElementById('replace-photo-btn');
+        const viewfinderAuditBtn = document.getElementById('viewfinder-audit-btn');
+        const viewfinderReplaceBtn = document.getElementById('viewfinder-replace-btn');
         const quickToolbar = document.getElementById('quick-toolbar');
         const fileInput = document.getElementById('file-input');
         const canvas = document.getElementById('panel-canvas');
@@ -1255,6 +1292,7 @@
                     
                     // Switch dropzone to collapsed badge strip
                     dropZone.style.display = 'none';
+                    if (viewfinderAuditBtn) viewfinderAuditBtn.style.display = 'none';
                     fileBadgeStrip.style.display = 'flex';
                     fileNameDisplay.textContent = file.name;
                     quickToolbar.style.display = 'grid';
@@ -1515,6 +1553,9 @@
         };
 
         replacePhotoBtn.onclick = () => fileInput.click();
+        const launchViewfinder = () => location.assign('/viewfinder/?return=analysis');
+        if (viewfinderAuditBtn) viewfinderAuditBtn.onclick = launchViewfinder;
+        if (viewfinderReplaceBtn) viewfinderReplaceBtn.onclick = launchViewfinder;
         dropZone.onclick = () => fileInput.click();
         fileInput.onchange = (e) => handleFile(e.target.files[0]);
 
@@ -1694,6 +1735,39 @@
 
         // Initialize language
         setLanguage(currentLang);
+
+        // Check for handoff from the live viewfinder (?source=viewfinder)
+        async function checkViewfinderHandoff() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('source') === 'viewfinder') {
+                window.history.replaceState(null, '', '/analysis.html');
+                try {
+                    const { getPendingCapture, deletePendingCapture } = await import('/js/modules/captureHandoff.js');
+                    const pending = await getPendingCapture(true);
+                    if (pending && pending.blob) {
+                        await deletePendingCapture();
+                        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                        const file = new File([pending.blob], `viewfinder_${timestamp}.jpg`, { type: 'image/jpeg' });
+                        handleFile(file);
+                    } else {
+                        await deletePendingCapture();
+                        const emptyEl = document.getElementById('empty-state');
+                        if (emptyEl) {
+                            emptyEl.innerHTML = `
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:64px;height:64px;opacity:0.4;margin-bottom:1rem;color:var(--accent);">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                </svg>
+                                <p style="color:rgba(255,255,255,0.6);font-weight:600;">No photo received from the viewfinder — take it again</p>
+                                <p style="font-size:0.85rem;color:rgba(255,255,255,0.3);margin-top:0.5rem">Click 'Use camera viewfinder' or drop an image to start</p>
+                            `;
+                        }
+                    }
+                } catch (err) {
+                    console.error('[Handoff] Error reading pending capture:', err);
+                }
+            }
+        }
+        checkViewfinderHandoff();
     </script>
 </body>
 </html>
