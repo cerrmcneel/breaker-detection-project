@@ -1,7 +1,7 @@
 // PanelSafe Live Viewfinder Service Worker (T9 Offline "Basement" Mode)
 // Cache Name is explicitly versioned so new weights/assets supersede old versions.
 // Bump it whenever the model, runtime or page changes.
-const CACHE_NAME = "panelsafe-viewfinder-prod-2026-09-29";
+const CACHE_NAME = "panelsafe-viewfinder-prod-2026-09-30";
 
 const PRECACHE_URLS = [
   "./",
@@ -9,7 +9,8 @@ const PRECACHE_URLS = [
   "./vendor/ort.min.js",
   "./vendor/ort-wasm-simd-threaded.wasm",
   "./vendor/ort-wasm-simd-threaded.mjs",
-  "./board_viewfinder.onnx"
+  "./board_viewfinder.onnx",
+  "/js/modules/captureHandoff.js"
 ];
 // samples/ is deliberately absent: those panels are not published on the public
 // site, so precaching them would 404 and keep the HUD from ever reporting READY.

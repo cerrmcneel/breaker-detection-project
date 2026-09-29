@@ -311,9 +311,12 @@
 
   <!-- Floating HUD -->
   <div class="hud-header">
-    <div class="badge-status">
-      <div id="statusDot" class="status-dot"></div>
-      <span id="statusText">INITIALIZING...</span>
+    <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 8px; pointer-events: auto;">
+      <a id="backToAnalysisLink" href="/analysis.html" class="btn" style="display: none; padding: 6px 14px; min-height: 44px; font-size: 0.84rem; text-decoration: none; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);">← Back to analysis</a>
+      <div class="badge-status">
+        <div id="statusDot" class="status-dot"></div>
+        <span id="statusText">INITIALIZING...</span>
+      </div>
     </div>
 
     <div class="hud-telemetry">
@@ -369,6 +372,15 @@
     <div class="error-actions">
       <button id="fallbackVideoBtn" class="btn primary">Play Test Video Feed</button>
       <button id="retryCameraBtn" class="btn">Retry Camera</button>
+    </div>
+  </div>
+
+  <!-- Notice Card (Offline / Storage Fallback) -->
+  <div id="noticeCard" class="error-card" style="display: none; background: rgba(15, 23, 42, 0.95); border-color: var(--accent);">
+    <h3 id="noticeTitle" style="color: var(--accent);">Notice</h3>
+    <p id="noticeMsg" style="color: #cbd5e1;"></p>
+    <div class="error-actions">
+      <button id="noticeDismissBtn" class="btn primary">Dismiss</button>
     </div>
   </div>
 </div>
@@ -980,10 +992,118 @@
     }
   }
 
-  // --- Step 5: Capture Full-Resolution Still ---
-  captureBtn.addEventListener("click", () => {
+  // Return Mode & Notice Card Handling
+  const returnParams = new URLSearchParams(window.location.search);
+  const isReturnToAnalysis = returnParams.get("return") === "analysis";
+  const backToAnalysisLink = document.getElementById("backToAnalysisLink");
+  const noticeCard = document.getElementById("noticeCard");
+  const noticeTitle = document.getElementById("noticeTitle");
+  const noticeMsg = document.getElementById("noticeMsg");
+  const noticeDismissBtn = document.getElementById("noticeDismissBtn");
+
+  function showNotice(title, msg) {
+    if (noticeTitle) noticeTitle.textContent = title;
+    if (noticeMsg) noticeMsg.textContent = msg;
+    if (noticeCard) noticeCard.style.display = "block";
+  }
+  if (noticeDismissBtn) {
+    noticeDismissBtn.addEventListener("click", () => {
+      if (noticeCard) noticeCard.style.display = "none";
+    });
+  }
+
+  if (isReturnToAnalysis) {
+    if (backToAnalysisLink) backToAnalysisLink.style.display = "inline-flex";
+    captureBtn.textContent = "Analyze this photo";
+  }
+
+  // --- Step 5: Capture Full-Resolution Still / Analysis Handoff ---
+  captureBtn.addEventListener("click", async () => {
     if (!isVideoReady || video.videoWidth === 0) return;
 
+    if (isReturnToAnalysis) {
+      // Offline fallback in return mode: if offline, the audit cannot run (needs /predict/)
+      if (!navigator.onLine) {
+        const capCanvas = document.createElement("canvas");
+        capCanvas.width = video.videoWidth;
+        capCanvas.height = video.videoHeight;
+        const capCtx = capCanvas.getContext("2d");
+        capCtx.drawImage(video, 0, 0);
+
+        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+        const link = document.createElement("a");
+        link.download = `panelsafe_viewfinder_${timestamp}.jpg`;
+        link.href = capCanvas.toDataURL("image/jpeg", 0.95);
+        link.click();
+
+        showNotice(
+          "No connection",
+          "No connection — photo saved to this device. Open it in the analyzer when you're back online."
+        );
+        return;
+      }
+
+      // Online return mode: capture video frame to Blob and write to IndexedDB
+      const capCanvas = document.createElement("canvas");
+      capCanvas.width = video.videoWidth;
+      capCanvas.height = video.videoHeight;
+      const capCtx = capCanvas.getContext("2d");
+      capCtx.drawImage(video, 0, 0);
+
+      capCanvas.toBlob(async (blob) => {
+        if (!blob) {
+          showError("Capture Error", "Could not generate photo blob from video frame.");
+          return;
+        }
+
+        try {
+          const { savePendingCapture } = await import("/js/modules/captureHandoff.js");
+          let boardData = null;
+          if (emaUnionBox && currentMetrics.conf > 0) {
+            boardData = {
+              conf: parseFloat(currentMetrics.conf.toFixed(3)),
+              box: [
+                Math.round(emaUnionBox[0]),
+                Math.round(emaUnionBox[1]),
+                Math.round(emaUnionBox[2]),
+                Math.round(emaUnionBox[3])
+              ]
+            };
+          }
+
+          await savePendingCapture({
+            blob: blob,
+            width: video.videoWidth,
+            height: video.videoHeight,
+            bytes: blob.size,
+            method: "videoFrame",
+            createdAt: Date.now(),
+            board: boardData
+          });
+
+          // Stop camera tracks (release the camera)
+          stopCurrentStream();
+
+          // Navigate to analysis page
+          window.location.assign("/analysis.html?source=viewfinder");
+        } catch (err) {
+          console.error("[Viewfinder] IndexedDB handoff failed:", err);
+          // Fall back to download
+          const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+          const link = document.createElement("a");
+          link.download = `panelsafe_viewfinder_${timestamp}.jpg`;
+          link.href = URL.createObjectURL(blob);
+          link.click();
+          showError(
+            "Storage Error",
+            `Failed to transfer photo to analysis (${err.message}) — photo saved to this device instead.`
+          );
+        }
+      }, "image/jpeg", 0.95);
+      return;
+    }
+
+    // Standalone mode: existing download behaviour
     const capCanvas = document.createElement("canvas");
     capCanvas.width = video.videoWidth;
     capCanvas.height = video.videoHeight;
