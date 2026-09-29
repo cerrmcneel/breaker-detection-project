@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>PanelSafe Live Viewfinder (T7)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>PanelSafe Live Viewfinder (T7/T8)</title>
   <!-- Vendored ONNX Runtime Web 1.20.1 (Local Same-Origin) -->
   <script src="vendor/ort.min.js"></script>
   <style>
@@ -18,23 +18,34 @@
       --warning: #f59e0b;
       --danger: #ef4444;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
     html, body {
-      width: 100%;
+      width: 100vw;
+      max-width: 100%;
       height: 100%;
+      height: 100dvh;
       overflow: hidden;
       background: var(--bg);
       color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       user-select: none;
       -webkit-user-select: none;
+      touch-action: manipulation;
     }
 
     /* Fullscreen Viewport Layout */
     .viewport {
       position: relative;
-      width: 100%;
+      width: 100vw;
+      max-width: 100%;
       height: 100%;
+      height: 100dvh;
+      overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -62,33 +73,35 @@
       z-index: 10;
     }
 
-    /* Floating HUD Header */
+    /* Floating HUD Header with Safe Area Insets */
     .hud-header {
       position: absolute;
-      top: 16px;
-      left: 16px;
-      right: 16px;
+      top: max(16px, env(safe-area-inset-top, 16px));
+      left: max(16px, env(safe-area-inset-left, 16px));
+      right: max(16px, env(safe-area-inset-right, 16px));
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
       z-index: 20;
       pointer-events: none;
+      gap: 10px;
     }
 
     .badge-status {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       background: var(--card-bg);
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
       border: 1px solid var(--border);
-      padding: 6px 12px;
+      padding: 8px 14px;
       border-radius: 9999px;
       font-size: 0.85rem;
       font-weight: 700;
       letter-spacing: 0.05em;
       text-transform: uppercase;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
     .status-dot {
       width: 10px;
@@ -119,7 +132,8 @@
       gap: 4px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: 0.78rem;
-      min-width: 190px;
+      min-width: 195px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
     .tel-row {
       display: flex;
@@ -131,12 +145,12 @@
     .tel-val.accent { color: var(--accent); }
     .tel-val.success { color: var(--success); }
 
-    /* Bottom Control Bar */
+    /* Bottom Control Bar with Safe Area Insets & Touch Sizing */
     .controls-bar {
       position: absolute;
-      bottom: 20px;
-      left: 16px;
-      right: 16px;
+      bottom: max(20px, env(safe-area-inset-bottom, 20px));
+      left: max(16px, env(safe-area-inset-left, 16px));
+      right: max(16px, env(safe-area-inset-right, 16px));
       display: flex;
       justify-content: center;
       gap: 12px;
@@ -148,17 +162,21 @@
       -webkit-backdrop-filter: blur(8px);
       border: 1px solid var(--border);
       color: #fff;
-      padding: 10px 18px;
+      min-height: 48px;
+      min-width: 48px;
+      padding: 12px 22px;
       border-radius: 9999px;
-      font-size: 0.85rem;
+      font-size: 0.92rem;
       font-weight: 600;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      justify-content: center;
+      gap: 8px;
       transition: all 0.15s;
+      touch-action: manipulation;
     }
-    .btn:hover {
+    .btn:hover, .btn:active {
       background: rgba(30, 41, 59, 0.95);
       border-color: var(--accent);
     }
@@ -168,7 +186,7 @@
       border: none;
       font-weight: 700;
     }
-    .btn.primary:hover {
+    .btn.primary:hover, .btn.primary:active {
       background: #0284c7;
       color: #fff;
     }
@@ -204,11 +222,12 @@
       display: flex;
       gap: 10px;
       justify-content: center;
+      flex-wrap: wrap;
     }
 
     .falsification-footer {
       position: absolute;
-      bottom: 6px;
+      bottom: max(6px, env(safe-area-inset-bottom, 6px));
       left: 0;
       right: 0;
       text-align: center;
@@ -216,6 +235,71 @@
       color: #64748b;
       pointer-events: none;
       z-index: 15;
+    }
+
+    /* --- Mobile Responsive Rules --- */
+    /* Phone Portrait (e.g. Pixel 8, iPhone: width <= 600px) */
+    @media (max-width: 600px) {
+      .hud-header {
+        top: max(10px, env(safe-area-inset-top, 10px));
+        left: max(10px, env(safe-area-inset-left, 10px));
+        right: max(10px, env(safe-area-inset-right, 10px));
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+      }
+      .hud-telemetry {
+        min-width: unset;
+        width: 100%;
+        max-width: 250px;
+        font-size: 0.72rem;
+        padding: 8px 10px;
+        gap: 3px;
+      }
+      .controls-bar {
+        bottom: max(16px, env(safe-area-inset-bottom, 16px));
+        left: max(10px, env(safe-area-inset-left, 10px));
+        right: max(10px, env(safe-area-inset-right, 10px));
+        gap: 8px;
+      }
+      .btn {
+        flex: 1 1 0;
+        padding: 12px 14px;
+        font-size: 0.85rem;
+      }
+      .falsification-footer {
+        display: none;
+      }
+    }
+
+    /* Phone Landscape (e.g. height <= 520px) */
+    @media (orientation: landscape) and (max-height: 520px) {
+      .hud-header {
+        top: max(8px, env(safe-area-inset-top, 8px));
+        left: max(8px, env(safe-area-inset-left, 8px));
+        right: max(8px, env(safe-area-inset-right, 8px));
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-start;
+      }
+      .hud-telemetry {
+        padding: 6px 10px;
+        font-size: 0.70rem;
+        gap: 2px;
+        min-width: 175px;
+      }
+      .controls-bar {
+        bottom: max(8px, env(safe-area-inset-bottom, 8px));
+        gap: 8px;
+      }
+      .btn {
+        min-height: 44px;
+        padding: 8px 16px;
+        font-size: 0.82rem;
+      }
+      .falsification-footer {
+        display: none;
+      }
     }
   </style>
 </head>
@@ -260,6 +344,10 @@
       <div class="tel-row">
         <span class="tel-lbl">Isolated:</span>
         <span id="isIsolated" class="tel-val">—</span>
+      </div>
+      <div class="tel-row">
+        <span class="tel-lbl">Offline:</span>
+        <span id="offlineStatus" class="tel-val">—</span>
       </div>
     </div>
   </div>
@@ -325,6 +413,7 @@
   const fillFractionEl = document.getElementById("fillFraction");
   const wasmThreadsEl = document.getElementById("wasmThreads");
   const isIsolatedEl = document.getElementById("isIsolated");
+  const offlineStatusEl = document.getElementById("offlineStatus");
   const srcToggleBtn = document.getElementById("srcToggleBtn");
   const captureBtn = document.getElementById("captureBtn");
   const errorCard = document.getElementById("errorCard");
@@ -344,6 +433,83 @@
   if (!window.crossOriginIsolated) {
     isIsolatedEl.style.color = "var(--warning)";
   }
+
+  // --- Service Worker & Offline Cache Tracking ---
+  let isOfflineReady = false;
+
+  function updateOfflineHUD(ready, offlineMode) {
+    if (!offlineStatusEl) return;
+    if (offlineMode || !navigator.onLine) {
+      offlineStatusEl.textContent = "OFFLINE ACTIVE";
+      offlineStatusEl.className = "tel-val success";
+    } else if (ready) {
+      offlineStatusEl.textContent = "READY (CACHED)";
+      offlineStatusEl.className = "tel-val success";
+    } else {
+      offlineStatusEl.textContent = "CACHING...";
+      offlineStatusEl.className = "tel-val accent";
+    }
+  }
+
+  async function initServiceWorker() {
+    if (!("serviceWorker" in navigator)) {
+      if (offlineStatusEl) {
+        offlineStatusEl.textContent = "UNSUPPORTED";
+        offlineStatusEl.className = "tel-val";
+      }
+      return;
+    }
+
+    try {
+      const reg = await navigator.serviceWorker.register("./sw.js", { scope: "./" });
+      console.log("[ServiceWorker] Registered with scope:", reg.scope);
+
+      const checkCache = () => {
+        if (navigator.serviceWorker.controller) {
+          const channel = new MessageChannel();
+          channel.port1.onmessage = (event) => {
+            if (event.data && event.data.ready) {
+              isOfflineReady = true;
+              updateOfflineHUD(true, !navigator.onLine);
+              console.log("[ServiceWorker] All assets precached in:", event.data.cacheName);
+            }
+          };
+          navigator.serviceWorker.controller.postMessage({ type: "CHECK_OFFLINE_READY" }, [channel.port2]);
+        }
+      };
+
+      if (reg.installing) {
+        reg.installing.addEventListener("statechange", (e) => {
+          if (e.target.state === "installed") {
+            isOfflineReady = true;
+            updateOfflineHUD(true, !navigator.onLine);
+          }
+        });
+      } else if (reg.active) {
+        isOfflineReady = true;
+        updateOfflineHUD(true, !navigator.onLine);
+        checkCache();
+      }
+
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        isOfflineReady = true;
+        updateOfflineHUD(true, !navigator.onLine);
+        checkCache();
+      });
+
+      setTimeout(checkCache, 1200);
+      setTimeout(checkCache, 3000);
+    } catch (err) {
+      console.warn("[ServiceWorker] Registration error:", err);
+      if (offlineStatusEl) {
+        offlineStatusEl.textContent = "FAILED";
+        offlineStatusEl.className = "tel-val";
+      }
+    }
+  }
+
+  window.addEventListener("online", () => updateOfflineHUD(isOfflineReady, false));
+  window.addEventListener("offline", () => updateOfflineHUD(isOfflineReady, true));
 
   // --- Step 1: Initialize Vendored ONNX Runtime Web ---
   async function initModel() {
@@ -493,11 +659,69 @@
     isVideoReady = false;
   }
 
+  function recomputeOverlayMapping() {
+    if (!video || video.videoWidth === 0 || video.videoHeight === 0) return;
+
+    // Ensure canvas internal pixel resolution strictly matches native video frame dimensions
+    if (overlay.width !== video.videoWidth || overlay.height !== video.videoHeight) {
+      overlay.width = video.videoWidth;
+      overlay.height = video.videoHeight;
+    }
+
+    // Measure viewport vs video frame geometry for precise letterboxing/pillarboxing mapping
+    const vpW = window.innerWidth;
+    const vpH = window.innerHeight;
+    const videoAR = video.videoWidth / video.videoHeight;
+    const vpAR = vpW / vpH;
+
+    let dispW, dispH, offsetX, offsetY;
+    if (vpAR > videoAR) {
+      // Pillarbox (black bars on sides)
+      dispH = vpH;
+      dispW = vpH * videoAR;
+      offsetX = (vpW - dispW) / 2;
+      offsetY = 0;
+    } else {
+      // Letterbox (black bars on top and bottom)
+      dispW = vpW;
+      dispH = vpW / videoAR;
+      offsetX = 0;
+      offsetY = (vpH - dispH) / 2;
+    }
+
+    window._viewfinderGeometry = {
+      viewportWidth: vpW,
+      viewportHeight: vpH,
+      videoWidth: video.videoWidth,
+      videoHeight: video.videoHeight,
+      displayedWidth: dispW,
+      displayedHeight: dispH,
+      offsetX: offsetX,
+      offsetY: offsetY,
+      scale: dispW / video.videoWidth,
+      orientation: vpW > vpH ? "landscape" : "portrait"
+    };
+
+    console.log("[Viewfinder] Recomputed overlay mapping:", window._viewfinderGeometry);
+  }
+
   function onVideoPlaying() {
     isVideoReady = true;
-    overlay.width = video.videoWidth || 1280;
-    overlay.height = video.videoHeight || 720;
+    recomputeOverlayMapping();
     statusText.textContent = "SEARCHING...";
+  }
+
+  // Handle orientation changes and window resizes smoothly
+  window.addEventListener("resize", recomputeOverlayMapping);
+  window.addEventListener("orientationchange", () => {
+    setTimeout(recomputeOverlayMapping, 100);
+    setTimeout(recomputeOverlayMapping, 300);
+  });
+  if (screen.orientation) {
+    screen.orientation.addEventListener("change", () => {
+      setTimeout(recomputeOverlayMapping, 100);
+      setTimeout(recomputeOverlayMapping, 300);
+    });
   }
 
   function showError(title, msg) {
@@ -847,8 +1071,162 @@
     }, 100);
   }
 
+  // --- Automated Mobile Layout Verification Runner ---
+  async function checkMobileTestMode() {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has("mobile_test")) return;
+
+    console.log("[MobileTest] Starting mobile layout verification...");
+    initTestVideo();
+
+    let frames = 0;
+    const testInterval = setInterval(async () => {
+      if (isVideoReady && isModelReady && lastInferenceTime > 0) {
+        frames++;
+        if (frames >= 10) {
+          clearInterval(testInterval);
+
+          // 1. Measure viewport geometry
+          const vpW = window.innerWidth;
+          const vpH = window.innerHeight;
+          const orientation = vpW > vpH ? "landscape" : "portrait";
+          const hasHorizontalScroll = document.documentElement.scrollWidth > vpW || document.body.scrollWidth > vpW;
+
+          // 2. Measure touch target button sizes
+          const buttons = Array.from(document.querySelectorAll(".btn")).map((b) => {
+            const rect = b.getBoundingClientRect();
+            return {
+              id: b.id,
+              text: b.textContent.trim(),
+              width: parseFloat(rect.width.toFixed(1)),
+              height: parseFloat(rect.height.toFixed(1)),
+              meetsMinTouchTarget: rect.width >= 44 && rect.height >= 44,
+              bottomDist: parseFloat((vpH - rect.bottom).toFixed(1))
+            };
+          });
+
+          // 3. Measure HUD elements
+          const hudHeader = document.querySelector(".hud-header").getBoundingClientRect();
+          const hudTelemetry = document.querySelector(".hud-telemetry").getBoundingClientRect();
+          const badgeStatus = document.querySelector(".badge-status").getBoundingClientRect();
+
+          // 4. Capture composited screen snapshot (video + overlay)
+          const compCanvas = document.createElement("canvas");
+          compCanvas.width = vpW;
+          compCanvas.height = vpH;
+          const cCtx = compCanvas.getContext("2d");
+
+          cCtx.fillStyle = "#000";
+          cCtx.fillRect(0, 0, vpW, vpH);
+
+          if (video.videoWidth > 0) {
+            const videoAR = video.videoWidth / video.videoHeight;
+            const vpAR = vpW / vpH;
+            let dW, dH, dX, dY;
+            if (vpAR > videoAR) {
+              dH = vpH;
+              dW = vpH * videoAR;
+              dX = (vpW - dW) / 2;
+              dY = 0;
+            } else {
+              dW = vpW;
+              dH = vpW / videoAR;
+              dX = 0;
+              dY = (vpH - dH) / 2;
+            }
+            cCtx.drawImage(video, dX, dY, dW, dH);
+            cCtx.drawImage(overlay, dX, dY, dW, dH);
+          }
+
+          const screenshotB64 = compCanvas.toDataURL("image/png");
+
+          const payload = {
+            task: "T8_phone_access",
+            userAgent: navigator.userAgent,
+            orientation: orientation,
+            viewport: { width: vpW, height: vpH },
+            hasHorizontalScroll: hasHorizontalScroll,
+            allTouchTargetsCompliant: buttons.every((b) => b.meetsMinTouchTarget),
+            buttons: buttons,
+            hud: {
+              headerTop: parseFloat(hudHeader.top.toFixed(1)),
+              telemetryWidth: parseFloat(hudTelemetry.width.toFixed(1)),
+              telemetryHeight: parseFloat(hudTelemetry.height.toFixed(1)),
+              statusBadgeWidth: parseFloat(badgeStatus.width.toFixed(1))
+            },
+            viewfinderGeometry: window._viewfinderGeometry || null,
+            lastInferenceMs: parseFloat(lastInferenceTime.toFixed(1)),
+            fps: parseFloat(fps) || 30.0,
+            crossOriginIsolated: window.crossOriginIsolated,
+            wasmThreads: ort.env.wasm.numThreads,
+            screenshot: screenshotB64
+          };
+
+          console.log("[MobileTest] Verification complete:", payload);
+          try {
+            await fetch("/api/mobile_test", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
+          } catch (postErr) {
+            console.error("Failed to POST mobile test payload:", postErr);
+          }
+        }
+      }
+    }, 100);
+  }
+
+  // --- Automated Offline Verification Runner ---
+  async function checkOfflineTestMode() {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has("offline_test")) return;
+
+    console.log("[OfflineTest] Starting offline test verification...");
+    initTestVideo();
+
+    let frames = 0;
+    const testInterval = setInterval(async () => {
+      if (isVideoReady && isModelReady && lastInferenceTime > 0) {
+        frames++;
+        if (frames >= 10) {
+          clearInterval(testInterval);
+
+          const payload = {
+            task: "T9_viewfinder_offline",
+            userAgent: navigator.userAgent,
+            crossOriginIsolated: window.crossOriginIsolated,
+            wasmThreads: ort.env.wasm.numThreads,
+            isOfflineReady: isOfflineReady,
+            offlineHUDText: offlineStatusEl ? offlineStatusEl.textContent : "N/A",
+            navigatorOnLine: navigator.onLine,
+            lastInferenceMs: parseFloat(lastInferenceTime.toFixed(1)),
+            fps: parseFloat(fps) || 30.0,
+            boardDetected: emaUnionBox !== null,
+            detectionsCount: currentDetections.length,
+            serviceWorkerActive: !!navigator.serviceWorker.controller
+          };
+
+          console.log("[OfflineTest] Verification payload:", payload);
+          try {
+            await fetch("/api/offline_test", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
+          } catch (postErr) {
+            console.error("Failed to POST offline test payload:", postErr);
+          }
+        }
+      }
+    }, 100);
+  }
+
   // --- Startup Sequence ---
   window.addEventListener("DOMContentLoaded", async () => {
+    // 0. Register service worker for offline basement support
+    initServiceWorker();
+
     // 1. Kick off overlay 60 FPS animation loop
     renderOverlay();
 
@@ -857,14 +1235,16 @@
 
     // 3. Initialize video stream
     const params = new URLSearchParams(window.location.search);
-    if (params.get("src") === "video" || params.has("benchmark")) {
+    if (params.get("src") === "video" || params.has("benchmark") || params.has("mobile_test") || params.has("offline_test")) {
       initTestVideo();
     } else {
       initCamera();
     }
 
-    // 4. Hook automated benchmark if requested
+    // 4. Hook automated benchmark, mobile, or offline tests if requested
     checkBenchmarkMode();
+    checkMobileTestMode();
+    checkOfflineTestMode();
   });
 </script>
 </body>

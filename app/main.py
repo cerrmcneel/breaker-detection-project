@@ -236,6 +236,13 @@ async def add_cache_control_header(request, call_next):
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
+    # Cross-origin isolation lets the viewfinder's in-browser model use
+    # multi-threaded WASM (SharedArrayBuffer). Scoped to /viewfinder because
+    # require-corp blocks any cross-origin asset that lacks a CORP header, and
+    # the rest of the site is not audited for that.
+    if request.url.path.startswith("/viewfinder"):
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        response.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
     return response
 
 # Global Constants
