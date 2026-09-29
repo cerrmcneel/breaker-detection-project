@@ -42,10 +42,13 @@ def test_register_model_version(tmp_path):
     assert target_path.read_text(encoding="utf-8") == "new weights"
     assert target_path.resolve().is_relative_to(tmp_path.resolve())
 
-    # Assert nothing was written to the repo's models/ directory
+    # Assert nothing was written to the repo's models/ directory. Compare
+    # before/after rather than asserting a specific file is absent: the
+    # pre-fix code left a models/yolo26l_v1.1.0.pt stub on every run, so that
+    # file may exist on any machine that ran the old tests, whatever this
+    # test does.
     repo_models_after = set(os.listdir("models")) if os.path.exists("models") else None
     assert repo_models_after == repo_models_before
-    assert not os.path.exists("models/yolo26l_v1.1.0.pt")
 
 
 def test_register_model_version_with_crop_and_custom_model_name(tmp_path):
