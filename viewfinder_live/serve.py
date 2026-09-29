@@ -24,6 +24,7 @@ class ViewfinderLiveHTTPRequestHandler(SimpleHTTPRequestHandler):
         # Enable SharedArrayBuffer for multi-threaded ONNX Runtime Web WASM
         self.send_header("Cross-Origin-Opener-Policy", "same-origin")
         self.send_header("Cross-Origin-Embedder-Policy", "require-corp")
+        self.send_header("Service-Worker-Allowed", "/")
         self.send_header("Cache-Control", "no-cache")
         super().end_headers()
 
@@ -68,6 +69,25 @@ class ViewfinderLiveHTTPRequestHandler(SimpleHTTPRequestHandler):
                 json.dump(data, rf, indent=2)
 
             print(f"\n>>> MOBILE LAYOUT TELEMETRY RECEIVED ({orientation.upper()}):")
+            print(json.dumps(data, indent=2))
+            print("<<<\n")
+
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(b'{"status": "ok"}')
+        elif self.path == "/api/offline_test":
+            import json
+
+            length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(length)
+            data = json.loads(body.decode("utf-8"))
+
+            report_file = "offline_test_report.json"
+            with open(report_file, "w", encoding="utf-8") as rf:
+                json.dump(data, rf, indent=2)
+
+            print("\n>>> OFFLINE VIEWFINDER TELEMETRY RECEIVED:")
             print(json.dumps(data, indent=2))
             print("<<<\n")
 

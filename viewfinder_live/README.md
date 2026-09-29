@@ -116,7 +116,15 @@ Follow these steps to test the viewfinder on the Pixel:
    - Confirm bounding boxes remain aligned with the physical panel and no horizontal scrolling occurs.
 8. **Test Still Capture:**
    - Tap "Capture Frame". The phone will download a full-resolution JPEG still without uploading anything.
-9. **Clean Up:**
+9. **Test Offline "Basement" Mode (T9):**
+   - Confirm the HUD displays `Offline: READY (CACHED)` indicating all 9 assets (`index.html`, vendored runtime, `.wasm`, model, and test feeds) are precached in Cache Storage (`panelsafe-viewfinder-v1.0.0`).
+   - Turn on **Airplane Mode** (or disable Wi-Fi / cellular) on the Pixel 8.
+   - Refresh / reload the page in Chrome while completely disconnected.
+   - Verify the page loads immediately with zero connection.
+   - Verify HUD indicates `Offline: OFFLINE ACTIVE` and `Isolated: true (COOP/COEP)`.
+   - Point the camera at a breaker panel: verify real-time inference, EMA smoothing, and box tracking continue smoothly offline at ~30+ FPS!
+   - Turn Airplane Mode back off.
+10. **Clean Up:**
    - On the PC, turn off the proxy:
      ```powershell
      tailscale serve --https=8443 off

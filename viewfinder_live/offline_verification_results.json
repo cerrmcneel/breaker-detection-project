@@ -1,0 +1,45 @@
+{
+  "task": "T9_viewfinder_offline",
+  "timestamp": "2026-09-29 17:05:36",
+  "cacheName": "panelsafe-viewfinder-v1.0.0",
+  "cachedAssetsCount": 9,
+  "cachedAssets": [
+    "/",
+    "/index.html",
+    "/vendor/ort.min.js",
+    "/vendor/ort-wasm-simd-threaded.wasm",
+    "/vendor/ort-wasm-simd-threaded.mjs",
+    "/board_viewfinder.onnx",
+    "/samples/sample1.jpg",
+    "/samples/sample2.jpg",
+    "/samples/sample3.jpg"
+  ],
+  "onlineBaseline": {
+    "isolated": true,
+    "threads": 4,
+    "infMs": 26.5,
+    "fps": "42 FPS",
+    "status": "BOARD FOUND",
+    "offlineHUD": "READY (CACHED)",
+    "onLine": true,
+    "hasController": true
+  },
+  "offlineReload": {
+    "isolated": true,
+    "threads": 4,
+    "infMs": 25.1,
+    "fps": "41 FPS",
+    "status": "BOARD FOUND",
+    "offlineHUD": "OFFLINE ACTIVE",
+    "onLine": false,
+    "hasController": true
+  },
+  "verification": {
+    "offlineReloadSuccessful": true,
+    "crossOriginIsolatedPreservedOffline": true,
+    "wasmMultiThreadingActiveOffline": true,
+    "inferenceActiveOffline": true,
+    "offlineHUDText": "OFFLINE ACTIVE",
+    "navigatorOnLineReported": false
+  }
+}

@@ -345,6 +345,10 @@
         <span class="tel-lbl">Isolated:</span>
         <span id="isIsolated" class="tel-val">—</span>
       </div>
+      <div class="tel-row">
+        <span class="tel-lbl">Offline:</span>
+        <span id="offlineStatus" class="tel-val">—</span>
+      </div>
     </div>
   </div>
 
@@ -409,6 +413,7 @@
   const fillFractionEl = document.getElementById("fillFraction");
   const wasmThreadsEl = document.getElementById("wasmThreads");
   const isIsolatedEl = document.getElementById("isIsolated");
+  const offlineStatusEl = document.getElementById("offlineStatus");
   const srcToggleBtn = document.getElementById("srcToggleBtn");
   const captureBtn = document.getElementById("captureBtn");
   const errorCard = document.getElementById("errorCard");
@@ -428,6 +433,83 @@
   if (!window.crossOriginIsolated) {
     isIsolatedEl.style.color = "var(--warning)";
   }
+
+  // --- Service Worker & Offline Cache Tracking ---
+  let isOfflineReady = false;
+
+  function updateOfflineHUD(ready, offlineMode) {
+    if (!offlineStatusEl) return;
+    if (offlineMode || !navigator.onLine) {
+      offlineStatusEl.textContent = "OFFLINE ACTIVE";
+      offlineStatusEl.className = "tel-val success";
+    } else if (ready) {
+      offlineStatusEl.textContent = "READY (CACHED)";
+      offlineStatusEl.className = "tel-val success";
+    } else {
+      offlineStatusEl.textContent = "CACHING...";
+      offlineStatusEl.className = "tel-val accent";
+    }
+  }
+
+  async function initServiceWorker() {
+    if (!("serviceWorker" in navigator)) {
+      if (offlineStatusEl) {
+        offlineStatusEl.textContent = "UNSUPPORTED";
+        offlineStatusEl.className = "tel-val";
+      }
+      return;
+    }
+
+    try {
+      const reg = await navigator.serviceWorker.register("./sw.js", { scope: "./" });
+      console.log("[ServiceWorker] Registered with scope:", reg.scope);
+
+      const checkCache = () => {
+        if (navigator.serviceWorker.controller) {
+          const channel = new MessageChannel();
+          channel.port1.onmessage = (event) => {
+            if (event.data && event.data.ready) {
+              isOfflineReady = true;
+              updateOfflineHUD(true, !navigator.onLine);
+              console.log("[ServiceWorker] All assets precached in:", event.data.cacheName);
+            }
+          };
+          navigator.serviceWorker.controller.postMessage({ type: "CHECK_OFFLINE_READY" }, [channel.port2]);
+        }
+      };
+
+      if (reg.installing) {
+        reg.installing.addEventListener("statechange", (e) => {
+          if (e.target.state === "installed") {
+            isOfflineReady = true;
+            updateOfflineHUD(true, !navigator.onLine);
+          }
+        });
+      } else if (reg.active) {
+        isOfflineReady = true;
+        updateOfflineHUD(true, !navigator.onLine);
+        checkCache();
+      }
+
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        isOfflineReady = true;
+        updateOfflineHUD(true, !navigator.onLine);
+        checkCache();
+      });
+
+      setTimeout(checkCache, 1200);
+      setTimeout(checkCache, 3000);
+    } catch (err) {
+      console.warn("[ServiceWorker] Registration error:", err);
+      if (offlineStatusEl) {
+        offlineStatusEl.textContent = "FAILED";
+        offlineStatusEl.className = "tel-val";
+      }
+    }
+  }
+
+  window.addEventListener("online", () => updateOfflineHUD(isOfflineReady, false));
+  window.addEventListener("offline", () => updateOfflineHUD(isOfflineReady, true));
 
   // --- Step 1: Initialize Vendored ONNX Runtime Web ---
   async function initModel() {
@@ -1095,8 +1177,56 @@
     }, 100);
   }
 
+  // --- Automated Offline Verification Runner ---
+  async function checkOfflineTestMode() {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has("offline_test")) return;
+
+    console.log("[OfflineTest] Starting offline test verification...");
+    initTestVideo();
+
+    let frames = 0;
+    const testInterval = setInterval(async () => {
+      if (isVideoReady && isModelReady && lastInferenceTime > 0) {
+        frames++;
+        if (frames >= 10) {
+          clearInterval(testInterval);
+
+          const payload = {
+            task: "T9_viewfinder_offline",
+            userAgent: navigator.userAgent,
+            crossOriginIsolated: window.crossOriginIsolated,
+            wasmThreads: ort.env.wasm.numThreads,
+            isOfflineReady: isOfflineReady,
+            offlineHUDText: offlineStatusEl ? offlineStatusEl.textContent : "N/A",
+            navigatorOnLine: navigator.onLine,
+            lastInferenceMs: parseFloat(lastInferenceTime.toFixed(1)),
+            fps: parseFloat(fps) || 30.0,
+            boardDetected: emaUnionBox !== null,
+            detectionsCount: currentDetections.length,
+            serviceWorkerActive: !!navigator.serviceWorker.controller
+          };
+
+          console.log("[OfflineTest] Verification payload:", payload);
+          try {
+            await fetch("/api/offline_test", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
+          } catch (postErr) {
+            console.error("Failed to POST offline test payload:", postErr);
+          }
+        }
+      }
+    }, 100);
+  }
+
   // --- Startup Sequence ---
   window.addEventListener("DOMContentLoaded", async () => {
+    // 0. Register service worker for offline basement support
+    initServiceWorker();
+
     // 1. Kick off overlay 60 FPS animation loop
     renderOverlay();
 
@@ -1105,15 +1235,16 @@
 
     // 3. Initialize video stream
     const params = new URLSearchParams(window.location.search);
-    if (params.get("src") === "video" || params.has("benchmark") || params.has("mobile_test")) {
+    if (params.get("src") === "video" || params.has("benchmark") || params.has("mobile_test") || params.has("offline_test")) {
       initTestVideo();
     } else {
       initCamera();
     }
 
-    // 4. Hook automated benchmark or mobile test if requested
+    // 4. Hook automated benchmark, mobile, or offline tests if requested
     checkBenchmarkMode();
     checkMobileTestMode();
+    checkOfflineTestMode();
   });
 </script>
 </body>
