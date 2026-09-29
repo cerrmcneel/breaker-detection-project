@@ -44,6 +44,37 @@ class ViewfinderLiveHTTPRequestHandler(SimpleHTTPRequestHandler):
             self.send_header("Content-Type", "application/json")
             self.end_headers()
             self.wfile.write(b'{"status": "ok"}')
+        elif self.path == "/api/mobile_test":
+            import base64
+            import json
+
+            length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(length)
+            data = json.loads(body.decode("utf-8"))
+
+            orientation = data.get("orientation", "unknown")
+            # If screenshot image data provided, decode and save to file
+            if "screenshot" in data and data["screenshot"].startswith("data:image/"):
+                header, b64data = data["screenshot"].split(",", 1)
+                img_bytes = base64.b64decode(b64data)
+                screenshot_filename = f"screenshot_{orientation}.png"
+                with open(screenshot_filename, "wb") as img_f:
+                    img_f.write(img_bytes)
+                print(f"[Mobile Test] Saved screenshot: {screenshot_filename} ({len(img_bytes)} bytes)")
+                del data["screenshot"]  # Don't clutter JSON with large base64 string
+
+            report_file = f"mobile_test_{orientation}.json"
+            with open(report_file, "w", encoding="utf-8") as rf:
+                json.dump(data, rf, indent=2)
+
+            print(f"\n>>> MOBILE LAYOUT TELEMETRY RECEIVED ({orientation.upper()}):")
+            print(json.dumps(data, indent=2))
+            print("<<<\n")
+
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(b'{"status": "ok"}')
         else:
             self.send_response(404)
             self.end_headers()

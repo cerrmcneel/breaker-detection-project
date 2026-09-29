@@ -1,0 +1,67 @@
+{
+  "task": "T8_phone_access",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36",
+  "orientation": "portrait",
+  "viewport": {
+    "width": 500,
+    "height": 749
+  },
+  "hasHorizontalScroll": false,
+  "allTouchTargetsCompliant": true,
+  "buttons": [
+    {
+      "id": "srcToggleBtn",
+      "text": "Use Live Camera",
+      "width": 237,
+      "height": 48,
+      "meetsMinTouchTarget": true,
+      "bottomDist": 16
+    },
+    {
+      "id": "captureBtn",
+      "text": "Capture Frame",
+      "width": 235,
+      "height": 48,
+      "meetsMinTouchTarget": true,
+      "bottomDist": 16
+    },
+    {
+      "id": "fallbackVideoBtn",
+      "text": "Play Test Video Feed",
+      "width": 189,
+      "height": 48,
+      "meetsMinTouchTarget": true,
+      "bottomDist": 305.8
+    },
+    {
+      "id": "retryCameraBtn",
+      "text": "Retry Camera",
+      "width": 191,
+      "height": 48,
+      "meetsMinTouchTarget": true,
+      "bottomDist": 305.8
+    }
+  ],
+  "hud": {
+    "headerTop": 10,
+    "telemetryWidth": 250,
+    "telemetryHeight": 134,
+    "statusBadgeWidth": 154.5
+  },
+  "viewfinderGeometry": {
+    "viewportWidth": 500,
+    "viewportHeight": 749,
+    "videoWidth": 1280,
+    "videoHeight": 720,
+    "displayedWidth": 500,
+    "displayedHeight": 281.25,
+    "offsetX": 0,
+    "offsetY": 233.875,
+    "scale": 0.390625,
+    "orientation": "portrait"
+  },
+  "lastInferenceMs": 38.5,
+  "fps": 28,
+  "crossOriginIsolated": true,
+  "wasmThreads": 4
+}
