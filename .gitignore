@@ -39,6 +39,7 @@ result.txt
 *.mov
 *.pptx
 viewfinder_spike/samples/
+viewfinder_live/samples/
 
 # --- Caches ---
 .pytest_cache/
