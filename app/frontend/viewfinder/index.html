@@ -1017,6 +1017,54 @@
     captureBtn.textContent = "Analyze this photo";
   }
 
+  // --- EXIF Orientation Parser (TIFF/JPEG DataView) ---
+  async function getExifOrientation(blob) {
+    try {
+      const buffer = await blob.slice(0, 65536).arrayBuffer();
+      const view = new DataView(buffer);
+      if (view.byteLength < 4 || view.getUint16(0, false) !== 0xFFD8) return null; // Not JPEG
+
+      let offset = 2;
+      while (offset < view.byteLength - 2) {
+        const marker = view.getUint16(offset, false);
+        offset += 2;
+        if (marker === 0xFFE1) { // APP1 EXIF
+          const length = view.getUint16(offset, false);
+          offset += 2;
+          if (offset + 6 <= view.byteLength &&
+              view.getUint32(offset, false) === 0x45786966 && // "Exif"
+              view.getUint16(offset + 4, false) === 0x0000) {  // "\0\0"
+            const tiffStart = offset + 6;
+            const littleEndian = view.getUint16(tiffStart, false) === 0x4949;
+            const ifdOffset = view.getUint32(tiffStart + 4, littleEndian);
+            const ifdStart = tiffStart + ifdOffset;
+            if (ifdStart + 2 <= view.byteLength) {
+              const numEntries = view.getUint16(ifdStart, littleEndian);
+              for (let i = 0; i < numEntries; i++) {
+                const entryOffset = ifdStart + 2 + (i * 12);
+                if (entryOffset + 12 > view.byteLength) break;
+                const tag = view.getUint16(entryOffset, littleEndian);
+                if (tag === 0x0112) { // Orientation tag
+                  return view.getUint16(entryOffset + 8, littleEndian);
+                }
+              }
+            }
+          }
+          break;
+        } else if ((marker & 0xFF00) === 0xFF00 && marker !== 0xFF00 && marker !== 0xFFD9) {
+          const length = view.getUint16(offset, false);
+          offset += length;
+        } else {
+          break;
+        }
+      }
+    } catch (err) {
+      console.warn("[Viewfinder] EXIF parsing error:", err);
+    }
+    return null;
+  }
+  window.getExifOrientation = getExifOrientation;
+
   // --- Step 5: Capture Full-Resolution Still / Analysis Handoff ---
   captureBtn.addEventListener("click", async () => {
     if (!isVideoReady || video.videoWidth === 0) return;
@@ -1043,63 +1091,167 @@
         return;
       }
 
-      // Online return mode: capture video frame to Blob and write to IndexedDB
-      const capCanvas = document.createElement("canvas");
-      capCanvas.width = video.videoWidth;
-      capCanvas.height = video.videoHeight;
-      const capCtx = capCanvas.getContext("2d");
-      capCtx.drawImage(video, 0, 0);
+      // Full-Resolution Capture Flow (T11)
+      const forceVideoFrame = returnParams.has("forceVideoFrame");
+      const videoTrack = (currentStream && !useVideoSource) ? currentStream.getVideoTracks()[0] : null;
+      const canUseImageCapture = !forceVideoFrame && typeof ImageCapture !== "undefined" && videoTrack && videoTrack.readyState === "live";
 
-      capCanvas.toBlob(async (blob) => {
-        if (!blob) {
-          showError("Capture Error", "Could not generate photo blob from video frame.");
-          return;
-        }
+      // Pause inference loop while capture runs
+      isInferring = true;
 
+      let blob = null;
+      let method = "videoFrame";
+
+      if (canUseImageCapture) {
         try {
-          const { savePendingCapture } = await import("/js/modules/captureHandoff.js");
-          let boardData = null;
-          if (emaUnionBox && currentMetrics.conf > 0) {
-            boardData = {
-              conf: parseFloat(currentMetrics.conf.toFixed(3)),
-              box: [
-                Math.round(emaUnionBox[0]),
-                Math.round(emaUnionBox[1]),
-                Math.round(emaUnionBox[2]),
-                Math.round(emaUnionBox[3])
-              ]
-            };
+          const imageCapture = new ImageCapture(videoTrack);
+          let photoSettings = {};
+          try {
+            const caps = await imageCapture.getPhotoCapabilities();
+            if (caps && (caps.imageWidth || caps.imageHeight)) {
+              if (caps.imageWidth) {
+                photoSettings.imageWidth = caps.imageWidth.max || caps.imageWidth;
+              }
+              if (caps.imageHeight) {
+                photoSettings.imageHeight = caps.imageHeight.max || caps.imageHeight;
+              }
+            }
+          } catch (capsErr) {
+            console.warn("[Viewfinder] getPhotoCapabilities failed, continuing with default takePhoto:", capsErr);
           }
 
-          await savePendingCapture({
-            blob: blob,
-            width: video.videoWidth,
-            height: video.videoHeight,
-            bytes: blob.size,
-            method: "videoFrame",
-            createdAt: Date.now(),
-            board: boardData
-          });
-
-          // Stop camera tracks (release the camera)
-          stopCurrentStream();
-
-          // Navigate to analysis page
-          window.location.assign("/analysis.html?source=viewfinder");
-        } catch (err) {
-          console.error("[Viewfinder] IndexedDB handoff failed:", err);
-          // Fall back to download
-          const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-          const link = document.createElement("a");
-          link.download = `panelsafe_viewfinder_${timestamp}.jpg`;
-          link.href = URL.createObjectURL(blob);
-          link.click();
-          showError(
-            "Storage Error",
-            `Failed to transfer photo to analysis (${err.message}) — photo saved to this device instead.`
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("ImageCapture 5s timeout")), 5000)
           );
+
+          blob = await Promise.race([
+            imageCapture.takePhoto(photoSettings),
+            timeoutPromise
+          ]);
+          method = "takePhoto";
+          console.log(`[Viewfinder] takePhoto() successful (${blob.size} bytes)`);
+        } catch (icErr) {
+          console.warn("[Viewfinder] takePhoto() failed or timed out, falling back to video frame:", icErr);
+          blob = null;
         }
-      }, "image/jpeg", 0.95);
+      }
+
+      // Fallback: video frame
+      if (!blob) {
+        method = "videoFrame";
+        const capCanvas = document.createElement("canvas");
+        capCanvas.width = video.videoWidth;
+        capCanvas.height = video.videoHeight;
+        const capCtx = capCanvas.getContext("2d");
+        capCtx.drawImage(video, 0, 0);
+
+        blob = await new Promise((resolve) => capCanvas.toBlob(resolve, "image/jpeg", 0.95));
+      }
+
+      if (!blob) {
+        isInferring = false;
+        showError("Capture Error", "Could not capture image from stream.");
+        return;
+      }
+
+      // Decode actual dimensions
+      let imgBitmap = await createImageBitmap(blob);
+      let captureWidth = imgBitmap.width;
+      let captureHeight = imgBitmap.height;
+      imgBitmap.close();
+
+      // Size cap: gateway rejects uploads > 10 MB. If > 9 MB, re-encode through canvas: long edge <= 4032 px, quality 0.9
+      let sizeCapTriggered = false;
+      if (blob.size > 9 * 1024 * 1024) {
+        sizeCapTriggered = true;
+        console.log(`[Viewfinder] Capture size (${(blob.size / (1024 * 1024)).toFixed(2)} MB) exceeds 9 MB limit, re-encoding...`);
+        const maxEdge = 4032;
+        let reWidth = captureWidth;
+        let reHeight = captureHeight;
+        if (Math.max(reWidth, reHeight) > maxEdge) {
+          const scale = maxEdge / Math.max(reWidth, reHeight);
+          reWidth = Math.round(reWidth * scale);
+          reHeight = Math.round(reHeight * scale);
+        }
+        const reCanvas = document.createElement("canvas");
+        reCanvas.width = reWidth;
+        reCanvas.height = reHeight;
+        const reCtx = reCanvas.getContext("2d");
+        const bmp = await createImageBitmap(blob);
+        reCtx.drawImage(bmp, 0, 0, reWidth, reHeight);
+        bmp.close();
+
+        blob = await new Promise((resolve) => reCanvas.toBlob(resolve, "image/jpeg", 0.9));
+        captureWidth = reWidth;
+        captureHeight = reHeight;
+      }
+
+      // Read EXIF orientation
+      const exifOrientation = await getExifOrientation(blob);
+
+      // Map board.box into still's pixel space
+      let boardData = null;
+      if (emaUnionBox && currentMetrics.conf > 0) {
+        const vw = video.videoWidth;
+        const vh = video.videoHeight;
+        const arVideo = vw / vh;
+        const arStill = captureWidth / captureHeight;
+        if (Math.abs(arVideo - arStill) / arVideo > 0.02) {
+          console.warn(`[Viewfinder] Aspect ratio mismatch (preview ${arVideo.toFixed(2)} vs still ${arStill.toFixed(2)}), discarding board box`);
+          boardData = null;
+        } else {
+          const scaleX = captureWidth / vw;
+          const scaleY = captureHeight / vh;
+          boardData = {
+            conf: parseFloat(currentMetrics.conf.toFixed(3)),
+            box: [
+              Math.round(emaUnionBox[0] * scaleX),
+              Math.round(emaUnionBox[1] * scaleY),
+              Math.round(emaUnionBox[2] * scaleX),
+              Math.round(emaUnionBox[3] * scaleY)
+            ]
+          };
+        }
+      }
+
+      window._lastCaptureMetadata = {
+        method: method,
+        width: captureWidth,
+        height: captureHeight,
+        bytes: blob.size,
+        exifOrientation: exifOrientation,
+        sizeCapTriggered: sizeCapTriggered,
+        board: boardData
+      };
+
+      try {
+        const { savePendingCapture } = await import("/js/modules/captureHandoff.js");
+        await savePendingCapture({
+          blob: blob,
+          width: captureWidth,
+          height: captureHeight,
+          bytes: blob.size,
+          method: method,
+          createdAt: Date.now(),
+          board: boardData,
+          exifOrientation: exifOrientation
+        });
+
+        stopCurrentStream();
+        window.location.assign("/analysis.html?source=viewfinder");
+      } catch (err) {
+        console.error("[Viewfinder] IndexedDB handoff failed:", err);
+        isInferring = false;
+        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+        const link = document.createElement("a");
+        link.download = `panelsafe_viewfinder_${timestamp}.jpg`;
+        link.href = URL.createObjectURL(blob);
+        link.click();
+        showError(
+          "Storage Error",
+          `Failed to transfer photo to analysis (${err.message}) — photo saved to this device instead.`
+        );
+      }
       return;
     }
 
