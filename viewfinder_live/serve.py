@@ -1,6 +1,6 @@
 import argparse
 import os
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 
@@ -19,6 +19,12 @@ class ViewfinderLiveHTTPRequestHandler(SimpleHTTPRequestHandler):
         ".json": "application/json",
         ".mp4": "video/mp4",
     })
+
+    def handle(self):
+        try:
+            super().handle()
+        except (ConnectionResetError, BrokenPipeError):
+            pass
 
     def end_headers(self):
         # Enable SharedArrayBuffer for multi-threaded ONNX Runtime Web WASM
@@ -122,7 +128,7 @@ def run_server(host: str = "127.0.0.1", port: int = 8095, directory: str = ".", 
     os.chdir(directory)
     ViewfinderLiveHTTPRequestHandler.dev_endpoints = dev
     server_address = (host, port)
-    httpd = HTTPServer(server_address, ViewfinderLiveHTTPRequestHandler)
+    httpd = ThreadingHTTPServer(server_address, ViewfinderLiveHTTPRequestHandler)
     print("\n=======================================================")
     print("PanelSafe Live Viewfinder HTTP Server Running")
     print(f"URL: http://{host}:{port}/")
