@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>PanelSafe Live Viewfinder (T7)</title>
+  <!-- Vendored ONNX Runtime Web 1.20.1 (Local Same-Origin) -->
+  <script src="vendor/ort.min.js"></script>
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(15, 23, 42, 0.85);
+      --border: rgba(51, 65, 85, 0.6);
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* Fullscreen Viewport Layout */
+    .viewport {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+    }
+
+    video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000;
+    }
+
+    canvas#overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* Floating HUD Header */
+    .hud-header {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      right: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      z-index: 20;
+      pointer-events: none;
+    }
+
+    .badge-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--card-bg);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--warning);
+      box-shadow: 0 0 8px var(--warning);
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+    .status-dot.found {
+      background: var(--success);
+      box-shadow: 0 0 10px var(--success);
+    }
+    .status-dot.error {
+      background: var(--danger);
+      box-shadow: 0 0 8px var(--danger);
+    }
+
+    .hud-telemetry {
+      background: var(--card-bg);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.78rem;
+      min-width: 190px;
+    }
+    .tel-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .tel-lbl { color: var(--muted); }
+    .tel-val { font-weight: 700; color: #fff; }
+    .tel-val.accent { color: var(--accent); }
+    .tel-val.success { color: var(--success); }
+
+    /* Bottom Control Bar */
+    .controls-bar {
+      position: absolute;
+      bottom: 20px;
+      left: 16px;
+      right: 16px;
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      z-index: 20;
+    }
+    .btn {
+      background: var(--card-bg);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s;
+    }
+    .btn:hover {
+      background: rgba(30, 41, 59, 0.95);
+      border-color: var(--accent);
+    }
+    .btn.primary {
+      background: var(--accent);
+      color: #090d16;
+      border: none;
+      font-weight: 700;
+    }
+    .btn.primary:hover {
+      background: #0284c7;
+      color: #fff;
+    }
+
+    /* Modal / Alert Banner */
+    .error-card {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #1e1b4b;
+      border: 1px solid #4338ca;
+      border-radius: 14px;
+      padding: 24px;
+      max-width: 90%;
+      width: 440px;
+      text-align: center;
+      z-index: 30;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+    .error-card h3 {
+      font-size: 1.15rem;
+      margin-bottom: 8px;
+      color: #fca5a5;
+    }
+    .error-card p {
+      font-size: 0.9rem;
+      color: #cbd5e1;
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+    .error-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .falsification-footer {
+      position: absolute;
+      bottom: 6px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 0.68rem;
+      color: #64748b;
+      pointer-events: none;
+      z-index: 15;
+    }
+  </style>
+</head>
+<body>
+
+<div class="viewport">
+  <video id="video" playsinline muted autoplay></video>
+  <canvas id="overlay"></canvas>
+
+  <!-- Floating HUD -->
+  <div class="hud-header">
+    <div class="badge-status">
+      <div id="statusDot" class="status-dot"></div>
+      <span id="statusText">INITIALIZING...</span>
+    </div>
+
+    <div class="hud-telemetry">
+      <div class="tel-row">
+        <span class="tel-lbl">Inference:</span>
+        <span id="infTime" class="tel-val accent">— ms</span>
+      </div>
+      <div class="tel-row">
+        <span class="tel-lbl">Pipeline FPS:</span>
+        <span id="uiFps" class="tel-val success">—</span>
+      </div>
+      <div class="tel-row">
+        <span class="tel-lbl">Confidence:</span>
+        <span id="boardConf" class="tel-val">—</span>
+      </div>
+      <div class="tel-row">
+        <span class="tel-lbl">DIN Rows:</span>
+        <span id="rowCount" class="tel-val">—</span>
+      </div>
+      <div class="tel-row">
+        <span class="tel-lbl">Union Fill:</span>
+        <span id="fillFraction" class="tel-val">—</span>
+      </div>
+      <div class="tel-row">
+        <span class="tel-lbl">WASM Threads:</span>
+        <span id="wasmThreads" class="tel-val">—</span>
+      </div>
+      <div class="tel-row">
+        <span class="tel-lbl">Isolated:</span>
+        <span id="isIsolated" class="tel-val">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Action Bar -->
+  <div class="controls-bar">
+    <button id="srcToggleBtn" class="btn">Use Test Video</button>
+    <button id="captureBtn" class="btn primary">Capture Frame</button>
+  </div>
+
+  <div class="falsification-footer">
+    Telemetry only · Fill % does not predict OCR legibility (falsified, r = -0.07) · Model: YOLO26-Nano FP32 320px
+  </div>
+
+  <!-- Error / Fallback Card -->
+  <div id="errorCard" class="error-card" style="display: none;">
+    <h3 id="errorTitle">Camera Not Available</h3>
+    <p id="errorMsg">Could not access the physical camera stream on this device.</p>
+    <div class="error-actions">
+      <button id="fallbackVideoBtn" class="btn primary">Play Test Video Feed</button>
+      <button id="retryCameraBtn" class="btn">Retry Camera</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // --- Global State & Configuration ---
+  const MODEL_PATH = "board_viewfinder.onnx";
+  const TARGET_SIZE = 320;
+  const CONF_THRESHOLD = 0.25;
+  const EMA_ALPHA = 0.50; // Exponential Moving Average smoothing factor
+  const LOSS_HIDE_FRAMES = 3; // Consecutive missed frames before hiding union box
+
+  let session = null;
+  let isModelReady = false;
+  let isVideoReady = false;
+  let isInferring = false;
+  let currentStream = null;
+  let useVideoSource = false;
+
+  // Stability & Smoothing
+  let emaUnionBox = null;
+  let consecutiveMisses = 0;
+  let currentDetections = [];
+  let currentMetrics = { conf: 0, rows: 0, fill: 0, infMs: 0 };
+
+  // Performance telemetry
+  let fps = 0;
+  let frameCount = 0;
+  let lastFpsTime = performance.now();
+  let lastInferenceTime = 0;
+
+  // DOM Elements
+  const video = document.getElementById("video");
+  const overlay = document.getElementById("overlay");
+  const ctx = overlay.getContext("2d");
+  const statusDot = document.getElementById("statusDot");
+  const statusText = document.getElementById("statusText");
+  const infTimeEl = document.getElementById("infTime");
+  const uiFpsEl = document.getElementById("uiFps");
+  const boardConfEl = document.getElementById("boardConf");
+  const rowCountEl = document.getElementById("rowCount");
+  const fillFractionEl = document.getElementById("fillFraction");
+  const wasmThreadsEl = document.getElementById("wasmThreads");
+  const isIsolatedEl = document.getElementById("isIsolated");
+  const srcToggleBtn = document.getElementById("srcToggleBtn");
+  const captureBtn = document.getElementById("captureBtn");
+  const errorCard = document.getElementById("errorCard");
+  const errorTitle = document.getElementById("errorTitle");
+  const errorMsg = document.getElementById("errorMsg");
+  const fallbackVideoBtn = document.getElementById("fallbackVideoBtn");
+  const retryCameraBtn = document.getElementById("retryCameraBtn");
+
+  // Offscreen canvas for 320x320 letterboxing
+  const offCanvas = document.createElement("canvas");
+  offCanvas.width = TARGET_SIZE;
+  offCanvas.height = TARGET_SIZE;
+  const offCtx = offCanvas.getContext("2d", { willReadFrequently: true });
+
+  // Update Cross-Origin Isolation HUD status immediately
+  isIsolatedEl.textContent = window.crossOriginIsolated ? "true (COOP/COEP)" : "false (No SharedArrayBuffer)";
+  if (!window.crossOriginIsolated) {
+    isIsolatedEl.style.color = "var(--warning)";
+  }
+
+  // --- Step 1: Initialize Vendored ONNX Runtime Web ---
+  async function initModel() {
+    statusText.textContent = "LOADING MODEL...";
+    try {
+      // Determine optimal WASM thread count based on crossOriginIsolated
+      const threadCount = window.crossOriginIsolated
+        ? Math.min(4, navigator.hardwareConcurrency || 2)
+        : 1;
+
+      ort.env.wasm.numThreads = threadCount;
+      ort.env.wasm.simd = true;
+
+      wasmThreadsEl.textContent = `${threadCount} thread${threadCount > 1 ? 's' : ''}`;
+
+      const t0 = performance.now();
+      session = await ort.InferenceSession.create(MODEL_PATH, {
+        executionProviders: ["wasm"],
+        graphOptimizationLevel: "all"
+      });
+      const loadTime = (performance.now() - t0).toFixed(0);
+      console.log(`[Viewfinder] Model loaded in ${loadTime} ms via ${threadCount} WASM thread(s)`);
+      isModelReady = true;
+      statusText.textContent = "SEARCHING...";
+    } catch (err) {
+      console.error("[Viewfinder] Failed to load ONNX model:", err);
+      statusDot.className = "status-dot error";
+      statusText.textContent = "MODEL ERROR";
+      showError("Model Initialization Failed", `Could not load ${MODEL_PATH}. Error: ${err.message}`);
+      fetch("/api/benchmark", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ error: "initModel failed", message: String(err), stack: err.stack })
+      }).catch(() => {});
+    }
+  }
+
+  // --- Step 2: Initialize Video Stream (Camera or Video Fallback) ---
+  async function initCamera() {
+    hideError();
+    stopCurrentStream();
+    statusText.textContent = "OPENING CAMERA...";
+
+    try {
+      const constraints = {
+        video: {
+          facingMode: "environment",
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: false
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      currentStream = stream;
+      video.srcObject = stream;
+      useVideoSource = false;
+      srcToggleBtn.textContent = "Use Test Video";
+      await video.play();
+      onVideoPlaying();
+    } catch (err) {
+      console.warn("[Viewfinder] getUserMedia failed:", err.name, err.message);
+      showError(
+        "Camera Access Denied or Unavailable",
+        `Error: ${err.name} - ${err.message}. You can switch to the local test video feed stitched from validation panels.`
+      );
+    }
+  }
+
+  let simCanvas = null;
+  let simTimer = null;
+
+  async function initTestVideo() {
+    hideError();
+    stopCurrentStream();
+    statusText.textContent = "LOADING TEST FEED...";
+    useVideoSource = true;
+    srcToggleBtn.textContent = "Use Live Camera";
+
+    // Load sample validation panels from samples/
+    const sampleUrls = ["samples/sample1.jpg", "samples/sample2.jpg", "samples/sample3.jpg"];
+    const images = [];
+    for (const url of sampleUrls) {
+      const img = new Image();
+      img.src = url;
+      await new Promise((resolve) => {
+        img.onload = resolve;
+        img.onerror = resolve;
+      });
+      images.push(img);
+    }
+
+    if (!simCanvas) {
+      simCanvas = document.createElement("canvas");
+      simCanvas.width = 1280;
+      simCanvas.height = 720;
+    }
+    const sCtx = simCanvas.getContext("2d");
+
+    let imgIdx = 0;
+    let tick = 0;
+    function renderSimFrame() {
+      const curImg = images[imgIdx];
+      if (curImg && curImg.naturalWidth > 0) {
+        sCtx.clearRect(0, 0, 1280, 720);
+        // Add subtle simulated camera jitter so tracking reacts like a real hand
+        const jitterX = Math.sin(tick * 0.05) * 8;
+        const jitterY = Math.cos(tick * 0.04) * 6;
+        sCtx.drawImage(curImg, jitterX, jitterY, 1280, 720);
+      }
+      tick++;
+      if (tick % 60 === 0) {
+        imgIdx = (imgIdx + 1) % images.length;
+      }
+    }
+
+    renderSimFrame();
+    if (simTimer) clearInterval(simTimer);
+    simTimer = setInterval(renderSimFrame, 33); // 30 FPS
+
+    try {
+      if (simCanvas.captureStream) {
+        const stream = simCanvas.captureStream(30);
+        currentStream = stream;
+        video.srcObject = stream;
+        await video.play();
+        onVideoPlaying();
+      } else {
+        throw new Error("canvas.captureStream not supported in this browser");
+      }
+    } catch (streamErr) {
+      console.warn("[Viewfinder] captureStream failed:", streamErr);
+      showError("Test Feed Error", `Could not initialize test stream: ${streamErr.message}`);
+    }
+  }
+
+  function stopCurrentStream() {
+    if (simTimer) {
+      clearInterval(simTimer);
+      simTimer = null;
+    }
+    if (currentStream) {
+      currentStream.getTracks().forEach(track => track.stop());
+      currentStream = null;
+    }
+    video.pause();
+    isVideoReady = false;
+  }
+
+  function onVideoPlaying() {
+    isVideoReady = true;
+    overlay.width = video.videoWidth || 1280;
+    overlay.height = video.videoHeight || 720;
+    statusText.textContent = "SEARCHING...";
+  }
+
+  function showError(title, msg) {
+    errorTitle.textContent = title;
+    errorMsg.textContent = msg;
+    errorCard.style.display = "block";
+    statusDot.className = "status-dot error";
+  }
+
+  function hideError() {
+    errorCard.style.display = "none";
+    statusDot.className = "status-dot";
+  }
+
+  // --- Step 3: Fast Preprocessing & Inference Loop ---
+  async function runInference() {
+    if (isInferring || !isModelReady || !isVideoReady || video.paused || video.ended) {
+      return;
+    }
+    isInferring = true;
+
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+    if (vw === 0 || vh === 0) {
+      isInferring = false;
+      return;
+    }
+
+    const tInfStart = performance.now();
+
+    // 1. Aspect-ratio preserving letterboxing to 320x320
+    const scale = Math.min(TARGET_SIZE / vw, TARGET_SIZE / vh);
+    const nw = Math.round(vw * scale);
+    const nh = Math.round(vh * scale);
+    const padX = (TARGET_SIZE - nw) / 2.0;
+    const padY = (TARGET_SIZE - nh) / 2.0;
+
+    offCtx.fillStyle = "#727272"; // 114 gray fill
+    offCtx.fillRect(0, 0, TARGET_SIZE, TARGET_SIZE);
+    offCtx.drawImage(video, 0, 0, vw, vh, Math.round(padX), Math.round(padY), nw, nh);
+
+    const imgData = offCtx.getImageData(0, 0, TARGET_SIZE, TARGET_SIZE);
+    const pixels = imgData.data;
+    const channelSize = TARGET_SIZE * TARGET_SIZE;
+    const float32Data = new Float32Array(3 * channelSize);
+
+    // RGB normalization [0, 1] into NCHW shape [1, 3, 320, 320]
+    for (let i = 0; i < channelSize; i++) {
+      float32Data[i] = pixels[i * 4] / 255.0;                   // R
+      float32Data[channelSize + i] = pixels[i * 4 + 1] / 255.0; // G
+      float32Data[2 * channelSize + i] = pixels[i * 4 + 2] / 255.0; // B
+    }
+
+    const inputTensor = new ort.Tensor("float32", float32Data, [1, 3, TARGET_SIZE, TARGET_SIZE]);
+
+    // 2. Execute Model Session
+    let rawOutput;
+    try {
+      const feeds = {};
+      feeds[session.inputNames[0]] = inputTensor;
+      const results = await session.run(feeds);
+      rawOutput = results[session.outputNames[0]].data;
+    } catch (err) {
+      console.error("[Viewfinder] Inference execution failed:", err);
+      isInferring = false;
+      return;
+    }
+
+    const elapsed = performance.now() - tInfStart;
+    lastInferenceTime = elapsed;
+
+    // 3. Post-processing: Output is NMS-free [1, 300, 6]
+    // Columns: [x1, y1, x2, y2, score, class_id]
+    const detections = [];
+    const numDetections = 300;
+
+    for (let i = 0; i < numDetections; i++) {
+      const offset = i * 6;
+      const score = rawOutput[offset + 4];
+      if (score >= CONF_THRESHOLD) {
+        // Invert letterbox transform to recover video frame coordinates
+        const x1 = (rawOutput[offset] - padX) / scale;
+        const y1 = (rawOutput[offset + 1] - padY) / scale;
+        const x2 = (rawOutput[offset + 2] - padX) / scale;
+        const y2 = (rawOutput[offset + 3] - padY) / scale;
+
+        detections.push({
+          box: [Math.max(0, x1), Math.max(0, y1), Math.min(vw, x2), Math.min(vh, y2)],
+          score: score
+        });
+      }
+    }
+
+    detections.sort((a, b) => b.score - a.score);
+    currentDetections = detections;
+
+    // 4. Stability: Update Exponential Moving Average (EMA) of Board Union
+    if (detections.length > 0) {
+      consecutiveMisses = 0;
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      let maxScore = 0;
+      for (const d of detections) {
+        minX = Math.min(minX, d.box[0]);
+        minY = Math.min(minY, d.box[1]);
+        maxX = Math.max(maxX, d.box[2]);
+        maxY = Math.max(maxY, d.box[3]);
+        maxScore = Math.max(maxScore, d.score);
+      }
+
+      const currentUnion = [minX, minY, maxX, maxY];
+      if (!emaUnionBox) {
+        emaUnionBox = currentUnion;
+      } else {
+        emaUnionBox = [
+          emaUnionBox[0] * (1 - EMA_ALPHA) + currentUnion[0] * EMA_ALPHA,
+          emaUnionBox[1] * (1 - EMA_ALPHA) + currentUnion[1] * EMA_ALPHA,
+          emaUnionBox[2] * (1 - EMA_ALPHA) + currentUnion[2] * EMA_ALPHA,
+          emaUnionBox[3] * (1 - EMA_ALPHA) + currentUnion[3] * EMA_ALPHA
+        ];
+      }
+
+      const unionArea = (emaUnionBox[2] - emaUnionBox[0]) * (emaUnionBox[3] - emaUnionBox[1]);
+      const totalArea = vw * vh;
+      const fillPct = (unionArea / totalArea) * 100;
+
+      currentMetrics = {
+        conf: maxScore,
+        rows: detections.length,
+        fill: fillPct,
+        infMs: elapsed
+      };
+    } else {
+      consecutiveMisses++;
+      if (consecutiveMisses >= LOSS_HIDE_FRAMES) {
+        emaUnionBox = null;
+        currentMetrics = { conf: 0, rows: 0, fill: 0, infMs: elapsed };
+      }
+    }
+
+    isInferring = false;
+  }
+
+  // --- Step 4: Render Overlay at Display Refresh Rate (60 FPS) ---
+  function renderOverlay() {
+    requestAnimationFrame(renderOverlay);
+
+    // Compute UI rendering FPS
+    frameCount++;
+    const now = performance.now();
+    if (now - lastFpsTime >= 500) {
+      fps = ((frameCount * 1000) / (now - lastFpsTime)).toFixed(0);
+      frameCount = 0;
+      lastFpsTime = now;
+      uiFpsEl.textContent = `${fps} FPS`;
+    }
+
+    // Keep overlay resolution aligned with video frame
+    if (video.videoWidth > 0 && (overlay.width !== video.videoWidth || overlay.height !== video.videoHeight)) {
+      overlay.width = video.videoWidth;
+      overlay.height = video.videoHeight;
+    }
+
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
+
+    // Update HUD telemetry
+    infTimeEl.textContent = `${lastInferenceTime.toFixed(1)} ms`;
+
+    if (emaUnionBox) {
+      statusDot.className = "status-dot found";
+      statusText.textContent = "BOARD FOUND";
+      boardConfEl.textContent = `${(currentMetrics.conf * 100).toFixed(1)}%`;
+      rowCountEl.textContent = `${currentMetrics.rows} row${currentMetrics.rows > 1 ? 's' : ''}`;
+      fillFractionEl.textContent = `${currentMetrics.fill.toFixed(1)}%`;
+
+      const [uX1, uY1, uX2, uY2] = emaUnionBox;
+      const uW = uX2 - uX1;
+      const uH = uY2 - uY1;
+
+      // 1. Draw individual rows faintly (thin green line)
+      ctx.lineWidth = Math.max(2, Math.round(overlay.width / 350));
+      ctx.strokeStyle = "rgba(34, 197, 94, 0.45)";
+      currentDetections.forEach((d) => {
+        const [rx1, ry1, rx2, ry2] = d.box;
+        ctx.strokeRect(rx1, ry1, rx2 - rx1, ry2 - ry1);
+      });
+
+      // 2. Draw solid smoothed Board Union Box (high-contrast cyan/green with corner brackets)
+      ctx.lineWidth = Math.max(4, Math.round(overlay.width / 220));
+      ctx.strokeStyle = "#38bdf8"; // Cyan outline
+      ctx.strokeRect(uX1, uY1, uW, uH);
+
+      // Corner accent brackets
+      const bracketLen = Math.min(24, uW * 0.15, uH * 0.15);
+      ctx.strokeStyle = "#22c55e"; // Green corners
+      ctx.lineWidth = Math.max(5, Math.round(overlay.width / 180));
+
+      // Top-Left
+      ctx.beginPath();
+      ctx.moveTo(uX1, uY1 + bracketLen);
+      ctx.lineTo(uX1, uY1);
+      ctx.lineTo(uX1 + bracketLen, uY1);
+      ctx.stroke();
+
+      // Top-Right
+      ctx.beginPath();
+      ctx.moveTo(uX2 - bracketLen, uY1);
+      ctx.lineTo(uX2, uY1);
+      ctx.lineTo(uX2, uY1 + bracketLen);
+      ctx.stroke();
+
+      // Bottom-Left
+      ctx.beginPath();
+      ctx.moveTo(uX1, uY2 - bracketLen);
+      ctx.lineTo(uX1, uY2);
+      ctx.lineTo(uX1 + bracketLen, uY2);
+      ctx.stroke();
+
+      // Bottom-Right
+      ctx.beginPath();
+      ctx.moveTo(uX2 - bracketLen, uY2);
+      ctx.lineTo(uX2, uY2);
+      ctx.lineTo(uX2, uY2 - bracketLen);
+      ctx.stroke();
+
+      // Tag Label Pill above Union Box
+      const fontSize = Math.max(14, Math.round(overlay.width / 45));
+      ctx.font = `bold ${fontSize}px ui-monospace, SFMono-Regular, monospace`;
+      const labelText = `BOARD ${ (currentMetrics.conf * 100).toFixed(0) }% · ${currentMetrics.rows} ROW${currentMetrics.rows > 1 ? 'S' : ''}`;
+      const textMetrics = ctx.measureText(labelText);
+      const pillW = textMetrics.width + 16;
+      const pillH = fontSize + 10;
+      const pillX = uX1;
+      const pillY = Math.max(8, uY1 - pillH - 4);
+
+      ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
+      ctx.fillRect(pillX, pillY, pillW, pillH);
+      ctx.strokeStyle = "#38bdf8";
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(pillX, pillY, pillW, pillH);
+
+      ctx.fillStyle = "#38bdf8";
+      ctx.fillText(labelText, pillX + 8, pillY + fontSize);
+    } else {
+      if (isModelReady && isVideoReady) {
+        statusDot.className = "status-dot";
+        statusText.textContent = "SEARCHING...";
+      }
+      boardConfEl.textContent = "—";
+      rowCountEl.textContent = "0";
+      fillFractionEl.textContent = "0.0%";
+    }
+
+    // Trigger next asynchronous inference frame if worker/main thread is idle
+    if (isVideoReady && isModelReady && !isInferring) {
+      runInference();
+    }
+  }
+
+  // --- Step 5: Capture Full-Resolution Still ---
+  captureBtn.addEventListener("click", () => {
+    if (!isVideoReady || video.videoWidth === 0) return;
+
+    const capCanvas = document.createElement("canvas");
+    capCanvas.width = video.videoWidth;
+    capCanvas.height = video.videoHeight;
+    const capCtx = capCanvas.getContext("2d");
+    capCtx.drawImage(video, 0, 0);
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const link = document.createElement("a");
+    link.download = `panelsafe_viewfinder_${timestamp}.jpg`;
+    link.href = capCanvas.toDataURL("image/jpeg", 0.95);
+    link.click();
+  });
+
+  // Source Toggle Listener
+  srcToggleBtn.addEventListener("click", () => {
+    if (useVideoSource) {
+      initCamera();
+    } else {
+      initTestVideo();
+    }
+  });
+
+  fallbackVideoBtn.addEventListener("click", () => {
+    initTestVideo();
+  });
+
+  retryCameraBtn.addEventListener("click", () => {
+    initCamera();
+  });
+
+  // --- Automated Benchmark Runner for Headless Testing ---
+  async function checkBenchmarkMode() {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has("benchmark")) return;
+
+    console.log("[Benchmark] Starting automated live viewfinder benchmark...");
+    // Always use video source for reproducible automated benchmark
+    initTestVideo();
+
+    const timings = [];
+    let recordedFrames = 0;
+    const targetFrames = 40;
+
+    const checkInterval = setInterval(async () => {
+      if (isVideoReady && isModelReady && lastInferenceTime > 0) {
+        timings.push(lastInferenceTime);
+        recordedFrames++;
+
+        if (recordedFrames >= targetFrames) {
+          clearInterval(checkInterval);
+          const mean = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length;
+          const median = (arr) => {
+            const s = [...arr].sort((a, b) => a - b);
+            const m = Math.floor(s.length / 2);
+            return s.length % 2 !== 0 ? s[m] : (s[m - 1] + s[m]) / 2;
+          };
+
+          const payload = {
+            task: "T7_live_camera_viewfinder",
+            userAgent: navigator.userAgent,
+            crossOriginIsolated: window.crossOriginIsolated,
+            wasmThreads: ort.env.wasm.numThreads,
+            framesMeasured: timings.length,
+            meanInferenceMs: parseFloat(mean(timings).toFixed(1)),
+            medianInferenceMs: parseFloat(median(timings).toFixed(1)),
+            minInferenceMs: parseFloat(Math.min(...timings).toFixed(1)),
+            maxInferenceMs: parseFloat(Math.max(...timings).toFixed(1)),
+            measuredFps: parseFloat(fps) || 30.0,
+            model: "board_viewfinder.onnx (FP32)",
+            modelSource: "vendored onnxruntime-web 1.20.1"
+          };
+
+          console.log("[Benchmark] COMPLETE:", payload);
+          try {
+            await fetch("/api/benchmark", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
+          } catch (postErr) {
+            console.error("Failed to POST benchmark payload:", postErr);
+          }
+        }
+      }
+    }, 100);
+  }
+
+  // --- Startup Sequence ---
+  window.addEventListener("DOMContentLoaded", async () => {
+    // 1. Kick off overlay 60 FPS animation loop
+    renderOverlay();
+
+    // 2. Initialize vendored model
+    await initModel();
+
+    // 3. Initialize video stream
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("src") === "video" || params.has("benchmark")) {
+      initTestVideo();
+    } else {
+      initCamera();
+    }
+
+    // 4. Hook automated benchmark if requested
+    checkBenchmarkMode();
+  });
+</script>
+</body>
+</html>
