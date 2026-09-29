@@ -994,7 +994,18 @@
 
   // Return Mode & Notice Card Handling
   const returnParams = new URLSearchParams(window.location.search);
-  const isReturnToAnalysis = returnParams.get("return") === "analysis";
+  // Pages that can send the user here and take the photo back. A fixed allow-list:
+  // the destination is never read from the query string (no open redirect).
+  const RETURN_TARGETS = {
+    analysis: { done: "/analysis.html?source=viewfinder", back: "/analysis.html",
+                backLabel: "← Back to analysis", captureLabel: "Analyze this photo" },
+    audit:    { done: "/?source=viewfinder", back: "/?open=audit",
+                backLabel: "← Back to evaluation", captureLabel: "Use this photo" }
+  };
+  const returnTarget = Object.prototype.hasOwnProperty.call(RETURN_TARGETS, returnParams.get("return"))
+    ? RETURN_TARGETS[returnParams.get("return")]
+    : null;
+  const isReturnToAnalysis = returnTarget !== null;  // i.e. "return mode", for any target
   const backToAnalysisLink = document.getElementById("backToAnalysisLink");
   const noticeCard = document.getElementById("noticeCard");
   const noticeTitle = document.getElementById("noticeTitle");
@@ -1013,8 +1024,12 @@
   }
 
   if (isReturnToAnalysis) {
-    if (backToAnalysisLink) backToAnalysisLink.style.display = "inline-flex";
-    captureBtn.textContent = "Analyze this photo";
+    if (backToAnalysisLink) {
+      backToAnalysisLink.href = returnTarget.back;
+      backToAnalysisLink.textContent = returnTarget.backLabel;
+      backToAnalysisLink.style.display = "inline-flex";
+    }
+    captureBtn.textContent = returnTarget.captureLabel;
   }
 
   // --- EXIF Orientation Parser (TIFF/JPEG DataView) ---
@@ -1239,7 +1254,7 @@
         });
 
         stopCurrentStream();
-        window.location.assign("/analysis.html?source=viewfinder");
+        window.location.assign(returnTarget.done);
         return true;
       } catch (err) {
         console.error("[Viewfinder] IndexedDB handoff failed:", err);

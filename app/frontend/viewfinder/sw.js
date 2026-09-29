@@ -1,7 +1,7 @@
 // PanelSafe Live Viewfinder Service Worker (T9 Offline "Basement" Mode)
 // Cache Name is explicitly versioned so new weights/assets supersede old versions.
 // Bump it whenever the model, runtime or page changes.
-const CACHE_NAME = "panelsafe-viewfinder-prod-2026-09-30";
+const CACHE_NAME = "panelsafe-viewfinder-prod-2026-09-30b";
 
 const PRECACHE_URLS = [
   "./",

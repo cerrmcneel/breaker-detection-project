@@ -1086,11 +1086,14 @@
                         </div>
 
                         <div id="upload-options" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 1rem;">
-                            <button type="button" class="btn btn-primary" id="start-camera-btn">
-                                📸 <span data-i18n="use_camera">Use Camera</span>
+                            <button type="button" class="btn btn-primary" id="viewfinder-btn">
+                                🎯 <span data-i18n="use_viewfinder">Use Camera Viewfinder</span>
+                            </button>
+                            <button type="button" class="btn btn-outline" id="start-camera-btn">
+                                <span data-i18n="use_camera">📸 Use Camera</span>
                             </button>
                             <button type="button" class="btn btn-outline" id="browse-file-btn">
-                                📁 <span data-i18n="upload_file">Upload File</span>
+                                <span data-i18n="upload_file">📁 Upload File</span>
                             </button>
                         </div>
 
@@ -1211,6 +1214,8 @@
                 err_cam_access: "Camera access failed or was denied.",
                 status_uploading: "Uploading...",
                 status_no_file: "Please capture a photo or select a file first.",
+                use_viewfinder: "Use Camera Viewfinder",
+                status_viewfinder_missing: "No photo arrived from the viewfinder. Please take it again.",
                 status_err_upload: "Upload failed. Check console/network.",
                 status_success: "Success! Saved as",
                 status_error: "Error:",
@@ -1269,6 +1274,8 @@
                 err_cam_access: "El acceso a la cámara falló o fue denegado.",
                 status_uploading: "Subiendo...",
                 status_no_file: "Por favor, capture una foto o seleccione un archivo primero.",
+                use_viewfinder: "Usar Visor de Cámara",
+                status_viewfinder_missing: "No llegó ninguna foto del visor. Vuelve a tomarla.",
                 status_err_upload: "Fallo en la subida. Revise la consola/red.",
                 status_success: "¡Éxito! Guardado como",
                 status_error: "Error:",
@@ -1327,6 +1334,8 @@
                 err_cam_access: "L'accès à la caméra a échoué ou a été refusé.",
                 status_uploading: "Téléversement...",
                 status_no_file: "Veuillez d'abord prendre une photo ou sélectionner un fichier.",
+                use_viewfinder: "Utiliser le viseur",
+                status_viewfinder_missing: "Aucune photo n'est arrivée du viseur. Veuillez la reprendre.",
                 status_err_upload: "Échec du téléversement. Vérifiez la console/le réseau.",
                 status_success: "Succès ! Enregistré sous",
                 status_error: "Erreur :",
@@ -1700,6 +1709,82 @@
                 lucide.createIcons();
             }
         });
+
+        // --- Live viewfinder handoff ---
+        // The viewfinder is its own page (/viewfinder/, cross-origin isolated for
+        // multi-threaded WASM), so the evaluation form is left and re-opened. What the
+        // user already filled in (country, RCD test) survives in sessionStorage. Consent
+        // is deliberately NOT carried over: it is ticked again next to the photo being
+        // sent. The photo itself comes back through IndexedDB (js/modules/captureHandoff.js),
+        // the same handoff analysis.html uses.
+        const AUDIT_FORM_KEY = 'panelsafe_audit_form';
+
+        function saveAuditForm() {
+            const selectedRcd = document.querySelector('input[name="rcd_test_result"]:checked');
+            try {
+                sessionStorage.setItem(AUDIT_FORM_KEY, JSON.stringify({
+                    country: countrySelect.value,
+                    rcdTested: document.getElementById('rcd-tested-checkbox').checked,
+                    rcdResult: selectedRcd ? selectedRcd.value : null
+                }));
+            } catch (err) {
+                console.warn('[Viewfinder] Could not save the form state:', err);
+            }
+        }
+
+        function restoreAuditForm() {
+            let saved = null;
+            try {
+                saved = JSON.parse(sessionStorage.getItem(AUDIT_FORM_KEY) || 'null');
+                sessionStorage.removeItem(AUDIT_FORM_KEY);
+            } catch (err) {
+                return;
+            }
+            if (!saved) return;
+            // countrySelect is a free-text <input list="countries">, not a <select>.
+            if (typeof saved.country === 'string') countrySelect.value = saved.country;
+            const rcdCheckbox = document.getElementById('rcd-tested-checkbox');
+            rcdCheckbox.checked = !!saved.rcdTested;
+            toggleRcdOptions();
+            if (saved.rcdTested && saved.rcdResult) {
+                const radio = document.querySelector(`input[name="rcd_test_result"][value="${CSS.escape(saved.rcdResult)}"]`);
+                if (radio) radio.checked = true;
+            }
+        }
+
+        document.getElementById('viewfinder-btn').addEventListener('click', () => {
+            saveAuditForm();
+            location.assign('/viewfinder/?return=audit');
+        });
+
+        async function checkViewfinderReturn() {
+            const params = new URLSearchParams(location.search);
+            const fromViewfinder = params.get('source') === 'viewfinder';
+            // ?open=audit is the viewfinder's "Back" link: re-open the form, no photo.
+            if (!fromViewfinder && params.get('open') !== 'audit') return;
+            history.replaceState(null, '', '/');
+            openUploadModal();
+            restoreAuditForm();
+            if (!fromViewfinder) return;
+
+            let pending = null;
+            try {
+                const { getPendingCapture, deletePendingCapture } = await import('/js/modules/captureHandoff.js');
+                pending = await getPendingCapture(true);
+                await deletePendingCapture();
+            } catch (err) {
+                console.error('[Viewfinder] Could not read the photo from the viewfinder:', err);
+            }
+            if (pending && pending.blob) {
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                handleFileSelection(new File([pending.blob], `viewfinder_${timestamp}.jpg`, { type: 'image/jpeg' }));
+            } else {
+                statusDiv.textContent = translations[currentLang].status_viewfinder_missing;
+                statusDiv.className = 'status-error';
+                statusDiv.style.display = 'block';
+            }
+        }
+        checkViewfinderReturn();
     </script>
 </body>
 

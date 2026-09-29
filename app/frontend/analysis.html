@@ -737,6 +737,20 @@
 
             .scroll-area { overflow-y: visible; max-height: none; }
             .sidebar-footer { position: sticky; bottom: 0; }
+
+            /* The sidebar drag handle is desktop-only. Stacked in a column it stretched to
+               a full screen of empty space above everything else. */
+            .resize-handle { display: none; }
+
+            /* Before a photo is loaded the canvas area is empty, so lead with the upload
+               controls. Once a photo is in (body.has-photo), the image goes back on top
+               and the detections list follows it. */
+            body:not(.has-photo) .sidebar {
+                order: 0;
+                border-top: none;
+                border-bottom: 1px solid var(--border);
+            }
+            body:not(.has-photo) .viewport { height: 30vh; }
         }
     </style>
 </head>
@@ -1288,8 +1302,12 @@
                 originalImage.onload = () => {
                     canvas.width = originalImage.width;
                     canvas.height = originalImage.height;
+                    // Mobile layout flips to image-first once there is an image (see the
+                    // max-width: 900px rules). Set it before fitToScreen() so the fit uses
+                    // the viewport's final height.
+                    document.body.classList.add('has-photo');
                     fitToScreen();
-                    
+
                     // Switch dropzone to collapsed badge strip
                     dropZone.style.display = 'none';
                     if (viewfinderAuditBtn) viewfinderAuditBtn.style.display = 'none';
