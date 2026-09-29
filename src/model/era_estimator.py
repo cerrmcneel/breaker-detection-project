@@ -72,30 +72,30 @@ class EraEstimate:
         }
 
 
-# Curated catalog database for verified manufacturer product lines.
-# Every remaining entry has been verified against manufacturer primary documentation
-# (catalogs, registration filings, press releases). Unverified entries have been removed.
-# For full citations, sources, and audit rationale, see:
-# directives/antigravity/reports/t1-catalog-years.md
+# Curated catalog of manufacturer product lines with SOURCED launch years.
+#
+# Rule: no strong source -> no entry. The original 16 LLM-generated entries were
+# audited in 2026-09 (Antigravity task T1, then re-checked by Claude because two of
+# the audit's cited URLs did not exist). What survives, with sources fetched and
+# confirmed on 2026-09-24:
+#   Acti9  2011   construible.es, 2011-05-13: "Schneider Electric lanza al mercado
+#                 su nuevo sistema de distribucion electrica Acti 9"
+#   Resi9  2016   Schneider press release dated 23/05/2016, "Schneider Electric lance
+#                 Resi9, le tableau electrique esthetique et personnalisable..."
+#   DX3    2011   Legrand DX3 datasheets created Feb/Apr 2011 (assets.legrand.com)
+#
+# Every remaining entry is open-ended ("-Present"): a LAUNCH year only bounds how
+# old a device can be, which is defensible. END years are deliberately absent --
+# discontinuation is rarely documented, and the launch of a successor is not the
+# end of sales (Multi 9 was removed for exactly that: "replaced by Acti9 in 2011"
+# was taken as an end date, but Schneider still sells Multi 9).
+#
+# NOTE: this lookup is currently unreachable. The era estimator receives cleaned
+# ocr_text ("C16", "30MA", ...), which never contains brand tokens. It only becomes
+# live if raw OCR text is ever routed here. Review record:
+# directives/antigravity/reports/REVIEW-2026-09-24.md
 CATALOG_SERIES_DB = [
-    # --- Schneider Electric / Merlin Gerin ---
-    {
-        "brand": "Schneider Electric",
-        "model_series": "Multi9 (C60N / C60H / C32N)",
-        "patterns": [
-            r"\bMULTI\s*9\b",
-            r"\bMULTI9\b",
-            r"\bC60N\b",
-            r"\bC60H\b",
-            r"\bC32N\b",
-            r"\bC45N\b",
-            r"\bMERLIN\s+GERIN\b",
-        ],
-        "era_start": 1974,
-        "era_end": 2011,
-        "era_label": "1974–2011 (Legacy / Discontinued)",
-        "notes": "Classic Merlin Gerin / Schneider modular line launched in 1974; replaced by Acti9 in 2011 for final distribution.",
-    },
+    # --- Schneider Electric ---
     {
         "brand": "Schneider Electric",
         "model_series": "Acti9 (iC60 / iID)",

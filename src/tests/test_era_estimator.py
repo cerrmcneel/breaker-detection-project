@@ -14,16 +14,10 @@ from src.model.era_estimator import (
 
 # --- CATALOG SIGNATURE MATCHING TESTS ---------------------------------------
 
-def test_schneider_multi9_signature():
-    text = "MERLIN GERIN Multi 9 C60N C16 400V~"
-    matches = match_catalog_signatures(text)
-    assert len(matches) >= 1
-    m = matches[0]
-    assert m.brand == "Schneider Electric"
-    assert "Multi9" in m.model_series
-    assert m.era_start == 1974
-    assert m.era_end == 2011
-    assert m.confidence == "high"
+def test_schneider_multi9_no_longer_matches():
+    # Removed: its 2011 "end" was the launch of its successor, not a sourced end of
+    # sales, and Schneider still sells Multi 9. A wrong end year overstates age.
+    assert match_catalog_signatures("MERLIN GERIN Multi 9 C60N C16 400V~") == []
 
 
 def test_schneider_resi9_signature():
@@ -66,6 +60,7 @@ def test_removed_unverified_signatures_return_no_matches():
         "LEGRAND 013 00 C16",
         "GE REDLINE EP60 C16",
         "CHINT NB1-63 C16",
+        "MERLIN GERIN multi 9 C60N C20",
     ]
     for text in unverified_texts:
         assert match_catalog_signatures(text) == []
@@ -154,17 +149,17 @@ def test_unified_estimate_with_catalog_and_composition():
         {"class": "MCB"},
     ]
     ocr_texts = [
-        "SCHNEIDER Multi 9 C60N C16",
-        "SCHNEIDER Multi 9 C60N C20",
+        "SCHNEIDER Acti9 iC60N C16",
+        "SCHNEIDER Acti9 iC60N C20",
     ]
     result = estimate_panel_era(preds, ocr_texts, current_year=2026)
 
     assert isinstance(result, EraEstimate)
-    assert result.era_range == "1974–2011"
-    assert "15–52 years" in result.estimated_age_range
+    assert result.era_range == "2011–Present"
+    assert "0–15 years" in result.estimated_age_range
     assert result.confidence == "high"
     assert len(result.catalog_matches) == 1
-    assert "Multi9" in result.catalog_matches[0].model_series
+    assert "Acti9" in result.catalog_matches[0].model_series
     assert "REBT 2002" in result.rebt_standard
     assert "Estimación de Época de Instalación" in result.feedback_es
     assert "Estimated Installation Era" in result.feedback_en
@@ -221,33 +216,39 @@ def test_catalog_match_conflicting_with_composition_downgrades_confidence():
 
 def test_catalog_match_consistent_with_composition_stays_high_confidence():
     # Same fixture as test_unified_estimate_with_catalog_and_composition: a
-    # 1990-2010 catalog match against a 2002-2019 composition baseline overlaps
-    # (2002-2010), so this must NOT be flagged as conflicting.
+    # 2011-present catalog match against a 2002-2019 composition baseline overlaps
+    # (2011-2019), so this must NOT be flagged as conflicting.
     preds = [
         {"class": "MAINBREAKER"},
         {"class": "RCD"},
         {"class": "MCB"},
         {"class": "MCB"},
     ]
-    ocr_texts = ["SCHNEIDER Multi 9 C60N C16", "SCHNEIDER Multi 9 C60N C20"]
+    ocr_texts = ["SCHNEIDER Acti9 iC60N C16", "SCHNEIDER Acti9 iC60N C20"]
     result = estimate_panel_era(preds, ocr_texts, current_year=2026)
 
     assert result.confidence == "high"
     assert not any("CONFLICTING EVIDENCE" in e for e in result.evidence)
 
 
-def test_catalog_match_conflicting_with_modern_composition_downgrades_confidence():
-    # Composition says modern (surge protector present -> 2020-Present), but the
-    # only catalog hit is an obsolete legacy series (Multi 9: 1974-2011) -- the other
-    # direction of conflict from the first test.
+def test_catalog_match_conflicting_with_modern_composition_downgrades_confidence(monkeypatch):
+    # Composition says modern (surge protector present -> 2020-Present), but the only
+    # catalog hit is a discontinued series -- the other direction of conflict from the
+    # first test. No closed-range series survives the sourcing rule, so a synthetic
+    # entry is injected: this tests the reconciliation logic, not real-world dates.
+    import src.model.era_estimator as ee
+    monkeypatch.setattr(ee, "CATALOG_SERIES_DB", ee.CATALOG_SERIES_DB + [{
+        "brand": "TestBrand", "model_series": "Legacy X (test fixture)",
+        "patterns": [r"\bLEGACYX\b"], "era_start": 1980, "era_end": 1995,
+        "era_label": "1980–1995 (test fixture)", "notes": "Synthetic, tests only.",
+    }])
     preds = [
         {"class": "MAINBREAKER"},
         {"class": "RCD"},
         {"class": "OVERSURGE"},
         {"class": "MCB"},
     ]
-    ocr_texts = ["SCHNEIDER Multi 9 C60N C16"]
-    result = estimate_panel_era(preds, ocr_texts, current_year=2026)
+    result = estimate_panel_era(preds, ["TESTBRAND LEGACYX C16"], current_year=2026)
 
     assert result.composition_era.startswith("2020")
     assert result.confidence == "low"
@@ -273,7 +274,7 @@ def test_high_confidence_estimate_carries_no_qualifier():
         {"class": "MAINBREAKER"}, {"class": "RCD"}, {"class": "MCB"}, {"class": "MCB"},
     ]
     result = estimate_panel_era(
-        preds, ["SCHNEIDER Multi 9 C60N C16", "SCHNEIDER Multi 9 C60N C20"], current_year=2026
+        preds, ["SCHNEIDER Acti9 iC60N C16", "SCHNEIDER Acti9 iC60N C20"], current_year=2026
     )
 
     assert result.confidence == "high"
