@@ -731,7 +731,7 @@
         <div class="nav-links">
             <a href="/" class="nav-link active" data-i18n="nav_home">Inicio</a>
             <a href="/analysis.html" class="nav-link" data-i18n="nav_analysis">Analizador IA</a>
-            <a href="/unifilar/" class="nav-link">Generador Unifilar</a>
+            <a href="/unifilar/" class="nav-link" data-i18n="nav_unifilar">Generador Unifilar</a>
             <a href="/blog.html" class="nav-link" data-i18n="nav_blog">Blog</a>
         </div>
     </nav>
@@ -740,7 +740,7 @@
     <div class="dashboard-container" id="dashboard-view" style="display: flex; flex-direction: column; align-items: center; padding: 40px 20px;">
         <div class="hero-section" style="text-align: center; margin-bottom: 40px;">
             <h1 class="hero-title">PanelSafe Portal</h1>
-            <p class="hero-subtitle">Inteligencia Artificial y Cumplimiento Normativo REBT para Cuadros Eléctricos</p>
+            <p class="hero-subtitle" data-i18n="hero_subtitle">Inteligencia Artificial y Cumplimiento Normativo REBT para Cuadros Eléctricos</p>
         </div>
 
         <div class="dashboard-grid">
@@ -749,9 +749,9 @@
                 <div class="card-icon-wrapper">
                     <i data-lucide="scan-eye"></i>
                 </div>
-                <h2 class="card-title">Analizador de Cuadros (IA)</h2>
-                <p class="card-desc">Sube una foto del cuadro eléctrico. La Inteligencia Artificial detectará, clasificará y extraerá automáticamente los interruptores magnetotérmicos (PIAs) y diferenciales.</p>
-                <div class="card-cta">Iniciar Analizador &rarr;</div>
+                <h2 class="card-title" data-i18n="card_analyzer_title">Analizador de Cuadros (IA)</h2>
+                <p class="card-desc" data-i18n="card_analyzer_desc">Sube una foto del cuadro eléctrico. La Inteligencia Artificial detectará, clasificará y extraerá automáticamente los interruptores magnetotérmicos (PIAs) y diferenciales.</p>
+                <div class="card-cta" data-i18n="card_analyzer_cta">Iniciar Analizador &rarr;</div>
             </a>
 
             <!-- Card 2: Unifilar Generator -->
@@ -759,20 +759,20 @@
                 <div class="card-icon-wrapper accent-blue">
                     <i data-lucide="layout-template"></i>
                 </div>
-                <h2 class="card-title">Generador Unifilar (CAD)</h2>
-                <p class="card-desc">Genera esquemas unifilares profesionales que cumplen la normativa de Industria. Modifica valores en tiempo real y descarga en PDF vectorial y PNG.</p>
-                <div class="card-cta cta-blue">Abrir Editor Unifilar &rarr;</div>
+                <h2 class="card-title" data-i18n="card_unifilar_title">Generador Unifilar (CAD)</h2>
+                <p class="card-desc" data-i18n="card_unifilar_desc">Genera esquemas unifilares profesionales que cumplen la normativa de Industria. Modifica valores en tiempo real y descarga en PDF vectorial y PNG.</p>
+                <div class="card-cta cta-blue" data-i18n="card_unifilar_cta">Abrir Editor Unifilar &rarr;</div>
             </a>
 
             <!-- Card 3: Compliance Blog (intentionally styled as content, not a tool) -->
             <a href="/blog.html" class="dashboard-card blog-card">
-                <div class="blog-eyebrow">Artículos</div>
+                <div class="blog-eyebrow" data-i18n="blog_eyebrow">Artículos</div>
                 <div class="card-icon-wrapper">
                     <i data-lucide="book-open"></i>
                 </div>
-                <h2 class="card-title">Blog de Normativa REBT</h2>
-                <p class="card-desc">Consulta artículos técnicos e instrucciones sobre el Reglamento Electrotécnico de Baja Tensión (REBT) y cumplimiento de la ITC-BT-25.</p>
-                <div class="card-cta">Ver Artículos</div>
+                <h2 class="card-title" data-i18n="card_blog_title">Blog de Normativa REBT</h2>
+                <p class="card-desc" data-i18n="card_blog_desc">Consulta artículos técnicos e instrucciones sobre el Reglamento Electrotécnico de Baja Tensión (REBT) y cumplimiento de la ITC-BT-25.</p>
+                <div class="card-cta" data-i18n="card_blog_cta">Ver Artículos</div>
             </a>
 
             <!-- Card 4: Consumer Safety Audit -->
@@ -789,15 +789,15 @@
         <div class="compliance-checklist">
             <div class="compliance-item">
                 <i data-lucide="badge-check"></i>
-                <span>Conforme REBT ITC-BT-25</span>
+                <span data-i18n="badge_rebt">Conforme REBT ITC-BT-25</span>
             </div>
             <div class="compliance-item">
                 <i data-lucide="badge-check"></i>
-                <span>Librería de Símbolos UNE-EN 60617</span>
+                <span data-i18n="badge_symbols">Librería de Símbolos UNE-EN 60617</span>
             </div>
             <div class="compliance-item">
                 <i data-lucide="badge-check"></i>
-                <span>Exportación Directa PDF/PNG</span>
+                <span data-i18n="badge_export">Exportación Directa PDF/PNG</span>
             </div>
         </div>
     </div>
@@ -1106,8 +1106,8 @@
                         <span id="fileName" class="text-muted" style="display: none; margin-bottom: 1rem; font-size: 14px;">No file chosen</span>
 
                         <div id="preview-actions" style="display: none; gap: 10px; margin-bottom: 1rem; width: 100%;">
-                            <button type="button" class="btn btn-outline" id="retake-btn" style="flex: 1;">🔄 Retake</button>
-                            <button type="button" class="btn btn-primary" id="confirm-btn" style="flex: 1;">✅ Use This Photo</button>
+                            <button type="button" class="btn btn-outline" id="retake-btn" style="flex: 1;" data-i18n="btn_retake">🔄 Retake</button>
+                            <button type="button" class="btn btn-primary" id="confirm-btn" style="flex: 1;" data-i18n="btn_use_photo">✅ Use This Photo</button>
                         </div>
 
                         <div class="consent-container" style="text-align: left; margin: 1.5rem 0; font-size: 14px; line-height: 1.5;">
@@ -1195,6 +1195,22 @@
                 nav_brand: "⚡ PanelSafe",
                 nav_home: "Home",
                 nav_blog: "Blog",
+                nav_analysis: "AI Analyzer",
+                nav_unifilar: "Diagram Generator",
+                hero_subtitle: "Artificial Intelligence and REBT Compliance for Electrical Panels",
+                card_analyzer_title: "Panel Analyzer (AI)",
+                card_analyzer_desc: "Upload a photo of the electrical panel. The AI will automatically detect, classify and extract the circuit breakers (MCBs) and residual-current devices (RCDs).",
+                card_analyzer_cta: "Start Analyzer &rarr;",
+                card_unifilar_title: "Single-Line Diagram Generator (CAD)",
+                card_unifilar_desc: "Generate professional single-line diagrams that comply with Spain's Industria regulations. Edit values in real time and download as vector PDF and PNG.",
+                card_unifilar_cta: "Open Diagram Editor &rarr;",
+                blog_eyebrow: "Articles",
+                card_blog_title: "REBT Regulations Blog",
+                card_blog_desc: "Read technical articles and guidance on Spain's Low Voltage Electrotechnical Regulation (REBT) and ITC-BT-25 compliance.",
+                card_blog_cta: "Read Articles",
+                badge_rebt: "REBT ITC-BT-25 Compliant",
+                badge_symbols: "UNE-EN 60617 Symbol Library",
+                badge_export: "Direct PDF/PNG Export",
                 title: "Inference Portal",
                 phase: "Safety Assessment Portal",
                 card_audit_title: "Evaluate My Panel — 100% Free",
@@ -1211,6 +1227,8 @@
                 use_camera: "📸 Use Camera",
                 upload_file: "📁 Upload File",
                 no_file: "No file chosen",
+                btn_retake: "🔄 Retake",
+                btn_use_photo: "✅ Use This Photo",
                 select_country: "Select Country:",
                 select_country_option: "Select a country",
                 upload_btn: "Upload",
@@ -1255,6 +1273,22 @@
                 nav_brand: "⚡ PanelSafe",
                 nav_home: "Inicio",
                 nav_blog: "Blog",
+                nav_analysis: "Analizador IA",
+                nav_unifilar: "Generador Unifilar",
+                hero_subtitle: "Inteligencia Artificial y Cumplimiento Normativo REBT para Cuadros Eléctricos",
+                card_analyzer_title: "Analizador de Cuadros (IA)",
+                card_analyzer_desc: "Sube una foto del cuadro eléctrico. La Inteligencia Artificial detectará, clasificará y extraerá automáticamente los interruptores magnetotérmicos (PIAs) y diferenciales.",
+                card_analyzer_cta: "Iniciar Analizador &rarr;",
+                card_unifilar_title: "Generador Unifilar (CAD)",
+                card_unifilar_desc: "Genera esquemas unifilares profesionales que cumplen la normativa de Industria. Modifica valores en tiempo real y descarga en PDF vectorial y PNG.",
+                card_unifilar_cta: "Abrir Editor Unifilar &rarr;",
+                blog_eyebrow: "Artículos",
+                card_blog_title: "Blog de Normativa REBT",
+                card_blog_desc: "Consulta artículos técnicos e instrucciones sobre el Reglamento Electrotécnico de Baja Tensión (REBT) y cumplimiento de la ITC-BT-25.",
+                card_blog_cta: "Ver Artículos",
+                badge_rebt: "Conforme REBT ITC-BT-25",
+                badge_symbols: "Librería de Símbolos UNE-EN 60617",
+                badge_export: "Exportación Directa PDF/PNG",
                 title: "Portal de Inferencia",
                 phase: "Portal de Evaluación de Seguridad",
                 card_audit_title: "Evaluar mi Cuadro — 100% Gratis",
@@ -1271,6 +1305,8 @@
                 use_camera: "📸 Usar Cámara",
                 upload_file: "📁 Subir Archivo",
                 no_file: "Ningún archivo elegido",
+                btn_retake: "🔄 Repetir",
+                btn_use_photo: "✅ Usar esta foto",
                 select_country: "Seleccionar País:",
                 select_country_option: "Seleccione un país",
                 upload_btn: "Subir",
@@ -1315,6 +1351,22 @@
                 nav_brand: "⚡ PanelSafe",
                 nav_home: "Accueil",
                 nav_blog: "Blog",
+                nav_analysis: "Analyseur IA",
+                nav_unifilar: "Générateur de schéma",
+                hero_subtitle: "Intelligence artificielle et conformité REBT pour tableaux électriques",
+                card_analyzer_title: "Analyseur de tableaux (IA)",
+                card_analyzer_desc: "Importez une photo du tableau électrique. L'intelligence artificielle détectera, classera et extraira automatiquement les disjoncteurs magnétothermiques et les interrupteurs différentiels.",
+                card_analyzer_cta: "Lancer l'analyseur &rarr;",
+                card_unifilar_title: "Générateur de schéma unifilaire (CAO)",
+                card_unifilar_desc: "Générez des schémas unifilaires professionnels conformes à la réglementation espagnole (Industria). Modifiez les valeurs en temps réel et téléchargez-les en PDF vectoriel et PNG.",
+                card_unifilar_cta: "Ouvrir l'éditeur de schéma &rarr;",
+                blog_eyebrow: "Articles",
+                card_blog_title: "Blog sur la réglementation REBT",
+                card_blog_desc: "Consultez des articles techniques et des guides sur le Règlement électrotechnique basse tension espagnol (REBT) et la conformité à l'ITC-BT-25.",
+                card_blog_cta: "Voir les articles",
+                badge_rebt: "Conforme REBT ITC-BT-25",
+                badge_symbols: "Bibliothèque de symboles UNE-EN 60617",
+                badge_export: "Export direct PDF/PNG",
                 title: "Portail d'inférence",
                 phase: "Portail d'Évaluation de Sécurité",
                 card_audit_title: "Évaluer mon Tableau — 100% Gratuit",
@@ -1331,6 +1383,8 @@
                 use_camera: "📸 Utiliser l'appareil photo",
                 upload_file: "📁 Téléverser un fichier",
                 no_file: "Aucun fichier choisi",
+                btn_retake: "🔄 Reprendre",
+                btn_use_photo: "✅ Utiliser cette photo",
                 select_country: "Sélectionnez le pays :",
                 select_country_option: "Sélectionnez un pays",
                 upload_btn: "Téléverser",
@@ -1396,7 +1450,7 @@
             });
 
             // Re-render JS dynamic text depending on current state
-            if (fileNameDisplay.textContent === translations['en'].no_file || fileNameDisplay.textContent === translations['es'].no_file) {
+            if (['en', 'es', 'fr'].some(l => fileNameDisplay.textContent === translations[l].no_file)) {
                 fileNameDisplay.textContent = translations[lang].no_file;
             }
 
