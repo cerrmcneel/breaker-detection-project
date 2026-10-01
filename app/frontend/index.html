@@ -295,6 +295,31 @@
             transition: all 0.2s;
         }
 
+        .nav-links { align-items: center; }
+
+        .nav-lang {
+            padding: 6px 8px;
+            border-radius: 8px;
+            border: 1px solid rgba(145, 55, 175, 0.3);
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .nav-lang option { background: #141219; color: var(--text); }
+
+        @media (max-width: 480px) {
+            .navbar { padding: 0.75rem 0.75rem; }
+            .nav-links { gap: 2px; }
+            .nav-link { padding: 6px 6px; font-size: 0.8rem; }
+            .nav-lang { padding: 4px 4px; font-size: 12px; }
+            /* The page heading right below already says "PanelSafe Portal", so the
+               bar keeps only the bolt and makes room for the language selector. */
+            .nav-brand-text { display: none; }
+        }
+
         .nav-link:hover,
         .nav-link.active {
             color: var(--secondary);
@@ -733,6 +758,11 @@
             <a href="/analysis.html" class="nav-link" data-i18n="nav_analysis">Analizador IA</a>
             <a href="/unifilar/" class="nav-link" data-i18n="nav_unifilar">Generador Unifilar</a>
             <a href="/blog.html" class="nav-link" data-i18n="nav_blog">Blog</a>
+            <select id="nav-lang" class="nav-lang" aria-label="Language / Idioma / Langue" onchange="setLanguage(this.value)">
+                <option value="en">EN</option>
+                <option value="es">ES</option>
+                <option value="fr">FR</option>
+            </select>
         </div>
     </nav>
 
@@ -1192,7 +1222,7 @@
             en: {
                 photo_by: "Photo by",
                 on_unsplash: "on Unsplash",
-                nav_brand: "⚡ PanelSafe",
+                nav_brand: '⚡ <span class="nav-brand-text">PanelSafe</span>',
                 nav_home: "Home",
                 nav_blog: "Blog",
                 nav_analysis: "AI Analyzer",
@@ -1270,7 +1300,7 @@
             es: {
                 photo_by: "Foto de",
                 on_unsplash: "en Unsplash",
-                nav_brand: "⚡ PanelSafe",
+                nav_brand: '⚡ <span class="nav-brand-text">PanelSafe</span>',
                 nav_home: "Inicio",
                 nav_blog: "Blog",
                 nav_analysis: "Analizador IA",
@@ -1348,7 +1378,7 @@
             fr: {
                 photo_by: "Photo de",
                 on_unsplash: "sur Unsplash",
-                nav_brand: "⚡ PanelSafe",
+                nav_brand: '⚡ <span class="nav-brand-text">PanelSafe</span>',
                 nav_home: "Accueil",
                 nav_blog: "Blog",
                 nav_analysis: "Analyseur IA",
@@ -1436,6 +1466,8 @@
             // Update UI buttons
             document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`btn-${lang}`).classList.add('active');
+            const navLang = document.getElementById('nav-lang');
+            if (navLang) navLang.value = lang;
 
             // Update static translations
             document.querySelectorAll('[data-i18n]').forEach(element => {
