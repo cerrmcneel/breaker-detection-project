@@ -6,7 +6,13 @@ pytest
 # blocked every training run. Upgrading this pin means running
 # `mlflow db upgrade sqlite:///mlflow.db` (after a backup) in the same change.
 mlflow==3.16.0
-ultralytics
+# Pinned 2026-10-05 to the version the production worker (.venv) runs and the
+# tests were written against. Unpinned, CI pulled 8.4.173, which replaced the
+# per-format `half`/`int8` export arguments with a single `quantize`, so
+# src/model/export.py dropped them and 3 tests in test_export.py failed on main
+# from 2026-10-01. Upgrading this pin means adapting export.py to `quantize`
+# first, and checking that the worker venv is upgraded in the same change.
+ultralytics==8.4.18
 # DELIBERATELY UNUSED -- do not wire back into src/model/pipeline.py.
 # SAHI was added to remediate poor real-world scoring before the actual root
 # cause was found (a classes.txt/data.yaml ordering mismatch that permuted all
