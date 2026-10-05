@@ -178,6 +178,27 @@
             padding: 1.5rem;
         }
 
+        .form-error-banner {
+            display: none;
+            background: rgba(255, 74, 74, 0.12);
+            border: 1px solid rgba(255, 74, 74, 0.4);
+            color: #ff9494;
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 0.88rem;
+            line-height: 1.45;
+            margin-bottom: 1.25rem;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-error-banner svg {
+            color: var(--danger);
+            flex-shrink: 0;
+            width: 20px;
+            height: 20px;
+        }
+
         .input-group {
             display: flex;
             flex-direction: column;
@@ -706,6 +727,12 @@
 
         <!-- Upload Form -->
         <div id="form-container" class="form-card">
+            <!-- Form Error Banner for 400/413 (Fix 1) -->
+            <div id="form-error-banner" class="form-error-banner">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="16.01"/></svg>
+                <div id="form-error-text"></div>
+            </div>
+
             <div class="input-group">
                 <label class="input-label">
                     <i data-lucide="camera" style="width: 18px; height: 18px;"></i>
@@ -810,7 +837,7 @@
                     <!-- Injected server feedback HTML -->
                 </div>
 
-                <div class="tracking-box">
+                <div class="tracking-box" id="tracking-box">
                     <span data-i18n="tracking_label">ID de seguimiento:</span>
                     <span id="tracking-id-text" class="tracking-code">--</span>
                 </div>
@@ -916,7 +943,10 @@
                 degraded_notice: "<strong>Servicio degradado:</strong> El análisis no pudo completarse debido a una incidencia temporal en el servicio de inferencia. No se puede proporcionar una puntuación en este momento.",
                 duplicate_notice: "<strong>Foto duplicada:</strong> Esta foto ya ha sido analizada anteriormente en PanelSafe.",
                 no_score_label: "Sin puntuación",
+                err_invalid_image: "Este archivo no es una foto que podamos leer — elige otra.",
+                err_file_too_large: "Esta foto es demasiado grande — prueba con una más pequeña o una captura de pantalla.",
                 wa_greeting: "Hola ElectroMarjal, he analizado mi cuadro con la herramienta PanelSafe.",
+                wa_duplicate_greeting: "Hola ElectroMarjal, he probado a analizar mi cuadro con la herramienta PanelSafe, pero esta foto ya había sido analizada anteriormente.",
                 wa_result_label: "Resultado",
                 wa_tracking_label: "Código de seguimiento",
                 wa_postcode_label: "Código Postal",
@@ -958,7 +988,10 @@
                 degraded_notice: "<strong>Degraded Service:</strong> The analysis could not be completed due to a temporary inference service interruption. No score can be provided at this time.",
                 duplicate_notice: "<strong>Duplicate Photo:</strong> This photo has already been analyzed previously on PanelSafe.",
                 no_score_label: "No score",
+                err_invalid_image: "This file isn't a photo we can read — choose another one.",
+                err_file_too_large: "This photo is too large — try a smaller one or a screenshot.",
                 wa_greeting: "Hello ElectroMarjal, I checked my electrical panel with the PanelSafe tool.",
+                wa_duplicate_greeting: "Hello ElectroMarjal, I tried to check my electrical panel with the PanelSafe tool, but this photo was already analyzed earlier.",
                 wa_result_label: "Result",
                 wa_tracking_label: "Tracking ID",
                 wa_postcode_label: "Postcode",
@@ -1000,7 +1033,10 @@
                 degraded_notice: "<strong>Service dégradé :</strong> L'analyse n'a pas pu être effectuée en raison d'une interruption temporaire du service d'inférence. Aucun score n'est disponible.",
                 duplicate_notice: "<strong>Photo déjà analysée :</strong> Cette photo a déjà été traitée sur PanelSafe.",
                 no_score_label: "Sans score",
+                err_invalid_image: "Ce fichier n'est pas une photo lisible — choisissez-en une autre.",
+                err_file_too_large: "Cette photo est trop volumineuse — essayez avec une plus petite ou une capture d'écran.",
                 wa_greeting: "Bonjour ElectroMarjal, j'ai vérifié mon tableau électrique avec l'outil PanelSafe.",
+                wa_duplicate_greeting: "Bonjour ElectroMarjal, j'ai essayé de vérifier mon tableau électrique avec l'outil PanelSafe, mais cette photo avait déjà été analysée précédemment.",
                 wa_result_label: "Résultat",
                 wa_tracking_label: "Identifiant",
                 wa_postcode_label: "Code Postal",
@@ -1061,6 +1097,30 @@
             updateContactLinks();
         }
 
+        let currentFormErrorKey = null;
+
+        function showFormError(errorKey) {
+            currentFormErrorKey = errorKey;
+            const t = translations[currentLang] || translations.es;
+            const banner = document.getElementById('form-error-banner');
+            const bannerText = document.getElementById('form-error-text');
+            bannerText.textContent = t[errorKey] || errorKey;
+            banner.style.display = 'flex';
+
+            // Reopen photo picker: clear selected file and preview, show picker
+            selectedFile = null;
+            document.getElementById('file-input').value = '';
+            document.getElementById('preview-box').style.display = 'none';
+            document.getElementById('photo-picker').style.display = 'block';
+            updateSubmitButtonState();
+        }
+
+        function hideFormError() {
+            currentFormErrorKey = null;
+            const banner = document.getElementById('form-error-banner');
+            if (banner) banner.style.display = 'none';
+        }
+
         function setLanguage(lang) {
             if (!translations[lang]) lang = 'es';
             currentLang = lang;
@@ -1075,6 +1135,13 @@
                 }
             });
 
+            if (currentFormErrorKey) {
+                const bannerText = document.getElementById('form-error-text');
+                if (bannerText && translations[lang][currentFormErrorKey]) {
+                    bannerText.textContent = translations[lang][currentFormErrorKey];
+                }
+            }
+
             localStorage.setItem('breakerLang', lang);
             updateContactLinks();
         }
@@ -1086,6 +1153,8 @@
         function handleFileSelected(event) {
             const file = event.target.files && event.target.files[0];
             if (!file) return;
+
+            hideFormError();
 
             selectedFile = file;
             const previewBox = document.getElementById('preview-box');
@@ -1155,6 +1224,16 @@
             updateContactLinks();
         }
 
+        function isRealTrackingId(id) {
+            if (!id || typeof id !== 'string') return false;
+            const trimmed = id.trim();
+            if (!trimmed) return false;
+            if (trimmed === 'ALREADY-UPLOADED' || trimmed === 'ERROR-OFFLINE' || trimmed === 'N/A' || trimmed === '--') {
+                return false;
+            }
+            return true;
+        }
+
         function updateContactLinks() {
             if (!configData || !currentResult) return;
             const t = translations[currentLang] || translations.es;
@@ -1164,20 +1243,30 @@
             const check = validatePostcode(postcodeRaw);
             const validPostcode = check.valid ? check.value : '';
 
-            // Score string
-            let scoreStr = t.no_score_label;
-            if (currentResult.score !== null && currentResult.score !== undefined) {
-                scoreStr = `${currentResult.score}/100`;
-            }
-
-            const trackingId = currentResult.tracking_id || 'N/A';
+            const isDuplicate = Boolean(currentResult.duplicate);
+            const hasRealId = isRealTrackingId(currentResult.tracking_id);
+            const trackingId = hasRealId ? currentResult.tracking_id.trim() : '';
 
             // Build plain text message
-            let lines = [
-                t.wa_greeting,
-                `${t.wa_result_label}: ${scoreStr}`,
-                `${t.wa_tracking_label}: ${trackingId}`
-            ];
+            let lines = [];
+
+            if (isDuplicate) {
+                // For a duplicate, message says photo was already analysed earlier, without a score line
+                lines.push(t.wa_duplicate_greeting);
+            } else {
+                lines.push(t.wa_greeting);
+
+                let scoreStr = t.no_score_label;
+                if (currentResult.score !== null && currentResult.score !== undefined) {
+                    scoreStr = `${currentResult.score}/100`;
+                }
+                lines.push(`${t.wa_result_label}: ${scoreStr}`);
+            }
+
+            // Omit tracking-ID line entirely when there is no real ID
+            if (hasRealId) {
+                lines.push(`${t.wa_tracking_label}: ${trackingId}`);
+            }
 
             if (validPostcode) {
                 lines.push(`${t.wa_postcode_label}: ${validPostcode}`);
@@ -1195,12 +1284,17 @@
             // 2. Email link (if configured)
             if (configData.channels && configData.channels.email) {
                 const emailBtn = document.getElementById('btn-email');
-                emailBtn.href = `mailto:${configData.channels.email}?subject=${encodeURIComponent('Consulta PanelSafe - ' + trackingId)}&body=${encodedMessage}`;
+                const emailSubject = hasRealId
+                    ? `Consulta PanelSafe - ${trackingId}`
+                    : 'Consulta PanelSafe';
+                emailBtn.href = `mailto:${configData.channels.email}?subject=${encodeURIComponent(emailSubject)}&body=${encodedMessage}`;
             }
         }
 
         async function submitUpload() {
             if (!selectedFile) return;
+
+            hideFormError();
 
             const submitBtn = document.getElementById('submit-btn');
             const spinner = document.getElementById('upload-spinner');
@@ -1218,6 +1312,19 @@
                     body: formData
                 });
 
+                if (response.status === 400 || response.status === 413) {
+                    try {
+                        const errData = await response.json();
+                        if (errData && errData.detail) {
+                            console.warn(`Server rejected upload (${response.status}):`, errData.detail);
+                        }
+                    } catch (_) {}
+
+                    const errorKey = (response.status === 400) ? 'err_invalid_image' : 'err_file_too_large';
+                    showFormError(errorKey);
+                    return;
+                }
+
                 if (!response.ok) {
                     throw new Error(`HTTP error ${response.status}`);
                 }
@@ -1228,8 +1335,7 @@
                 console.error('Upload failed:', err);
                 renderResult({
                     status: 'degraded',
-                    inference_ok: false,
-                    tracking_id: 'ERROR-OFFLINE'
+                    inference_ok: false
                 });
             } finally {
                 spinner.style.display = 'none';
@@ -1247,9 +1353,16 @@
             const scoreNumber = document.getElementById('score-number');
             const scoreCard = document.getElementById('score-card');
             const feedbackDisplay = document.getElementById('feedback-display');
+            const trackingBox = document.getElementById('tracking-box');
             const trackingIdText = document.getElementById('tracking-id-text');
 
-            trackingIdText.textContent = data.tracking_id || 'ALREADY-UPLOADED';
+            if (isRealTrackingId(data.tracking_id)) {
+                trackingIdText.textContent = data.tracking_id;
+                trackingBox.style.display = 'flex';
+            } else {
+                trackingIdText.textContent = '';
+                trackingBox.style.display = 'none';
+            }
 
             if (data.duplicate) {
                 // Duplicate case
@@ -1273,6 +1386,7 @@
         }
 
         function resetForm() {
+            hideFormError();
             selectedFile = null;
             currentResult = null;
             document.getElementById('file-input').value = '';
