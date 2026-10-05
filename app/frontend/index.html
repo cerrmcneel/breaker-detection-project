@@ -446,17 +446,199 @@
         /* Only used for the upload result, whose content is styled for the dark theme
            (white heading, muted filename, pale red/green recommendation text). A light
            mint background here made all of that nearly unreadable. */
-        .status-success {
-            background: rgba(115, 200, 60, 0.08);
-            border: 1px solid rgba(115, 200, 60, 0.35);
-            color: var(--text);
+        /* The result view carries its own colour (score card, recommendation),
+           so its container is neutral instead of a green "success" frame. */
+        .status-result {
+            background: none;
+            border: 0;
+            padding: 0;
             display: block !important;
         }
 
-        .status-error {
-            background: #FEF2F2;
-            color: #991B1B;
+        .status-error,
+        .status-notice,
+        .status-degraded {
             display: block !important;
+            border: 1px solid;
+            text-align: left;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .status-error {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.35);
+            color: #fca5a5;
+        }
+
+        .status-notice {
+            background: rgba(96, 165, 250, 0.1);
+            border-color: rgba(96, 165, 250, 0.35);
+            color: #bfdbfe;
+        }
+
+        .status-degraded {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: rgba(245, 158, 11, 0.35);
+            color: #fcd34d;
+        }
+
+        .status-degraded .status-body {
+            margin: 8px 0 0;
+            font-size: 0.9rem;
+            font-weight: 400;
+        }
+
+        .result-title {
+            margin: 0 0 14px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text);
+            text-align: center;
+        }
+
+        .score-card {
+            margin-bottom: 15px;
+            padding: 20px;
+            border: 1px solid;
+            border-radius: 16px;
+            text-align: center;
+        }
+
+        .score-card--attention {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.35);
+            color: #fca5a5;
+        }
+
+        .score-card--good {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.35);
+            color: #a7f3d0;
+        }
+
+        .score-card__label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .score-card__value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            color: var(--text);
+        }
+
+        .score-card__value small {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .score-card__band {
+            margin-top: 4px;
+            font-weight: 700;
+        }
+
+        .report-card {
+            margin-bottom: 15px;
+            padding: 20px;
+            background: #141219;
+            border: 1px solid rgba(145, 55, 175, 0.3);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            text-align: left;
+            font-weight: 400;
+        }
+
+        .finding-source {
+            display: block;
+            width: fit-content;
+            margin-bottom: 4px;
+            padding: 1px 8px;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .finding-source--form {
+            background: rgba(96, 165, 250, 0.15);
+            color: #bfdbfe;
+        }
+
+        .finding-source--photo {
+            background: rgba(145, 55, 175, 0.2);
+            color: #e9d5ff;
+        }
+
+        .report-note {
+            margin: 0 0 12px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .rec-box {
+            margin-bottom: 15px;
+            padding: 16px;
+            border: 1px solid;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            text-align: left;
+        }
+
+        .rec-box--attention {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+
+        .rec-box--good {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.3);
+            color: #a7f3d0;
+        }
+
+        .tracking-box {
+            margin-top: 15px;
+            padding: 15px;
+            background: #141219;
+            border: 1px dashed rgba(145, 55, 175, 0.2);
+            border-radius: 12px;
+        }
+
+        .tracking-box__label {
+            margin-bottom: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .tracking-box__row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .tracking-id {
+            font-family: monospace;
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .btn-copy {
+            width: auto;
+            height: auto;
+            padding: 4px 10px;
+            font-size: 12px;
         }
 
         .status-info {
@@ -1195,6 +1377,9 @@
         let selectedFile = null;
         let currentLang = 'en';
         let lastCount = 0;
+        // What the status area is currently showing, so it can be redrawn in
+        // another language without asking the server again.
+        let lastOutcome = null;
 
         // Add missing translations for new preview flow
         const previewTranslations = {
@@ -1268,9 +1453,24 @@
                 status_no_file: "Please capture a photo or select a file first.",
                 use_viewfinder: "Use Camera Viewfinder",
                 status_viewfinder_missing: "No photo arrived from the viewfinder. Please take it again.",
-                status_err_upload: "Upload failed. Check console/network.",
-                status_success: "Success! Saved as",
-                status_error: "Error:",
+                err_duplicate: "We already have this exact photo, so it wasn't uploaded again. To get a new assessment, take a fresh photo of your panel.",
+                err_invalid_image: "We couldn't read that file as a photo. Please choose a JPG or PNG image and try again.",
+                err_too_large: "That photo is too large (the limit is 10 MB). Please choose a smaller one or lower your camera's resolution.",
+                err_server: "Something went wrong on our side, not yours. Please try again in a few minutes.",
+                err_network: "We couldn't reach the server. Check your internet connection and try again.",
+                err_unexpected: "We got an unexpected reply from the server. Please try again.",
+                degraded_title: "⚠️ Photo received — analysis unavailable",
+                degraded_body: "Your photo was uploaded successfully, but our analysis service is temporarily unreachable, so we could not assess this panel. <strong>No safety score was produced.</strong> Please try again shortly — your tracking ID below stays valid.",
+                result_title: "Your panel assessment",
+                score_label: "Safety score",
+                band_attention: "⚠️ Needs attention",
+                band_good: "✅ Looks good",
+                rec_attention: "⚠️ <strong>Recommendation:</strong> Contacting a licensed electrician is highly recommended to inspect or upgrade your panel.",
+                rec_good: "✅ <strong>Status:</strong> Your panel looks healthy. Keep doing monthly RCD tests!",
+                tracking_label: "Tracking ID (for reference)",
+                copy_btn: "Copy",
+                source_form: "You reported",
+                source_photo: "Detected in photo",
                 advice_perfect: "Perfect! Hold still and capture.",
                 advice_dark: "Too dark! Find better lighting.",
                 advice_bright: "Too bright! Avoid glare.",
@@ -1346,9 +1546,24 @@
                 status_no_file: "Por favor, capture una foto o seleccione un archivo primero.",
                 use_viewfinder: "Usar Visor de Cámara",
                 status_viewfinder_missing: "No llegó ninguna foto del visor. Vuelve a tomarla.",
-                status_err_upload: "Fallo en la subida. Revise la consola/red.",
-                status_success: "¡Éxito! Guardado como",
-                status_error: "Error:",
+                err_duplicate: "Ya tenemos exactamente esta foto, así que no se ha subido de nuevo. Para obtener una nueva evaluación, haz una foto nueva de tu cuadro.",
+                err_invalid_image: "No hemos podido leer ese archivo como una foto. Elige una imagen JPG o PNG e inténtalo de nuevo.",
+                err_too_large: "Esa foto es demasiado grande (el límite es de 10 MB). Elige una más pequeña o reduce la resolución de la cámara.",
+                err_server: "Algo ha fallado por nuestra parte, no por la tuya. Inténtalo de nuevo en unos minutos.",
+                err_network: "No hemos podido conectar con el servidor. Comprueba tu conexión a internet e inténtalo de nuevo.",
+                err_unexpected: "Hemos recibido una respuesta inesperada del servidor. Inténtalo de nuevo.",
+                degraded_title: "⚠️ Foto recibida — análisis no disponible",
+                degraded_body: "Tu foto se subió correctamente, pero nuestro servicio de análisis no está disponible temporalmente, así que no hemos podido evaluar este cuadro. <strong>No se ha generado ninguna puntuación de seguridad.</strong> Inténtalo de nuevo en unos minutos — tu ID de seguimiento sigue siendo válido.",
+                result_title: "Evaluación de tu cuadro",
+                score_label: "Puntuación de seguridad",
+                band_attention: "⚠️ Requiere atención",
+                band_good: "✅ Todo en orden",
+                rec_attention: "⚠️ <strong>Recomendación:</strong> Se recomienda encarecidamente contactar a un electricista autorizado para inspeccionar o actualizar su cuadro.",
+                rec_good: "✅ <strong>Estado:</strong> Su cuadro parece saludable. ¡Siga realizando pruebas mensuales de RCD!",
+                tracking_label: "ID de seguimiento (de referencia)",
+                copy_btn: "Copiar",
+                source_form: "Lo que indicaste",
+                source_photo: "Detectado en la foto",
                 advice_perfect: "¡Perfecto! Quédese quieto y capture.",
                 advice_dark: "¡Muy oscuro! Busque mejor iluminación.",
                 advice_bright: "¡Muy brillante! Evite el resplandor.",
@@ -1424,9 +1639,25 @@
                 status_no_file: "Veuillez d'abord prendre une photo ou sélectionner un fichier.",
                 use_viewfinder: "Utiliser le viseur",
                 status_viewfinder_missing: "Aucune photo n'est arrivée du viseur. Veuillez la reprendre.",
-                status_err_upload: "Échec du téléversement. Vérifiez la console/le réseau.",
-                status_success: "Succès ! Enregistré sous",
-                status_error: "Erreur :",
+                err_duplicate: "Nous avons déjà exactement cette photo, elle n'a donc pas été envoyée à nouveau. Pour obtenir une nouvelle évaluation, prenez une nouvelle photo de votre tableau.",
+                err_invalid_image: "Nous n'avons pas pu lire ce fichier comme une photo. Choisissez une image JPG ou PNG et réessayez.",
+                err_too_large: "Cette photo est trop volumineuse (la limite est de 10 Mo). Choisissez-en une plus petite ou réduisez la résolution de l'appareil photo.",
+                err_server: "Un problème est survenu de notre côté, pas du vôtre. Réessayez dans quelques minutes.",
+                err_network: "Impossible de joindre le serveur. Vérifiez votre connexion Internet et réessayez.",
+                err_unexpected: "Nous avons reçu une réponse inattendue du serveur. Veuillez réessayer.",
+                degraded_title: "⚠️ Photo reçue — analyse indisponible",
+                degraded_body: "Votre photo a bien été envoyée, mais notre service d'analyse est temporairement injoignable, nous n'avons donc pas pu évaluer ce tableau. <strong>Aucun score de sécurité n'a été produit.</strong> Réessayez dans quelques instants — votre identifiant de suivi reste valide.",
+                result_title: "Évaluation de votre tableau",
+                score_label: "Score de sécurité",
+                band_attention: "⚠️ Nécessite une attention",
+                band_good: "✅ Tout semble en ordre",
+                rec_attention: "⚠️ <strong>Recommandation:</strong> Il est fortement recommandé de contacter un électricien agréé pour inspecter ou moderniser votre tableau.",
+                rec_good: "✅ <strong>Statut:</strong> Votre tableau semble sain. Continuez à faire des tests RCD mensuels !",
+                tracking_label: "Identifiant de suivi (pour référence)",
+                copy_btn: "Copier",
+                source_form: "Ce que vous avez indiqué",
+                source_photo: "Détecté sur la photo",
+                report_fallback_note: "Le détail ci-dessous n'est pas encore disponible en français ; il s'affiche en anglais.",
                 advice_perfect: "Parfait ! Ne bougez plus et capturez.",
                 advice_dark: "Trop sombre ! Trouvez un meilleur éclairage.",
                 advice_bright: "Trop lumineux ! Évitez les reflets.",
@@ -1488,6 +1719,9 @@
 
             // Update progress language suffix
             updateProgress(lastCount);
+
+            // Redraw any result/error already on screen in the new language
+            renderOutcome();
 
             // Persist language selection
             localStorage.setItem('breakerLang', lang);
@@ -1611,6 +1845,120 @@
             fileInput.value = "";
         });
 
+        // --- Status area: one place that draws every outcome of an upload ---
+
+        function el(tag, className, text) {
+            const node = document.createElement(tag);
+            if (className) node.className = className;
+            if (text !== undefined) node.textContent = text;
+            return node;
+        }
+
+        function uploadErrorKey(httpStatus) {
+            if (httpStatus === 400) return 'err_invalid_image';
+            if (httpStatus === 413) return 'err_too_large';
+            if (httpStatus >= 500) return 'err_server';
+            return 'err_unexpected';
+        }
+
+        function showOutcome(outcome) {
+            lastOutcome = outcome;
+            renderOutcome();
+        }
+
+        function renderOutcome() {
+            if (!lastOutcome) return;
+            const t = translations[currentLang];
+            statusDiv.replaceChildren();
+            statusDiv.style.display = 'block';
+            switch (lastOutcome.kind) {
+                case 'error':
+                    statusDiv.className = 'status-error';
+                    statusDiv.textContent = t[lastOutcome.key];
+                    break;
+                case 'duplicate':
+                    statusDiv.className = 'status-notice';
+                    statusDiv.textContent = t.err_duplicate;
+                    break;
+                case 'degraded':
+                    renderDegraded(lastOutcome.trackingId, t);
+                    break;
+                case 'result':
+                    renderResult(lastOutcome.result, t);
+                    break;
+            }
+        }
+
+        function buildTrackingBox(trackingId, t) {
+            const box = el('div', 'tracking-box');
+            box.appendChild(el('div', 'tracking-box__label', t.tracking_label));
+            const row = el('div', 'tracking-box__row');
+            row.appendChild(el('span', 'tracking-id', trackingId));
+            const copyBtn = el('button', 'btn btn-outline btn-copy', t.copy_btn);
+            copyBtn.type = 'button';
+            copyBtn.addEventListener('click', () => copyTrackingId(trackingId));
+            row.appendChild(copyBtn);
+            box.appendChild(row);
+            return box;
+        }
+
+        function renderDegraded(trackingId, t) {
+            statusDiv.className = 'status-degraded';
+            const body = el('p', 'status-body');
+            body.innerHTML = t.degraded_body; // our own static string, not server data
+            statusDiv.append(el('strong', null, t.degraded_title), body);
+            if (trackingId) statusDiv.appendChild(buildTrackingBox(trackingId, t));
+        }
+
+        // The server sends the findings as one HTML string holding an English and a
+        // Spanish block. Show only the block for the chosen language (French has no
+        // block yet and falls back to English).
+        function pickReport(feedbackHtml, lang, t) {
+            const tpl = document.createElement('template');
+            tpl.innerHTML = feedbackHtml;
+            const block = tpl.content.querySelector(lang === 'es' ? '.lang-es-report' : '.lang-en-report');
+            if (!block) return tpl.content;
+            // Its headline repeats the score card above it.
+            block.querySelector(':scope > strong')?.remove();
+            block.querySelector(':scope > br')?.remove();
+            // Say where each finding came from: the form answer or the photo.
+            // (A server that predates data-source simply gets no labels.)
+            block.querySelectorAll("li[data-source='form'], li[data-source='photo']").forEach(item => {
+                const fromForm = item.dataset.source === 'form';
+                item.prepend(el('span', 'finding-source finding-source--' + item.dataset.source,
+                    fromForm ? t.source_form : t.source_photo));
+            });
+            return block;
+        }
+
+        function renderResult(result, t) {
+            const needsAttention = result.score < 85 ||
+                /PELIGRO CRÍTICO|ADVERTENCIA|CRITICAL DANGER|WARNING/.test(result.feedback);
+
+            statusDiv.className = 'status-result';
+
+            const card = el('div', 'score-card ' + (needsAttention ? 'score-card--attention' : 'score-card--good'));
+            const value = el('div', 'score-card__value', String(result.score));
+            value.appendChild(el('small', null, '/100'));
+            card.append(
+                el('div', 'score-card__label', t.score_label),
+                value,
+                el('div', 'score-card__band', needsAttention ? t.band_attention : t.band_good)
+            );
+
+            const report = el('div', 'report-card');
+            if (t.report_fallback_note) report.appendChild(el('p', 'report-note', t.report_fallback_note));
+            report.appendChild(pickReport(result.feedback, currentLang, t));
+
+            const recommendation = el('div', 'rec-box ' + (needsAttention ? 'rec-box--attention' : 'rec-box--good'));
+            recommendation.innerHTML = needsAttention ? t.rec_attention : t.rec_good; // static strings
+
+            const wrap = el('div', 'result');
+            wrap.append(el('h3', 'result-title', t.result_title), card, report, recommendation);
+            if (result.tracking_id) wrap.appendChild(buildTrackingBox(result.tracking_id, t));
+            statusDiv.appendChild(wrap);
+        }
+
         form.addEventListener('submit', async function (e) {
             e.preventDefault();
 
@@ -1639,138 +1987,84 @@
             formData.append('rcd_test_result', rcdResult);
 
             submitBtn.disabled = true;
+            lastOutcome = null;
             statusDiv.textContent = translations[currentLang].status_uploading;
             statusDiv.className = "status-info";
             statusDiv.style.display = "block";
 
             try {
-                const response = await fetch('/upload/', {
-                    method: 'POST',
-                    body: formData
-                });
+                let response;
+                try {
+                    response = await fetch('/upload/', {
+                        method: 'POST',
+                        body: formData
+                    });
+                } catch (networkError) {
+                    console.error('Upload request failed:', networkError);
+                    showOutcome({ kind: 'error', key: 'err_network' });
+                    return;
+                }
 
-                if (response.ok) {
-                    const result = await response.json();
+                if (!response.ok) {
+                    console.error('Upload rejected:', response.status, await response.text());
+                    showOutcome({ kind: 'error', key: uploadErrorKey(response.status) });
+                    return;
+                }
 
-                    // The analysis backend can be down while the upload itself succeeds.
-                    // In that case the server deliberately omits score/feedback rather
-                    // than grading an empty detection list, because doing so fabricates
-                    // a verdict ("No RCD detected") for a panel nobody actually looked
-                    // at. Show an honest "not analysed" state instead of a number.
-                    if (result.inference_ok === false || result.status === "degraded") {
-                        const degradedText = {
-                            en: {
-                                title: "⚠️ Photo received — analysis unavailable",
-                                body: "Your photo was uploaded successfully, but our analysis service is temporarily unreachable, so we could not assess this panel. <strong>No safety score was produced.</strong> Please try again shortly — your tracking ID below stays valid."
-                            },
-                            es: {
-                                title: "⚠️ Foto recibida — análisis no disponible",
-                                body: "Tu foto se subió correctamente, pero nuestro servicio de análisis no está disponible temporalmente, así que no hemos podido evaluar este cuadro. <strong>No se ha generado ninguna puntuación de seguridad.</strong> Inténtalo de nuevo en unos minutos — tu ID de seguimiento sigue siendo válido."
-                            },
-                            fr: {
-                                title: "⚠️ Photo reçue — analyse indisponible",
-                                body: "Votre photo a bien été envoyée, mais notre service d'analyse est temporairement injoignable, nous n'avons donc pas pu évaluer ce tableau. <strong>Aucun score de sécurité n'a été produit.</strong> Réessayez dans quelques instants — votre identifiant de suivi reste valide."
-                            }
-                        };
-                        const d = degradedText[currentLang] || degradedText.en;
-                        statusDiv.className = "status-info";
-                        statusDiv.innerHTML = `
-                            <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.35); padding: 16px; border-radius: 12px; color: #fcd34d; font-size: 0.95rem; text-align: left;">
-                                <strong>${d.title}</strong>
-                                <p style="margin-top: 8px; font-size: 0.9rem;">${d.body}</p>
-                            </div>
-                            ${result.tracking_id ? `
-                            <div style="margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 10px;">
-                                <span style="font-size: 1.25rem; font-weight: 800; color: var(--primary); font-family: monospace;">${result.tracking_id}</span>
-                                <button type="button" class="btn btn-outline" onclick="copyTrackingId('${result.tracking_id}')" style="width: auto; padding: 4px 10px; font-size: 12px; height: auto;">Copy</button>
-                            </div>` : ""}
-                        `;
-                        if (result.tracking_id) {
-                            localStorage.setItem('breakerTrackingId', result.tracking_id);
-                        }
-                        return;
-                    }
+                let result;
+                try {
+                    result = await response.json();
+                } catch (parseError) {
+                    console.error('Upload reply was not JSON:', parseError);
+                    showOutcome({ kind: 'error', key: 'err_unexpected' });
+                    return;
+                }
 
-                    // Determine safety recommendation based on score and warnings
-                    const hasDanger = result.score < 85 ||
-                                      result.feedback.includes("PELIGRO CRÍTICO") || 
-                                      result.feedback.includes("ADVERTENCIA") || 
-                                      result.feedback.includes("CRITICAL DANGER") || 
-                                      result.feedback.includes("WARNING");
-                    
-                    let recommendationHtml = "";
-                    if (hasDanger) {
-                        const recText = {
-                            en: "⚠️ <strong>Recommendation:</strong> Contacting a licensed electrician is highly recommended to inspect or upgrade your panel.",
-                            es: "⚠️ <strong>Recomendación:</strong> Se recomienda encarecidamente contactar a un electricista autorizado para inspeccionar o actualizar su cuadro.",
-                            fr: "⚠️ <strong>Recommandation:</strong> Il est fortement recommandé de contacter un électricien agréé pour inspecter ou moderniser votre tableau."
-                        };
-                        recommendationHtml = `
-                            <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); padding: 16px; border-radius: 12px; color: #fca5a5; font-size: 0.9rem; text-align: left; margin-bottom: 15px;">
-                                ${recText[currentLang] || recText.en}
-                            </div>
-                        `;
-                    } else {
-                        const recText = {
-                            en: "✅ <strong>Status:</strong> Your panel looks healthy. Keep doing monthly RCD tests!",
-                            es: "✅ <strong>Estado:</strong> Su cuadro parece saludable. ¡Siga realizando pruebas mensuales de RCD!",
-                            fr: "✅ <strong>Statut:</strong> Votre tableau semble sain. Continuez à faire des tests RCD mensuels !"
-                        };
-                        recommendationHtml = `
-                            <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); padding: 16px; border-radius: 12px; color: #a7f3d0; font-size: 0.9rem; text-align: left; margin-bottom: 15px;">
-                                ${recText[currentLang] || recText.en}
-                            </div>
-                        `;
-                    }
+                // The server recognises a photo it already holds and answers with
+                // a success status but no score, feedback or real tracking ID.
+                if (result.duplicate) {
+                    showOutcome({ kind: 'duplicate' });
+                    return;
+                }
 
-                    // Show success with tracking ID and automated safety report
-                    statusDiv.innerHTML = `
-                        <div style="text-align: center; animation: slideIn 0.4s ease-out;">
-                            <div style="font-size: 32px; margin-bottom: 12px;">🎉</div>
-                            <strong style="font-size: 1.1rem; display: block; margin-bottom: 4px; color: var(--text);">${translations[currentLang].status_success}</strong>
-                            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px;">${result.filename}</p>
-                            
-                            <div style="background: #141219; padding: 20px; border-radius: 16px; box-shadow: var(--shadow); border: 1px solid rgba(145, 55, 175, 0.3); margin-bottom: 15px; text-align: left;">
-                                ${result.feedback}
-                            </div>
-
-                            ${recommendationHtml}
-                            
-                            <div style="background: #141219; padding: 15px; border-radius: 12px; border: 1px dashed rgba(145, 55, 175, 0.2); margin-top: 15px;">
-                                <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; font-weight: 700;">Tracking ID (For reference)</div>
-                                <div style="display: flex; justify-content: center; align-items: center; gap: 12px;">
-                                    <span style="font-size: 1.25rem; font-weight: 800; color: var(--primary); font-family: monospace;">${result.tracking_id}</span>
-                                    <button type="button" class="btn btn-outline" onclick="copyTrackingId('${result.tracking_id}')" style="width: auto; padding: 4px 10px; font-size: 12px; height: auto;">
-                                        Copy
-                                    </button>
-                                </div>
-                            </div>
-                        </div>`;
-                    statusDiv.className = "status-success";
-                    form.reset();
-                    // Reset custom UI
-                    selectedFile = null;
-                    previewContainer.style.display = 'none';
-                    previewActions.style.display = 'none';
-                    uploadOptions.style.display = 'flex';
-                    fileNameDisplay.style.display = 'none';
-
-                    // Persist tracking ID locally for easier checking later
+                // The analysis backend can be down while the upload itself succeeds.
+                // In that case the server deliberately omits score/feedback rather
+                // than grading an empty detection list, because doing so fabricates
+                // a verdict ("No RCD detected") for a panel nobody actually looked
+                // at. Show an honest "not analysed" state instead of a number.
+                if (result.inference_ok === false || result.status === "degraded") {
                     if (result.tracking_id) {
                         localStorage.setItem('breakerTrackingId', result.tracking_id);
                     }
-
-                    // Update progress counter after a successful upload
-                    fetchCount();
-                } else {
-                    const errorText = await response.text();
-                    statusDiv.textContent = `${translations[currentLang].status_error} ${errorText}`;
-                    statusDiv.className = "status-error";
+                    showOutcome({ kind: 'degraded', trackingId: result.tracking_id });
+                    return;
                 }
+
+                if (typeof result.score !== 'number' || typeof result.feedback !== 'string') {
+                    console.error('Unexpected /upload/ payload:', result);
+                    showOutcome({ kind: 'error', key: 'err_unexpected' });
+                    return;
+                }
+
+                showOutcome({ kind: 'result', result });
+                form.reset();
+                // Reset custom UI
+                selectedFile = null;
+                previewContainer.style.display = 'none';
+                previewActions.style.display = 'none';
+                uploadOptions.style.display = 'flex';
+                fileNameDisplay.style.display = 'none';
+
+                // Persist tracking ID locally for easier checking later
+                if (result.tracking_id) {
+                    localStorage.setItem('breakerTrackingId', result.tracking_id);
+                }
+
+                // Update progress counter after a successful upload
+                fetchCount();
             } catch (error) {
                 console.error('Error:', error);
-                statusDiv.textContent = translations[currentLang].status_err_upload;
-                statusDiv.className = "status-error";
+                showOutcome({ kind: 'error', key: 'err_unexpected' });
             } finally {
                 submitBtn.disabled = !consentCheckbox.checked;
             }

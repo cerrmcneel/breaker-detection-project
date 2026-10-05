@@ -705,6 +705,56 @@ def test_era_estimation_feedback_only_appears_for_spain():
     assert "Estimated Installation Era" in report_es
 
 
+# --- finding sources (2026-10-05) ----------------------------------------------------
+# A report once showed "RCD Working" (the homeowner's form answer) directly above
+# "No RCD detected" (the model's reading of the photo) with nothing saying which line
+# came from where, so it read as a contradiction. Each <li> now carries its source so
+# the page can label it.
+
+def _sources_by_language(report):
+    import re
+
+    en_part, es_part = report.split('class="lang-es-report"')
+    pattern = r"<li data-source='(\w+)'"
+    return re.findall(pattern, en_part), re.findall(pattern, es_part)
+
+
+@pytest.mark.parametrize("rcd_result", ["Responsive", "Slow", "Unresponsive", "Not Tested"])
+def test_rcd_test_finding_is_marked_as_reported_by_the_user(rcd_result):
+    from app.main import grade_panel_layout
+
+    _score, report = grade_panel_layout([], rcd_result, country="FR")
+    en_sources, es_sources = _sources_by_language(report)
+
+    assert en_sources[0] == "form"
+    assert en_sources.count("form") == 1, "only the RCD test answer comes from the form"
+    assert en_sources == es_sources, "both languages must tag the same findings"
+
+
+def test_findings_derived_from_the_photo_are_marked_as_such():
+    from app.main import grade_panel_layout
+
+    # The user says the RCD tripped; the photo shows no RCD and no MCBs.
+    _score, report = grade_panel_layout([], "Responsive", country="FR")
+    en_sources, _es_sources = _sources_by_language(report)
+
+    assert en_sources == ["form", "photo", "photo"]
+    assert "RCD Working" in report and "No RCD detected" in report
+
+
+def test_era_estimate_is_marked_as_derived_from_the_photo():
+    from app.main import grade_panel_layout
+
+    predictions = [
+        {"class": "MCB", "box": [0, 0, 1, 1], "conf": 0.9, "ocr_text": "LEGRAND DX3 C16"},
+    ]
+    _score, report = grade_panel_layout(predictions, "Not Tested", country="ES")
+    en_sources, _es_sources = _sources_by_language(report)
+
+    assert "Estimated Installation Era" in report
+    assert en_sources[-1] == "photo"
+
+
 # --- predictions audit trail wiring (Ontological-framework audit, 2026-08-16) ----------
 # src/storage/predictions_store.py exists in isolation with its own test coverage
 # (test_predictions_store.py); these confirm the gateway actually calls it, with the

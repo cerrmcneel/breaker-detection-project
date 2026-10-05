@@ -571,6 +571,11 @@ def grade_panel_layout(predictions, rcd_test_result, country="Unknown"):
         feedback_es.append("✅ <strong>Diferencial funcionando:</strong> El botón de prueba disparó el RCD al instante. ¡Excelente hábito de seguridad mensual!")
         feedback_en.append("✅ <strong>RCD Working:</strong> The test button tripped the RCD instantly. Great job maintaining your monthly safety checks!")
 
+    # The RCD test branch above reports what the homeowner told us in the form
+    # (exactly one finding per branch). Everything appended below is derived from
+    # the photo, and the page labels each line with its source.
+    form_reported = len(feedback_en)
+
     # Count components
     rcd_count = sum(1 for p in predictions if p.get("class") in ["RCD", "RCD_SI"])
     mcb_count = sum(1 for p in predictions if p.get("class") == "MCB")
@@ -621,19 +626,25 @@ def grade_panel_layout(predictions, rcd_test_result, country="Unknown"):
     # Bound score
     score = max(0, min(100, score))
     
+    def to_list_items(items):
+        return "".join(
+            f"<li data-source='{'form' if i < form_reported else 'photo'}' style='margin-bottom: 5px;'>{item}</li>"
+            for i, item in enumerate(items)
+        )
+
     # Combine lists into HTML lines based on language
     report = f"""
 <div class="lang-en-report">
   <strong>Automated Safety Score: {score}/100</strong><br>
   <ul style="margin: 8px 0; padding-left: 20px;">
-    {"".join(f"<li style='margin-bottom: 5px;'>{item}</li>" for item in feedback_en)}
+    {to_list_items(feedback_en)}
   </ul>
 </div>
 <hr style="margin: 10px 0; border: none; border-top: 1px dashed rgba(145,55,175,0.2);">
 <div class="lang-es-report">
   <strong>Puntuación de Seguridad Automática: {score}/100</strong><br>
   <ul style="margin: 8px 0; padding-left: 20px;">
-    {"".join(f"<li style='margin-bottom: 5px;'>{item}</li>" for item in feedback_es)}
+    {to_list_items(feedback_es)}
   </ul>
 </div>
 <br>
