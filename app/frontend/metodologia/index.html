@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="page_title">Metodología de Puntuación de Seguridad | PanelSafe</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/assets/favicon/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon/favicon-16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicon/favicon-180.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --primary: #9137af;
+            --primary-dark: #6c2583;
+            --primary-light: rgba(145, 55, 175, 0.15);
+            --secondary: #73c83c;
+            --secondary-dark: #56972d;
+            --secondary-light: rgba(115, 200, 60, 0.15);
+            --bg: #0b0a0d;
+            --card-bg: rgba(20, 18, 25, 0.95);
+            --text: #ffffff;
+            --text-muted: #a9a6b0;
+            --success: #73c83c;
+            --warning: #ffb800;
+            --danger: #ff4a4a;
+            --radius: 16px;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(145, 55, 175, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            background-image: radial-gradient(at 0% 0%, rgba(145, 55, 175, 0.15) 0px, transparent 50%),
+                              radial-gradient(at 100% 100%, rgba(115, 200, 60, 0.1) 0px, transparent 50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0 20px 60px 20px;
+            color: var(--text);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(11, 10, 13, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 1rem 1.5rem;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+            border-bottom: 1px solid rgba(145, 55, 175, 0.15);
+        }
+
+        .nav-brand {
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.875rem;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            color: var(--secondary);
+            background-color: var(--primary-light);
+        }
+
+        .nav-lang {
+            padding: 6px 8px;
+            border-radius: 8px;
+            border: 1px solid rgba(145, 55, 175, 0.3);
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .nav-lang option {
+            background: #141219;
+            color: var(--text);
+        }
+
+        @media (max-width: 640px) {
+            .navbar { padding: 0.75rem 0.75rem; }
+            .nav-links { gap: 4px; }
+            .nav-link { padding: 6px 6px; font-size: 0.8rem; }
+            .nav-lang { padding: 4px 4px; font-size: 12px; }
+            .nav-brand-text { display: none; }
+        }
+
+        .content-container {
+            max-width: 900px;
+            width: 100%;
+            margin-top: 100px;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .hero-section {
+            text-align: center;
+            padding: 20px 0 10px 0;
+        }
+
+        .hero-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin: 0;
+            background: linear-gradient(135deg, #ffffff 30%, #c084fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.03em;
+        }
+
+        .hero-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin: 12px auto 0 auto;
+            max-width: 650px;
+            line-height: 1.6;
+        }
+
+        .version-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(145, 55, 175, 0.15);
+            border: 1px solid rgba(145, 55, 175, 0.3);
+            border-radius: 20px;
+            padding: 6px 16px;
+            margin-top: 16px;
+            font-size: 0.85rem;
+            color: #d8b4fe;
+        }
+
+        .version-badge code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-weight: 700;
+            color: var(--secondary);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid rgba(145, 55, 175, 0.2);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .card h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-top: 0;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #ffffff;
+        }
+
+        .card h2 i {
+            color: var(--primary);
+        }
+
+        .card p, .card li {
+            font-size: 0.95rem;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+
+        .card ul {
+            padding-left: 20px;
+            margin-bottom: 0;
+        }
+
+        .card li {
+            margin-bottom: 8px;
+        }
+
+        .independence-banner {
+            background: rgba(115, 200, 60, 0.08);
+            border: 1px solid rgba(115, 200, 60, 0.3);
+            border-radius: var(--radius);
+            padding: 1.5rem 2rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .independence-banner i {
+            color: var(--secondary);
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .independence-text {
+            font-size: 0.95rem;
+            color: #f1f5f9;
+            line-height: 1.6;
+        }
+
+        .independence-text strong {
+            color: var(--secondary);
+        }
+
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(145, 55, 175, 0.2);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        thead {
+            background: rgba(145, 55, 175, 0.15);
+        }
+
+        th {
+            padding: 12px 16px;
+            font-weight: 700;
+            color: #ffffff;
+            border-bottom: 1px solid rgba(145, 55, 175, 0.25);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(145, 55, 175, 0.1);
+            color: #cbd5e1;
+            vertical-align: top;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(145, 55, 175, 0.05);
+        }
+
+        .score-pill {
+            display: inline-block;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+
+        .score-deduct-severe {
+            background: rgba(255, 74, 74, 0.2);
+            color: #ff6b6b;
+            border: 1px solid rgba(255, 74, 74, 0.3);
+        }
+
+        .score-deduct-med {
+            background: rgba(255, 184, 0, 0.2);
+            color: #ffc107;
+            border: 1px solid rgba(255, 184, 0, 0.3);
+        }
+
+        .score-neutral {
+            background: rgba(115, 200, 60, 0.15);
+            color: var(--secondary);
+            border: 1px solid rgba(115, 200, 60, 0.3);
+        }
+
+        .limitations-list {
+            list-style: none;
+            padding-left: 0 !important;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .limitations-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(145, 55, 175, 0.15);
+            border-radius: 10px;
+            padding: 12px 16px;
+        }
+
+        .limitations-item i {
+            color: var(--warning);
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        footer {
+            margin-top: 2rem;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        footer a {
+            color: var(--secondary);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="navbar">
+        <a href="/" class="nav-brand" data-i18n="nav_brand">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 2px;">
+                <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span class="nav-brand-text">PanelSafe</span>
+        </a>
+        <div class="nav-links">
+            <a href="/" class="nav-link" data-i18n="nav_home">Inicio</a>
+            <a href="/analysis.html" class="nav-link" data-i18n="nav_analysis">Analizador IA</a>
+            <a href="/unifilar/" class="nav-link" data-i18n="nav_unifilar">Generador Unifilar</a>
+            <a href="/blog.html" class="nav-link" data-i18n="nav_blog">Blog</a>
+            <a href="/metodologia/" class="nav-link active" data-i18n="nav_methodology">Metodología</a>
+            <select id="nav-lang" class="nav-lang" aria-label="Language / Idioma / Langue" onchange="setLanguage(this.value)">
+                <option value="es">ES</option>
+                <option value="en">EN</option>
+                <option value="fr">FR</option>
+            </select>
+        </div>
+    </nav>
+
+    <div class="content-container">
+        <!-- Hero Section -->
+        <div class="hero-section">
+            <h1 class="hero-title" data-i18n="hero_title">Metodología de Puntuación de Seguridad</h1>
+            <p class="hero-subtitle" data-i18n="hero_subtitle">
+                Transparencia total: cómo se calcula la puntuación a partir de una foto y por qué ningún colaborador externo puede influir en ella.
+            </p>
+            <div class="version-badge">
+                <i data-lucide="shield-check" style="width: 16px; height: 16px;"></i>
+                <code id="score-version">Versión del cálculo: ec54890f534c (2026-10-05)</code>
+            </div>
+        </div>
+
+        <!-- Section 1: What the score is -->
+        <div class="card">
+            <h2><i data-lucide="info"></i> <span data-i18n="what_is_title">¿Qué es esta puntuación?</span></h2>
+            <p data-i18n="what_is_p1">
+                La puntuación de seguridad es una <strong>estimación educativa automatizada (sobre 100 puntos)</strong> obtenida a partir del análisis visual de una única fotografía y la respuesta al botón de prueba del diferencial.
+            </p>
+            <p data-i18n="what_is_p2">
+                <strong>No es una inspección, ni un certificado de instalación, ni un boletín eléctrico (CIE).</strong> En España, únicamente un <em>instalador electricista autorizado</em> tiene la competencia legal y técnica para certificar el estado reglamentario de una instalación eléctrica conforme al REBT.
+            </p>
+        </div>
+
+        <!-- Section 2: Independence Statement -->
+        <div class="independence-banner">
+            <i data-lucide="check-circle-2" style="width: 24px; height: 24px;"></i>
+            <div class="independence-text">
+                <p style="margin: 0;" data-i18n="independence_text">
+                    <strong>Independencia garantizada:</strong> La puntuación se calcula exactamente igual en panelsafe.cv y en la página de cualquier electricista colaborador. Los electricistas que usan PanelSafe no pueden cambiarla, y los ingresos de PanelSafe no dependen de cuántas personas contacten a un electricista.
+                </p>
+            </div>
+        </div>
+
+        <!-- Section 3: Calculation Rules Table -->
+        <div class="card">
+            <h2><i data-lucide="sliders"></i> <span data-i18n="how_calc_title">Cómo se calcula la puntuación</span></h2>
+            <p data-i18n="how_calc_intro">
+                El cálculo comienza en una base de <strong>100 puntos</strong>. A continuación se aplican deducciones objetivas según los elementos detectados y la prueba del diferencial:
+            </p>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="th_check">Comprobación</th>
+                            <th data-i18n="th_condition">Condición</th>
+                            <th data-i18n="th_impact">Impacto</th>
+                            <th data-i18n="th_why">Por qué importa</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong data-i18n="rule_rcd_unresponsive_name">Prueba Diferencial (RCD)</strong></td>
+                            <td data-i18n="rule_rcd_unresponsive_cond">El botón "T" no dispara el interruptor ("Unresponsive")</td>
+                            <td><span class="score-pill score-deduct-severe">-40 pts</span></td>
+                            <td data-i18n="rule_rcd_unresponsive_why">Peligro crítico: la instalación carece de protección activa frente a descargas eléctricas potencialmente mortales.</td>
+                        </tr>
+                        <tr>
+                            <td><strong data-i18n="rule_rcd_slow_name">Prueba Diferencial (RCD)</strong></td>
+                            <td data-i18n="rule_rcd_slow_cond">El diferencial tardó en dispararse ("Slow")</td>
+                            <td><span class="score-pill score-deduct-med">-15 pts</span></td>
+                            <td data-i18n="rule_rcd_slow_why">Advertencia de degradación mecánica: un disparo retardado puede impedir una desconexión a tiempo ante una fuga.</td>
+                        </tr>
+                        <tr>
+                            <td><strong data-i18n="rule_rcd_not_tested_name">Prueba Diferencial (RCD)</strong></td>
+                            <td data-i18n="rule_rcd_not_tested_cond">No se ha realizado la prueba del botón ("Not Tested")</td>
+                            <td><span class="score-pill score-deduct-med">-5 pts</span></td>
+                            <td data-i18n="rule_rcd_not_tested_why">Recomendación preventiva: se aconseja pulsar mensualmente el botón de test para asegurar que el mecanismo no se atasca.</td>
+                        </tr>
+                        <tr>
+                            <td><strong data-i18n="rule_rcd_ok_name">Prueba Diferencial (RCD)</strong></td>
+                            <td data-i18n="rule_rcd_ok_cond">El botón disparó al instante ("Responsive")</td>
+                            <td><span class="score-pill score-neutral">0 pts</span></td>
+                            <td data-i18n="rule_rcd_ok_why">Excelente hábito: el mecanismo de disparo electromecánico responde de inmediato.</td>
+                        </tr>
+                        <tr>
+                            <td><strong data-i18n="rule_no_rcd_name">Presencia de Diferencial (RCD)</strong></td>
+                            <td data-i18n="rule_no_rcd_cond">No se detecta ningún diferencial en la foto</td>
+                            <td><span class="score-pill score-deduct-severe">-25 pts</span></td>
+                            <td data-i18n="rule_no_rcd_why">Falta de protección diferencial básica para salvaguardar la vida de las personas contra contactos indirectos.</td>
+                        </tr>
+                        <tr>
+                            <td><strong data-i18n="rule_no_mcb_name">Magnetotérmicos (MCB / PIAs)</strong></td>
+                            <td data-i18n="rule_no_mcb_cond">No se detecta ningún magnetotérmico en la foto</td>
+                            <td><span class="score-pill score-deduct-med">-10 pts</span></td>
+                            <td data-i18n="rule_no_mcb_why">No se identifican los interruptores individuales que protegen los circuitos de la vivienda contra sobrecargas y cortocircuitos.</td>
+                        </tr>
+                        <tr>
+                            <td><strong data-i18n="rule_no_iga_name">Interruptor General (IGA)</strong></td>
+                            <td data-i18n="rule_no_iga_cond">Cuadro en España sin IGA detectado</td>
+                            <td><span class="score-pill score-deduct-med">-10 pts</span></td>
+                            <td data-i18n="rule_no_iga_why">El REBT exige un IGA específico para cortar la alimentación total de la instalación en caso de emergencia.</td>
+                        </tr>
+                        <tr>
+                            <td><strong data-i18n="rule_no_surge_name">Protector de Sobretensiones</strong></td>
+                            <td data-i18n="rule_no_surge_cond">Cuadro en España sin sobretensiones detectado</td>
+                            <td><span class="score-pill score-deduct-med">-10 pts</span></td>
+                            <td data-i18n="rule_no_surge_why">La normativa REBT actual exige protección de sobretensiones para proteger electrodomésticos y equipos ante picos de tensión.</td>
+                        </tr>
+                        <tr>
+                            <td><strong data-i18n="rule_bounds_name">Rango final de puntuación</strong></td>
+                            <td data-i18n="rule_bounds_cond">Acotación numérica estricta</td>
+                            <td><span class="score-pill score-neutral">0 a 100</span></td>
+                            <td data-i18n="rule_bounds_why">La puntuación final se limita matemáticamente entre un mínimo de 0 y un máximo de 100 puntos.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="margin-top: 1.5rem;">
+                <h3><i data-lucide="calendar"></i> <span data-i18n="era_title">Estimación de Época de Instalación</span></h3>
+                <p data-i18n="era_desc">
+                    El informe incluye además una estimación orientativa de la época de instalación basada en la composición del cuadro y firmas de fabricantes (OCR). Esta estimación es informativa y no suma ni resta puntos a la puntuación:
+                </p>
+                <ul>
+                    <li><strong data-i18n="era_1_name">Anterior a 1973 (Pre-Normativa):</strong> <span data-i18n="era_1_desc">Sin diferencial y separación mínima de circuitos (&gt;50 años).</span></li>
+                    <li><strong data-i18n="era_2_name">1973–2002 (Época REBT-1973):</strong> <span data-i18n="era_2_desc">Diferencial presente pero sin IGA independiente ni protector de sobretensiones (24–53 años).</span></li>
+                    <li><strong data-i18n="era_3_name">2002–2019 (Época REBT-2002):</strong> <span data-i18n="era_3_desc">IGA independiente y diferenciales de 30mA pero sin protector de sobretensiones (7–24 años).</span></li>
+                    <li><strong data-i18n="era_4_name">2020–Actualidad (REBT Actualizado):</strong> <span data-i18n="era_4_desc">Protector de sobretensiones (DPS/IGA+DPS) o diferencial superinmunizado detectado (&lt;6 años).</span></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Section 4: What AI Cannot See -->
+        <div class="card">
+            <h2><i data-lucide="eye-off"></i> <span data-i18n="limits_title">Lo que una fotografía no puede ver</span></h2>
+            <p data-i18n="limits_intro">
+                Un modelo de visión artificial analiza únicamente los píxeles visibles en la imagen. La seguridad eléctrica real depende de factores físicos que una cámara no puede evaluar:
+            </p>
+            <ul class="limitations-list">
+                <li class="limitations-item">
+                    <i data-lucide="alert-triangle"></i>
+                    <div>
+                        <strong data-i18n="limit_1_title">Conexiones flojas y sobrecalentamientos:</strong>
+                        <span data-i18n="limit_1_desc">Los bornes flojos o recalentados detrás de la tapa no son visibles y son la causa principal de conatos de incendio.</span>
+                    </div>
+                </li>
+                <li class="limitations-item">
+                    <i data-lucide="alert-triangle"></i>
+                    <div>
+                        <strong data-i18n="limit_2_title">Cableado interno y secciones de conductor:</strong>
+                        <span data-i18n="limit_2_desc">No es posible verificar si los cables interiores tienen la sección adecuada para los amperajes instalados.</span>
+                    </div>
+                </li>
+                <li class="limitations-item">
+                    <i data-lucide="alert-triangle"></i>
+                    <div>
+                        <strong data-i18n="limit_3_title">Puesta a tierra real:</strong>
+                        <span data-i18n="limit_3_desc">La resistencia de la toma de tierra requiere medición instrumental in situ y no se puede comprobar por foto.</span>
+                    </div>
+                </li>
+                <li class="limitations-item">
+                    <i data-lucide="alert-triangle"></i>
+                    <div>
+                        <strong data-i18n="limit_4_title">Limitaciones de detección:</strong>
+                        <span data-i18n="limit_4_desc">Fotos desenfocadas, con reflejos o con ángulos acusados pueden omitir componentes reales. Pide siempre a un electricista autorizado que confirme el resultado.</span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <p data-i18n="footer_text">
+                Herramienta de PanelSafe · <a href="/">panelsafe.cv</a> · Evaluación visual con fines educativos.
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        const translations = {
+            es: {
+                page_title: "Metodología de Puntuación de Seguridad | PanelSafe",
+                nav_brand: '⚡ <span class="nav-brand-text">PanelSafe</span>',
+                nav_home: "Inicio",
+                nav_analysis: "Analizador IA",
+                nav_unifilar: "Generador Unifilar",
+                nav_blog: "Blog",
+                nav_methodology: "Metodología",
+                hero_title: "Metodología de Puntuación de Seguridad",
+                hero_subtitle: "Transparencia total: cómo se calcula la puntuación a partir de una foto y por qué ningún colaborador externo puede influir en ella.",
+                what_is_title: "¿Qué es esta puntuación?",
+                what_is_p1: "La puntuación de seguridad es una <strong>estimación educativa automatizada (sobre 100 puntos)</strong> obtenida a partir del análisis visual de una única fotografía y la respuesta al botón de prueba del diferencial.",
+                what_is_p2: "<strong>No es una inspección, ni un certificado de instalación, ni un boletín eléctrico (CIE).</strong> En España, únicamente un <em>instalador electricista autorizado</em> tiene la competencia legal y técnica para certificar el estado reglamentario de una instalación eléctrica conforme al REBT.",
+                independence_text: "<strong>Independencia garantizada:</strong> La puntuación se calcula exactamente igual en panelsafe.cv y en la página de cualquier electricista colaborador. Los electricistas que usan PanelSafe no pueden cambiarla, y los ingresos de PanelSafe no dependen de cuántas personas contacten a un electricista.",
+                how_calc_title: "Cómo se calcula la puntuación",
+                how_calc_intro: "El cálculo comienza en una base de <strong>100 puntos</strong>. A continuación se aplican deducciones objetivas según los elementos detectados y la prueba del diferencial:",
+                th_check: "Comprobación",
+                th_condition: "Condición",
+                th_impact: "Impacto",
+                th_why: "Por qué importa",
+                rule_rcd_unresponsive_name: "Prueba Diferencial (RCD)",
+                rule_rcd_unresponsive_cond: "El botón 'T' no dispara el interruptor ('Unresponsive')",
+                rule_rcd_unresponsive_why: "Peligro crítico: la instalación carece de protección activa frente a descargas eléctricas potencialmente mortales.",
+                rule_rcd_slow_name: "Prueba Diferencial (RCD)",
+                rule_rcd_slow_cond: "El diferencial tardó en dispararse ('Slow')",
+                rule_rcd_slow_why: "Advertencia de degradación mecánica: un disparo retardado puede impedir una desconexión a tiempo ante una fuga.",
+                rule_rcd_not_tested_name: "Prueba Diferencial (RCD)",
+                rule_rcd_not_tested_cond: "No se ha realizado la prueba del botón ('Not Tested')",
+                rule_rcd_not_tested_why: "Recomendación preventiva: se aconseja pulsar mensualmente el botón de test para asegurar que el mecanismo no se atasca.",
+                rule_rcd_ok_name: "Prueba Diferencial (RCD)",
+                rule_rcd_ok_cond: "El botón disparó al instante ('Responsive')",
+                rule_rcd_ok_why: "Excelente hábito: el mecanismo de disparo electromecánico responde de inmediato.",
+                rule_no_rcd_name: "Presencia de Diferencial (RCD)",
+                rule_no_rcd_cond: "No se detecta ningún diferencial en la foto",
+                rule_no_rcd_why: "Falta de protección diferencial básica para salvaguardar la vida de las personas contra contactos indirectos.",
+                rule_no_mcb_name: "Magnetotérmicos (MCB / PIAs)",
+                rule_no_mcb_cond: "No se detecta ningún magnetotérmico en la foto",
+                rule_no_mcb_why: "No se identifican los interruptores individuales que protegen los circuitos de la vivienda contra sobrecargas y cortocircuitos.",
+                rule_no_iga_name: "Interruptor General (IGA)",
+                rule_no_iga_cond: "Cuadro en España sin IGA detectado",
+                rule_no_iga_why: "El REBT exige un IGA específico para cortar la alimentación total de la instalación en caso de emergencia.",
+                rule_no_surge_name: "Protector de Sobretensiones",
+                rule_no_surge_cond: "Cuadro en España sin sobretensiones detectado",
+                rule_no_surge_why: "La normativa REBT actual exige protección de sobretensiones para proteger electrodomésticos y equipos ante picos de tensión.",
+                rule_bounds_name: "Rango final de puntuación",
+                rule_bounds_cond: "Acotación numérica estricta",
+                rule_bounds_why: "La puntuación final se limita matemáticamente entre un mínimo de 0 y un máximo de 100 puntos.",
+                era_title: "Estimación de Época de Instalación",
+                era_desc: "El informe incluye además una estimación orientativa de la época de instalación basada en la composición del cuadro y firmas de fabricantes (OCR). Esta estimación es informativa y no suma ni resta puntos a la puntuación:",
+                era_1_name: "Anterior a 1973 (Pre-Normativa):",
+                era_1_desc: "Sin diferencial y separación mínima de circuitos (>50 años).",
+                era_2_name: "1973–2002 (Época REBT-1973):",
+                era_2_desc: "Diferencial presente pero sin IGA independiente ni protector de sobretensiones (24–53 años).",
+                era_3_name: "2002–2019 (Época REBT-2002):",
+                era_3_desc: "IGA independiente y diferenciales de 30mA pero sin protector de sobretensiones (7–24 años).",
+                era_4_name: "2020–Actualidad (REBT Actualizado):",
+                era_4_desc: "Protector de sobretensiones (DPS/IGA+DPS) o diferencial superinmunizado detectado (<6 años).",
+                limits_title: "Lo que una fotografía no puede ver",
+                limits_intro: "Un modelo de visión artificial analiza únicamente los píxeles visibles en la imagen. La seguridad eléctrica real depende de factores físicos que una cámara no puede evaluar:",
+                limit_1_title: "Conexiones flojas y sobrecalentamientos:",
+                limit_1_desc: "Los bornes flojos o recalentados detrás de la tapa no son visibles y son la causa principal de conatos de incendio.",
+                limit_2_title: "Cableado interno y secciones de conductor:",
+                limit_2_desc: "No es posible verificar si los cables interiores tienen la sección adecuada para los amperajes instalados.",
+                limit_3_title: "Puesta a tierra real:",
+                limit_3_desc: "La resistencia de la toma de tierra requiere medición instrumental in situ y no se puede comprobar por foto.",
+                limit_4_title: "Limitaciones de detección:",
+                limit_4_desc: "Fotos desenfocadas, con reflejos o con ángulos acusados pueden omitir componentes reales. Pide siempre a un electricista autorizado que confirme el resultado.",
+                footer_text: "Herramienta de PanelSafe · <a href='/'>panelsafe.cv</a> · Evaluación visual con fines educativos."
+            },
+            en: {
+                page_title: "Safety Score Methodology | PanelSafe",
+                nav_brand: '⚡ <span class="nav-brand-text">PanelSafe</span>',
+                nav_home: "Home",
+                nav_analysis: "AI Analyzer",
+                nav_unifilar: "Single-Line Diagram",
+                nav_blog: "Blog",
+                nav_methodology: "Methodology",
+                hero_title: "Safety Score Methodology",
+                hero_subtitle: "Complete transparency: how the safety score is calculated from a photo and why partner electricians cannot influence it.",
+                what_is_title: "What is this score?",
+                what_is_p1: "The safety score is an <strong>automated educational estimate (out of 100 points)</strong> derived from visual analysis of a single photograph and your report on the RCD test button.",
+                what_is_p2: "<strong>It is not an inspection, certificate, or official electrical compliance document (boletín).</strong> In Spain, only a licensed electrical installer (<em>instalador autorizado</em>) has the legal authority to inspect and certify electrical safety.",
+                independence_text: "<strong>Guaranteed Independence:</strong> The score is calculated the same way on panelsafe.cv and on every partner electrician's page. Electricians who use PanelSafe cannot change it, and PanelSafe's income does not depend on how many people contact an electrician.",
+                how_calc_title: "How the score is calculated",
+                how_calc_intro: "Calculation begins at a baseline of <strong>100 points</strong>. Objective deductions are applied according to detected components and the RCD test result:",
+                th_check: "Check",
+                th_condition: "Condition",
+                th_impact: "Impact",
+                th_why: "Why it matters",
+                rule_rcd_unresponsive_name: "RCD Differential Test",
+                rule_rcd_unresponsive_cond: "Test button 'T' did not trip the breaker ('Unresponsive')",
+                rule_rcd_unresponsive_why: "Critical danger: the installation lacks active shock protection against fatal electrocution.",
+                rule_rcd_slow_name: "RCD Differential Test",
+                rule_rcd_slow_cond: "The breaker responded slowly ('Slow')",
+                rule_rcd_slow_why: "Mechanical wear warning: delayed tripping may fail to disconnect power quickly during a leakage fault.",
+                rule_rcd_not_tested_name: "RCD Differential Test",
+                rule_rcd_not_tested_cond: "Button test was not performed ('Not Tested')",
+                rule_rcd_not_tested_why: "Preventive advice: monthly testing of the 'T' button is recommended to ensure the trip mechanism remains active.",
+                rule_rcd_ok_name: "RCD Differential Test",
+                rule_rcd_ok_cond: "The breaker tripped instantly ('Responsive')",
+                rule_rcd_ok_why: "Good safety practice: the electromechanical trip mechanism operates promptly.",
+                rule_no_rcd_name: "RCD Presence",
+                rule_no_rcd_cond: "No differential (RCD) detected in the photo",
+                rule_no_rcd_why: "Missing essential residual-current protection to guard against electrical shocks and leakage fires.",
+                rule_no_mcb_name: "Circuit Breakers (MCBs)",
+                rule_no_mcb_cond: "No individual circuit breakers detected in the photo",
+                rule_no_mcb_why: "Individual breakers protecting household circuits against overloads and short circuits were not identified.",
+                rule_no_iga_name: "Main Breaker (IGA)",
+                rule_no_iga_cond: "Spanish panel layout with no main breaker detected",
+                rule_no_iga_why: "Spanish regulations require a dedicated general switch to cut total power to the dwelling in emergencies.",
+                rule_no_surge_name: "Surge Protector (DPS)",
+                rule_no_surge_cond: "Spanish panel layout with no surge protector detected",
+                rule_no_surge_why: "Current regulations require surge protection to safeguard appliances and electronics from grid voltage spikes.",
+                rule_bounds_name: "Final score range",
+                rule_bounds_cond: "Strict mathematical bounds",
+                rule_bounds_why: "The final score is strictly capped between a minimum of 0 and a maximum of 100 points.",
+                era_title: "Installation Era Estimation",
+                era_desc: "The report also includes an informative installation era estimate based on component composition and catalog signatures (OCR). This estimate does not modify the score:",
+                era_1_name: "Pre-1973 (Pre-Normative):",
+                era_1_desc: "No differential protection and minimal circuit separation (>50 years old).",
+                era_2_name: "1973–2002 (REBT-1973 Era):",
+                era_2_desc: "RCD present but lacks dedicated general switch (IGA) and surge protection (24–53 years old).",
+                era_3_name: "2002–2019 (REBT-2002 Era):",
+                era_3_desc: "Dedicated IGA and 30mA RCDs present, without surge protector (7–24 years old).",
+                era_4_name: "2020–Present (Modern REBT):",
+                era_4_desc: "Combined surge protection (DPS/IGA+DPS) or Type A / super-immunized RCD detected (<6 years old).",
+                limits_title: "What a photograph cannot see",
+                limits_intro: "A computer vision model only analyzes visible pixels in an image. True electrical safety depends on physical factors no camera can inspect:",
+                limit_1_title: "Loose connections and overheating:",
+                limit_1_desc: "Loose terminals or overheating behind the front cover are invisible and are a leading cause of electrical fires.",
+                limit_2_title: "Internal wiring and wire gauges:",
+                limit_2_desc: "It is impossible to verify whether wire cross-sections match breaker amperages without opening the panel.",
+                limit_3_title: "True earth grounding:",
+                limit_3_desc: "Earth loop impedance requires calibrated physical instruments on-site and cannot be verified from photos.",
+                limit_4_title: "Detection limitations:",
+                limit_4_desc: "Blurry, dark or angled photos may miss real breakers. Always have a licensed electrician confirm the findings.",
+                footer_text: "PanelSafe Tool · <a href='/'>panelsafe.cv</a> · Visual evaluation for educational purposes."
+            },
+            fr: {
+                page_title: "Méthodologie du Score de Sécurité | PanelSafe",
+                nav_brand: '⚡ <span class="nav-brand-text">PanelSafe</span>',
+                nav_home: "Accueil",
+                nav_analysis: "Analyseur IA",
+                nav_unifilar: "Schéma unifilaire",
+                nav_blog: "Blog",
+                nav_methodology: "Méthodologie",
+                hero_title: "Méthodologie du Score de Sécurité",
+                hero_subtitle: "Transparence totale : comment le score est calculé à partir d'une photo et pourquoi aucun électricien partenaire ne peut l'influencer.",
+                what_is_title: "Qu'est-ce que ce score ?",
+                what_is_p1: "Le score de sécurité est une <strong>estimation éducative automatisée (sur 100 points)</strong> obtenue par analyse visuelle d'une seule photo et par votre test du bouton différentiel.",
+                what_is_p2: "<strong>Ce n'est ni une inspection, ni un certificat d'installation, ni un document officiel (boletín).</strong> En Espagne, seul un électricien agréé (<em>instalador autorizado</em>) est habilité à certifier la conformité d'une installation.",
+                independence_text: "<strong>Indépendance garantie :</strong> Le score est calculé exactement de la même manière sur panelsafe.cv et sur la page de chaque électricien partenaire. Les électriciens qui utilisent PanelSafe ne peuvent pas le modifier, et les revenus de PanelSafe ne dépendent pas du nombre de personnes contactant un électricien.",
+                how_calc_title: "Comment le score est calculé",
+                how_calc_intro: "Le calcul part d'une base de <strong>100 points</strong>. Des déductions objectives sont appliquées selon les éléments détectés et le test du différentiel :",
+                th_check: "Vérification",
+                th_condition: "Condition",
+                th_impact: "Impact",
+                th_why: "Pourquoi c'est important",
+                rule_rcd_unresponsive_name: "Test du différentiel (RCD)",
+                rule_rcd_unresponsive_cond: "Le bouton 'T' n'a pas déclenché le disjoncteur ('Unresponsive')",
+                rule_rcd_unresponsive_why: "Danger critique : l'installation ne dispose d'aucune protection active contre les électrocutions mortelles.",
+                rule_rcd_slow_name: "Test du différentiel (RCD)",
+                rule_rcd_slow_cond: "Le différentiel a tardé à se déclencher ('Slow')",
+                rule_rcd_slow_why: "Avertissement d'usure mécanique : un déclenchement lent peut ne pas couper à temps en cas de défaut d'isolement.",
+                rule_rcd_not_tested_name: "Test du différentiel (RCD)",
+                rule_rcd_not_tested_cond: "Le test du bouton n'a pas été réalisé ('Not Tested')",
+                rule_rcd_not_tested_why: "Conseil préventif : appuyer mensuellement sur le bouton de test permet de vérifier le mécanisme électromécanique.",
+                rule_rcd_ok_name: "Test du différentiel (RCD)",
+                rule_rcd_ok_cond: "Le bouton a déclenché instantanément ('Responsive')",
+                rule_rcd_ok_why: "Excellente habitude : le mécanisme de déclenchement fonctionne promptement.",
+                rule_no_rcd_name: "Présence de différentiel (RCD)",
+                rule_no_rcd_cond: "Aucun différentiel détecté sur la photo",
+                rule_no_rcd_why: "Absence de protection différentielle essentielle pour prémunir les personnes contre les contacts indirects.",
+                rule_no_mcb_name: "Disjoncteurs (MCB)",
+                rule_no_mcb_cond: "Aucun disjoncteur divisionnaire détecté sur la photo",
+                rule_no_mcb_why: "Les disjoncteurs individuels protégeant les circuits contre les surcharges et courts-circuits n'ont pas été identifiés.",
+                rule_no_iga_name: "Disjoncteur général (IGA)",
+                rule_no_iga_cond: "Tableau espagnol sans interrupteur général détecté",
+                rule_no_iga_why: "La norme exige un disjoncteur général dédié pour couper l'ensemble de l'alimentation en cas d'urgence.",
+                rule_no_surge_name: "Parasurtenseur (DPS)",
+                rule_no_surge_cond: "Tableau espagnol sans parasurtenseur détecté",
+                rule_no_surge_why: "La réglementation moderne exige une protection contre les surtensions pour protéger les appareils électroniques.",
+                rule_bounds_name: "Plage de score final",
+                rule_bounds_cond: "Encadrement mathématique strict",
+                rule_bounds_why: "Le score final est strictement borné entre 0 et 100 points.",
+                era_title: "Estimation de l'époque d'installation",
+                era_desc: "Le rapport intègre également une estimation de l'époque d'installation basée sur la composition et les références fabricant (OCR). Cette estimation n'affecte pas le score :",
+                era_1_name: "Avant 1973 (Pré-normative) :",
+                era_1_desc: "Sans différentiel et séparation minimale des circuits (>50 ans).",
+                era_2_name: "1973–2002 (Époque REBT-1973) :",
+                era_2_desc: "Différentiel présent mais sans IGA dédié ni parasurtenseur (24–53 ans).",
+                era_3_name: "2002–2019 (Époque REBT-2002) :",
+                era_3_desc: "IGA dédié et différentiels 30mA présents, sans parasurtenseur (7–24 ans).",
+                era_4_name: "2020–Présent (REBT Moderne) :",
+                era_4_desc: "Parasurtenseur combiné ou différentiel superimmunisé détecté (<6 ans).",
+                limits_title: "Ce qu'une photo ne peut pas voir",
+                limits_intro: "Un modèle de vision artificielle analyse uniquement les pixels visibles. La sécurité réelle dépend de facteurs physiques invisibles à l'objectif :",
+                limit_1_title: "Connexions desserrées et surchauffes :",
+                limit_1_desc: "Les bornes desserrées ou brûlées derrière le capot sont invisibles et constituent la cause principale des départs d'incendie.",
+                limit_2_title: "Câblage interne et sections de conducteurs :",
+                limit_2_desc: "Il est impossible de vérifier visuellement si la section des fils correspond aux calibres des disjoncteurs.",
+                limit_3_title: "Mise à la terre réelle :",
+                limit_3_desc: "La résistance de la prise de terre nécessite un appareil de mesure dédié sur place et ne peut être évaluée par photo.",
+                limit_4_title: "Limites de la détection :",
+                limit_4_desc: "Des photos floues ou mal cadrées peuvent omettre des composants réels. Faites toujours vérifier par un professionnel agréé.",
+                footer_text: "Outil PanelSafe · <a href='/'>panelsafe.cv</a> · Évaluation visuelle à visée pédagogique."
+            }
+        };
+
+        let currentLang = 'es';
+
+        function setLanguage(lang) {
+            if (!translations[lang]) lang = 'es';
+            currentLang = lang;
+
+            const navLang = document.getElementById('nav-lang');
+            if (navLang) navLang.value = lang;
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang] && translations[lang][key]) {
+                    if (el.tagName === 'INPUT' || el.tagName === 'OPTION') {
+                        el.textContent = translations[lang][key];
+                    } else {
+                        el.innerHTML = translations[lang][key];
+                    }
+                }
+            });
+
+            localStorage.setItem('breakerLang', lang);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedLang = localStorage.getItem('breakerLang') || 'es';
+            setLanguage(savedLang);
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
+</body>
+
+</html>
