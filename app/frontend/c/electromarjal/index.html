@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title data-i18n="page_title">Comprueba tu Cuadro Eléctrico | ElectroMarjal</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/assets/favicon/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon/favicon-16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicon/favicon-180.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --primary: #9137af;
+            --primary-dark: #6c2583;
+            --primary-light: rgba(145, 55, 175, 0.15);
+            --secondary: #73c83c;
+            --secondary-dark: #56972d;
+            --secondary-light: rgba(115, 200, 60, 0.15);
+            --bg: #0b0a0d;
+            --card-bg: rgba(20, 18, 25, 0.95);
+            --text: #ffffff;
+            --text-muted: #a9a6b0;
+            --success: #73c83c;
+            --warning: #ffb800;
+            --danger: #ff4a4a;
+            --radius: 16px;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(145, 55, 175, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            background-image: radial-gradient(at 0% 0%, rgba(145, 55, 175, 0.15) 0px, transparent 50%),
+                              radial-gradient(at 100% 100%, rgba(115, 200, 60, 0.1) 0px, transparent 50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0 16px 40px 16px;
+            color: var(--text);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(11, 10, 13, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 0.75rem 1.25rem;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(145, 55, 175, 0.15);
+        }
+
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .partner-logo {
+            height: 34px;
+            width: auto;
+            max-width: 140px;
+            object-fit: contain;
+            display: block;
+        }
+
+        .partner-title {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #ffffff;
+            margin: 0;
+        }
+
+        .nav-lang {
+            padding: 6px 8px;
+            border-radius: 8px;
+            border: 1px solid rgba(145, 55, 175, 0.3);
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .nav-lang option {
+            background: #141219;
+            color: var(--text);
+        }
+
+        .container {
+            max-width: 520px;
+            width: 100%;
+            margin-top: 76px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .hero-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(145, 55, 175, 0.25);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 1.75rem 1.5rem;
+            text-align: center;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .hero-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 800;
+            margin: 0 0 8px 0;
+            color: #ffffff;
+            line-height: 1.2;
+        }
+
+        .hero-subtitle {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin: 0 0 12px 0;
+            line-height: 1.5;
+        }
+
+        .service-area-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(145, 55, 175, 0.12);
+            border: 1px solid rgba(145, 55, 175, 0.25);
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 0.8rem;
+            color: #d8b4fe;
+            margin-top: 4px;
+        }
+
+        .license-badge {
+            display: none; /* Controlled dynamically by config.licenseNumber */
+            align-items: center;
+            gap: 6px;
+            background: rgba(115, 200, 60, 0.12);
+            border: 1px solid rgba(115, 200, 60, 0.25);
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 0.8rem;
+            color: var(--secondary);
+            margin-top: 6px;
+        }
+
+        .form-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(145, 55, 175, 0.2);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+        }
+
+        .form-error-banner {
+            display: none;
+            background: rgba(255, 74, 74, 0.12);
+            border: 1px solid rgba(255, 74, 74, 0.4);
+            color: #ff9494;
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 0.88rem;
+            line-height: 1.45;
+            margin-bottom: 1.25rem;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-error-banner svg {
+            color: var(--danger);
+            flex-shrink: 0;
+            width: 20px;
+            height: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 1.25rem;
+        }
+
+        .input-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .photo-picker {
+            border: 2px dashed rgba(145, 55, 175, 0.4);
+            border-radius: 12px;
+            padding: 24px 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: rgba(145, 55, 175, 0.05);
+        }
+
+        .photo-picker:hover {
+            border-color: var(--primary);
+            background: rgba(145, 55, 175, 0.12);
+        }
+
+        .photo-picker i {
+            color: var(--primary);
+            width: 36px;
+            height: 36px;
+            margin-bottom: 8px;
+        }
+
+        .photo-picker-text {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin: 0;
+        }
+
+        .photo-picker-hint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin: 4px 0 0 0;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        #preview-box {
+            display: none;
+            position: relative;
+            margin-bottom: 1.25rem;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(145, 55, 175, 0.3);
+            background: #000;
+            aspect-ratio: 4/3;
+        }
+
+        #preview-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .btn-change-photo {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0, 0, 0, 0.75);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .rcd-section {
+            background: rgba(20, 18, 25, 0.6);
+            border: 1px solid rgba(145, 55, 175, 0.2);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .rcd-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #e2e8f0;
+        }
+
+        .rcd-toggle input {
+            accent-color: var(--primary);
+            width: 18px;
+            height: 18px;
+        }
+
+        .rcd-options {
+            display: none;
+            margin-top: 10px;
+            padding-left: 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .rcd-option-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            cursor: pointer;
+        }
+
+        .rcd-option-label input {
+            accent-color: var(--primary);
+        }
+
+        .consent-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(145, 55, 175, 0.15);
+            border-radius: 12px;
+            padding: 0.9rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .consent-label {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 0.82rem;
+            color: #cbd5e1;
+            cursor: pointer;
+            line-height: 1.45;
+        }
+
+        .consent-label input {
+            accent-color: var(--primary);
+            width: 18px;
+            height: 18px;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .privacy-toggle-btn {
+            background: none;
+            border: none;
+            color: var(--secondary);
+            font-size: 0.82rem;
+            padding: 0;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        #privacy-panel {
+            display: none;
+            margin-top: 10px;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+            border-top: 1px dashed rgba(145, 55, 175, 0.2);
+            padding-top: 8px;
+        }
+
+        .btn-submit {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            background: var(--primary);
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(145, 55, 175, 0.35);
+        }
+
+        .btn-submit:hover:not(:disabled) {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-submit:disabled {
+            background: #4a4754;
+            color: #9c98a6;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        #upload-spinner {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            font-size: 0.95rem;
+            color: #d8b4fe;
+        }
+
+        /* Results Display */
+        #result-container {
+            display: none;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        /* Mandatory conflict-of-interest heading */
+        .result-educational-heading {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0;
+            line-height: 1.4;
+            text-align: left;
+        }
+
+        /* Mandatory conflict-of-interest disclosure */
+        .disclosure-banner {
+            background: rgba(145, 55, 175, 0.12);
+            border: 1px solid rgba(145, 55, 175, 0.3);
+            border-radius: 12px;
+            padding: 12px 14px;
+            font-size: 0.85rem;
+            color: #f1f5f9;
+            line-height: 1.5;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .disclosure-banner i {
+            color: #c084fc;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .methodology-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--secondary);
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+            margin-top: 6px;
+        }
+
+        .score-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(145, 55, 175, 0.25);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+        }
+
+        .score-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .score-badge-circle {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #ffffff;
+            padding: 6px 16px;
+            border-radius: 12px;
+            background: rgba(145, 55, 175, 0.25);
+            border: 1px solid rgba(145, 55, 175, 0.4);
+            display: inline-flex;
+            align-items: baseline;
+            gap: 4px;
+        }
+
+        .score-denom {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .feedback-content {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 0.9rem;
+            color: #cbd5e1;
+            line-height: 1.5;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .feedback-content ul {
+            margin: 6px 0;
+            padding-left: 20px;
+        }
+
+        .feedback-content li {
+            margin-bottom: 6px;
+        }
+
+        .tracking-box {
+            margin-top: 12px;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 8px;
+            border: 1px dashed rgba(145, 55, 175, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .tracking-code {
+            font-family: monospace;
+            font-weight: 700;
+            color: #d8b4fe;
+            font-size: 0.9rem;
+        }
+
+        /* Mandatory Contact Section - Shown for EVERY result */
+        .contact-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(115, 200, 60, 0.35);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+            text-align: left;
+        }
+
+        .contact-card h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin: 0 0 6px 0;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .contact-card h3 i {
+            color: var(--secondary);
+        }
+
+        .contact-desc {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin: 0 0 1rem 0;
+            line-height: 1.5;
+        }
+
+        .postcode-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .postcode-input {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(145, 55, 175, 0.3);
+            background: rgba(0, 0, 0, 0.4);
+            color: #ffffff;
+            font-size: 0.95rem;
+            font-family: inherit;
+        }
+
+        .postcode-input:focus {
+            outline: none;
+            border-color: var(--secondary);
+        }
+
+        .postcode-error {
+            display: none;
+            font-size: 0.8rem;
+            color: #ff6b6b;
+            margin-top: 4px;
+        }
+
+        .contact-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn-contact {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn-whatsapp {
+            background: #25D366;
+            color: #000000;
+        }
+
+        .btn-whatsapp:hover {
+            background: #1EBE5D;
+            transform: translateY(-1px);
+        }
+
+        .btn-phone {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+        }
+
+        .btn-phone:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-email {
+            background: transparent;
+            border: 1px solid rgba(145, 55, 175, 0.4);
+            color: #d8b4fe;
+        }
+
+        .btn-email:hover {
+            background: rgba(145, 55, 175, 0.15);
+        }
+
+        .zero-storage-note {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 12px;
+            line-height: 1.4;
+        }
+
+        .btn-restart {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-muted);
+            padding: 10px 16px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .btn-restart:hover {
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        footer {
+            margin-top: 2rem;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        footer a {
+            color: var(--secondary);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="navbar">
+        <div class="brand-container">
+            <img id="nav-logo" class="partner-logo" src="logo.png" alt="ElectroMarjal Logo">
+            <h1 class="partner-title" id="nav-title">ElectroMarjal</h1>
+        </div>
+        <select id="nav-lang" class="nav-lang" aria-label="Language" onchange="setLanguage(this.value)">
+            <option value="es">ES</option>
+            <option value="en">EN</option>
+            <option value="fr">FR</option>
+        </select>
+    </nav>
+
+    <div class="container">
+        <!-- Hero Header -->
+        <div class="hero-card">
+            <h2 class="hero-title" data-i18n="hero_title">Comprueba tu Cuadro Eléctrico</h2>
+            <p class="hero-subtitle" data-i18n="hero_subtitle">
+                Sube una fotografía y obtén una estimación de seguridad educativa instantánea basada en el REBT.
+            </p>
+            <div class="service-area-badge">
+                <i data-lucide="map-pin" style="width: 14px; height: 14px;"></i>
+                <span id="service-area-text" data-i18n="service_area">Comarca del Maestrat (Castellón)</span>
+            </div>
+            <div id="license-badge-container" class="license-badge">
+                <i data-lucide="award" style="width: 14px; height: 14px;"></i>
+                <span id="license-badge-text"></span>
+            </div>
+        </div>
+
+        <!-- Upload Form -->
+        <div id="form-container" class="form-card">
+            <!-- Form Error Banner for 400/413 (Fix 1) -->
+            <div id="form-error-banner" class="form-error-banner">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="16.01"/></svg>
+                <div id="form-error-text"></div>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">
+                    <i data-lucide="camera" style="width: 18px; height: 18px;"></i>
+                    <span data-i18n="photo_label">Foto de tu cuadro eléctrico</span>
+                </label>
+
+                <div class="photo-picker" id="photo-picker" onclick="triggerFileInput()">
+                    <i data-lucide="upload-cloud"></i>
+                    <p class="photo-picker-text" data-i18n="picker_text">Haz una foto o selecciona una imagen</p>
+                    <p class="photo-picker-hint" data-i18n="picker_hint">Abre la tapa para que los interruptores sean visibles</p>
+                </div>
+
+                <input type="file" id="file-input" accept="image/*" capture="environment" onchange="handleFileSelected(event)">
+
+                <div id="preview-box">
+                    <img id="preview-img" src="" alt="Vista previa del cuadro">
+                    <button type="button" class="btn-change-photo" onclick="triggerFileInput()" data-i18n="change_photo">Cambiar foto</button>
+                </div>
+            </div>
+
+            <!-- Optional RCD test prompt -->
+            <div class="rcd-section">
+                <label class="rcd-toggle">
+                    <input type="checkbox" id="rcd-tested-checkbox" onchange="toggleRcdOptions()">
+                    <span data-i18n="rcd_checkbox_label">¿Has probado el botón del diferencial (botón 'T')?</span>
+                </label>
+                <div id="rcd-options-container" class="rcd-options">
+                    <label class="rcd-option-label">
+                        <input type="radio" name="rcd_test_result" value="Responsive" onchange="updateRcdResult()">
+                        <span data-i18n="rcd_opt_responsive">Responde (Disparó instantáneamente)</span>
+                    </label>
+                    <label class="rcd-option-label">
+                        <input type="radio" name="rcd_test_result" value="Slow" onchange="updateRcdResult()">
+                        <span data-i18n="rcd_opt_slow">Lento (Tardó en disparar)</span>
+                    </label>
+                    <label class="rcd-option-label">
+                        <input type="radio" name="rcd_test_result" value="Unresponsive" onchange="updateRcdResult()">
+                        <span data-i18n="rcd_opt_unresponsive">No responde (No disparó)</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Consent Checkbox -->
+            <div class="consent-box">
+                <label class="consent-label">
+                    <input type="checkbox" id="consent-checkbox" onchange="toggleConsent()">
+                    <span>
+                        <span data-i18n="consent_text">Consiento la recogida de la foto de mi cuadro y metadatos para el análisis de seguridad bajo la</span>
+                        <button type="button" class="privacy-toggle-btn" onclick="togglePrivacyPanel()" data-i18n="privacy_link">Política de Privacidad</button>.
+                    </span>
+                </label>
+                <div id="privacy-panel" data-i18n="privacy_content">
+                    Aviso de Privacidad (GDPR/ePrivacy): Procesamos la imagen de su cuadro únicamente para estimar la puntuación de seguridad y mejorar el modelo de visión. No utilizamos cookies de seguimiento. Las imágenes se procesan de forma segura en la UE.
+                </div>
+            </div>
+
+            <button type="button" id="submit-btn" class="btn-submit" disabled onclick="submitUpload()">
+                <i data-lucide="shield-check" style="width: 20px; height: 20px;"></i>
+                <span data-i18n="btn_analyze">Analizar mi Cuadro Gratis</span>
+            </button>
+
+            <div id="upload-spinner">
+                <p data-i18n="analyzing_wait">Analizando cuadro eléctrico con PanelSafe IA...</p>
+            </div>
+        </div>
+
+        <!-- Result View (Hidden until upload response) -->
+        <div id="result-container">
+            <!-- Conflict-of-interest Rule 2: Educational heading -->
+            <h2 class="result-educational-heading" id="result-heading" data-i18n="result_educational_heading">
+                Esto es lo que vemos en tu foto — pide a un electricista autorizado que lo confirme
+            </h2>
+
+            <!-- Conflict-of-interest Rule 3: Clear disclosure visible without scrolling -->
+            <div class="disclosure-banner">
+                <i data-lucide="info" style="width: 20px; height: 20px;"></i>
+                <div>
+                    <span data-i18n="disclosure_text">
+                        Esta herramienta es de PanelSafe, creada por Eric McNeel, que dirige ElectroMarjal. La puntuación se calcula igual que en panelsafe.cv: ElectroMarjal no puede cambiarla.
+                    </span>
+                    <br>
+                    <a href="/metodologia/" target="_blank" class="methodology-link" data-i18n="how_score_link">
+                        Cómo se calcula la puntuación &rarr;
+                    </a>
+                </div>
+            </div>
+
+            <!-- Score / Feedback Card -->
+            <div class="score-card" id="score-card">
+                <div class="score-header">
+                    <div>
+                        <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;" data-i18n="score_title">
+                            Puntuación de Seguridad
+                        </span>
+                        <div id="score-display-value" class="score-badge-circle">
+                            <span id="score-number">--</span><span class="score-denom">/100</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="feedback-display" class="feedback-content">
+                    <!-- Injected server feedback HTML -->
+                </div>
+
+                <div class="tracking-box" id="tracking-box">
+                    <span data-i18n="tracking_label">ID de seguimiento:</span>
+                    <span id="tracking-id-text" class="tracking-code">--</span>
+                </div>
+            </div>
+
+            <!-- Conflict-of-interest Rule 1: Contact block shown for EVERY result -->
+            <div class="contact-card" id="contact-card">
+                <h3>
+                    <i data-lucide="message-square"></i>
+                    <span id="contact-heading" data-i18n="contact_heading">Pide a ElectroMarjal que lo confirme</span>
+                </h3>
+                <p class="contact-desc" data-i18n="contact_desc">
+                    Contacta directamente con ElectroMarjal para resolver dudas o solicitar una revisión profesional.
+                </p>
+
+                <!-- Optional Postcode field (validated client-side, 5 digits) -->
+                <div class="postcode-group">
+                    <label class="input-label" for="postcode-input">
+                        <i data-lucide="map-pin" style="width: 16px; height: 16px;"></i>
+                        <span data-i18n="postcode_label">Código Postal de la vivienda (opcional):</span>
+                    </label>
+                    <input type="text" id="postcode-input" class="postcode-input" placeholder="Ej. 12598" maxlength="5" oninput="handlePostcodeChange()">
+                    <div id="postcode-error" class="postcode-error" data-i18n="postcode_error">
+                        El código postal debe contener exactamente 5 números.
+                    </div>
+                </div>
+
+                <!-- Contact Buttons (built from config.json) -->
+                <div class="contact-actions" id="contact-actions">
+                    <a id="btn-whatsapp" class="btn-contact btn-whatsapp" target="_blank" rel="noopener noreferrer">
+                        <i data-lucide="message-circle" style="width: 20px; height: 20px;"></i>
+                        <span data-i18n="btn_whatsapp">Consultar por WhatsApp</span>
+                    </a>
+                    <a id="btn-phone" class="btn-contact btn-phone">
+                        <i data-lucide="phone" style="width: 20px; height: 20px;"></i>
+                        <span data-i18n="btn_phone">Llamar a ElectroMarjal</span>
+                    </a>
+                    <a id="btn-email" class="btn-contact btn-email" style="display: none;">
+                        <i data-lucide="mail" style="width: 20px; height: 20px;"></i>
+                        <span data-i18n="btn_email">Enviar Correo Electrónico</span>
+                    </a>
+                </div>
+
+                <div class="zero-storage-note" data-i18n="zero_storage_note">
+                    🔒 PanelSafe no almacena tu teléfono, nombre ni código postal. El contacto se realiza directamente desde tu aplicación de WhatsApp o teléfono.
+                </div>
+            </div>
+
+            <button type="button" class="btn-restart" onclick="resetForm()" data-i18n="btn_restart">
+                &larr; Analizar otra foto
+            </button>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <p data-i18n="footer_text">
+                Herramienta de PanelSafe · <a href="/">panelsafe.cv</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        let configData = null;
+        let selectedFile = null;
+        let selectedRcdResult = 'Not Tested';
+        let currentLang = 'es';
+        let currentResult = null; // Stored result for dynamic WhatsApp message building
+
+        const translations = {
+            es: {
+                page_title: "Comprueba tu Cuadro Eléctrico | ElectroMarjal",
+                hero_title: "Comprueba tu Cuadro Eléctrico",
+                hero_subtitle: "Sube una fotografía y obtén una estimación de seguridad educativa instantánea basada en el REBT.",
+                service_area: "Comarca del Maestrat (Castellón)",
+                photo_label: "Foto de tu cuadro eléctrico",
+                picker_text: "Haz una foto o selecciona una imagen",
+                picker_hint: "Abre la tapa para que los interruptores sean visibles",
+                change_photo: "Cambiar foto",
+                rcd_checkbox_label: "¿Has probado el botón del diferencial (botón 'T')?",
+                rcd_opt_responsive: "Responde (Disparó instantáneamente)",
+                rcd_opt_slow: "Lento (Tardó en disparar)",
+                rcd_opt_unresponsive: "No responde (No disparó)",
+                consent_text: "Consiento la recogida de la foto de mi cuadro y metadatos para el análisis de seguridad bajo la",
+                privacy_link: "Política de Privacidad",
+                privacy_content: "Aviso de Privacidad (GDPR/ePrivacy): Procesamos la imagen de su cuadro únicamente para estimar la puntuación de seguridad y mejorar el modelo de visión. No utilizamos cookies de seguimiento. Las imágenes se procesan de forma segura en la UE.",
+                btn_analyze: "Analizar mi Cuadro Gratis",
+                analyzing_wait: "Analizando cuadro eléctrico con PanelSafe IA...",
+                result_educational_heading: "Esto es lo que vemos en tu foto — pide a un electricista autorizado que lo confirme",
+                disclosure_text: "Esta herramienta es de PanelSafe, creada por Eric McNeel, que dirige ElectroMarjal. La puntuación se calcula igual que en panelsafe.cv: ElectroMarjal no puede cambiarla.",
+                how_score_link: "Cómo se calcula la puntuación →",
+                score_title: "Puntuación de Seguridad",
+                tracking_label: "ID de seguimiento:",
+                contact_heading: "Pide a ElectroMarjal que lo confirme",
+                contact_desc: "Contacta directamente con ElectroMarjal para resolver dudas o solicitar una revisión profesional.",
+                postcode_label: "Código Postal de la vivienda (opcional):",
+                postcode_error: "El código postal debe contener exactamente 5 números.",
+                btn_whatsapp: "Consultar por WhatsApp",
+                btn_phone: "Llamar a ElectroMarjal",
+                btn_email: "Enviar Correo Electrónico",
+                zero_storage_note: "🔒 PanelSafe no almacena tu teléfono, nombre ni código postal. El contacto se realiza directamente desde tu aplicación de WhatsApp o teléfono.",
+                btn_restart: "← Analizar otra foto",
+                footer_text: "Herramienta de PanelSafe · <a href='/'>panelsafe.cv</a>",
+                degraded_notice: "<strong>Servicio degradado:</strong> El análisis no pudo completarse debido a una incidencia temporal en el servicio de inferencia. No se puede proporcionar una puntuación en este momento.",
+                duplicate_notice: "<strong>Foto duplicada:</strong> Esta foto ya ha sido analizada anteriormente en PanelSafe.",
+                no_score_label: "Sin puntuación",
+                err_invalid_image: "Este archivo no es una foto que podamos leer — elige otra.",
+                err_file_too_large: "Esta foto es demasiado grande — prueba con una más pequeña o una captura de pantalla.",
+                wa_greeting: "Hola ElectroMarjal, he analizado mi cuadro con la herramienta PanelSafe.",
+                wa_duplicate_greeting: "Hola ElectroMarjal, he probado a analizar mi cuadro con la herramienta PanelSafe, pero esta foto ya había sido analizada anteriormente.",
+                wa_result_label: "Resultado",
+                wa_tracking_label: "Código de seguimiento",
+                wa_postcode_label: "Código Postal",
+                wa_attach_photo: "Adjunto la foto de mi cuadro para que podáis revisarlo."
+            },
+            en: {
+                page_title: "Check Your Electrical Panel | ElectroMarjal",
+                hero_title: "Check Your Electrical Panel",
+                hero_subtitle: "Upload a photo to get an instant educational safety estimate based on Spanish electrical regulations (REBT).",
+                service_area: "Maestrat Region (Castellón)",
+                photo_label: "Photo of your electrical panel",
+                picker_text: "Take a photo or choose an image",
+                picker_hint: "Open the cover so breakers are visible",
+                change_photo: "Change photo",
+                rcd_checkbox_label: "Did you test the RCD test button ('T' button)?",
+                rcd_opt_responsive: "Responsive (Tripped instantly)",
+                rcd_opt_slow: "Slow (Took a moment to trip)",
+                rcd_opt_unresponsive: "Unresponsive (Did not trip)",
+                consent_text: "I consent to the collection of my panel photo and country metadata for safety analysis under the",
+                privacy_link: "Privacy Policy",
+                privacy_content: "Privacy Notice (GDPR/ePrivacy compliant): We process your panel image solely to estimate a safety score and improve our computer vision model. No tracking cookies are used. Images are securely hosted in the EU.",
+                btn_analyze: "Analyze My Panel for Free",
+                analyzing_wait: "Analyzing electrical panel with PanelSafe AI...",
+                result_educational_heading: "Here's what we can see in your photo — have a licensed electrician confirm it",
+                disclosure_text: "This tool is from PanelSafe, built by Eric McNeel, who runs ElectroMarjal. The score is calculated the same way as on panelsafe.cv: ElectroMarjal cannot change it.",
+                how_score_link: "How the score is calculated →",
+                score_title: "Safety Score",
+                tracking_label: "Tracking ID:",
+                contact_heading: "Ask ElectroMarjal to confirm it",
+                contact_desc: "Contact ElectroMarjal directly to ask questions or arrange an on-site professional verification.",
+                postcode_label: "Postal Code of property (optional):",
+                postcode_error: "The postal code must contain exactly 5 digits.",
+                btn_whatsapp: "Message via WhatsApp",
+                btn_phone: "Call ElectroMarjal",
+                btn_email: "Send Email",
+                zero_storage_note: "🔒 PanelSafe stores no phone numbers, names, or postcodes. Contact occurs directly through your WhatsApp or phone app.",
+                btn_restart: "← Analyze another photo",
+                footer_text: "PanelSafe Tool · <a href='/'>panelsafe.cv</a>",
+                degraded_notice: "<strong>Degraded Service:</strong> The analysis could not be completed due to a temporary inference service interruption. No score can be provided at this time.",
+                duplicate_notice: "<strong>Duplicate Photo:</strong> This photo has already been analyzed previously on PanelSafe.",
+                no_score_label: "No score",
+                err_invalid_image: "This file isn't a photo we can read — choose another one.",
+                err_file_too_large: "This photo is too large — try a smaller one or a screenshot.",
+                wa_greeting: "Hello ElectroMarjal, I checked my electrical panel with the PanelSafe tool.",
+                wa_duplicate_greeting: "Hello ElectroMarjal, I tried to check my electrical panel with the PanelSafe tool, but this photo was already analyzed earlier.",
+                wa_result_label: "Result",
+                wa_tracking_label: "Tracking ID",
+                wa_postcode_label: "Postcode",
+                wa_attach_photo: "I am attaching the photo of my panel so you can review it."
+            },
+            fr: {
+                page_title: "Vérifiez Votre Tableau Électrique | ElectroMarjal",
+                hero_title: "Vérifiez Votre Tableau Électrique",
+                hero_subtitle: "Importez une photo pour obtenir une estimation éducative instantanée de la sécurité de votre installation.",
+                service_area: "Région du Maestrat (Castellón)",
+                photo_label: "Photo de votre tableau électrique",
+                picker_text: "Prenez une photo ou choisissez une image",
+                picker_hint: "Ouvrez le couvercle afin que les disjoncteurs soient visibles",
+                change_photo: "Changer la photo",
+                rcd_checkbox_label: "Avez-vous testé le bouton du différentiel (bouton 'T') ?",
+                rcd_opt_responsive: "Réactif (a déclenché instantanément)",
+                rcd_opt_slow: "Lent (a mis un moment à déclencher)",
+                rcd_opt_unresponsive: "Sans réaction (n'a pas déclenché)",
+                consent_text: "Je consens à la collecte de la photo de mon tableau pour l'analyse de sécurité selon la",
+                privacy_link: "Politique de Confidentialité",
+                privacy_content: "Avis de confidentialité (RGPD/ePrivacy) : Nous traitons l'image de votre tableau uniquement pour estimer le score de sécurité et améliorer le modèle IA. Aucun cookie de suivi n'est utilisé. Hébergement sécurisé dans l'UE.",
+                btn_analyze: "Analyser Mon Tableau Gratuitement",
+                analyzing_wait: "Analyse du tableau électrique en cours avec PanelSafe IA...",
+                result_educational_heading: "Voici ce que nous voyons sur votre photo — faites-le confirmer par un électricien agréé",
+                disclosure_text: "Cet outil appartient à PanelSafe, créé par Eric McNeel, qui dirige ElectroMarjal. Le score est calculé exactement comme sur panelsafe.cv : ElectroMarjal ne peut pas le modifier.",
+                how_score_link: "Comment le score est calculé →",
+                score_title: "Score de Sécurité",
+                tracking_label: "Identifiant de suivi :",
+                contact_heading: "Demandez à ElectroMarjal de confirmer",
+                contact_desc: "Contactez directement ElectroMarjal pour toute question ou pour demander un contrôle sur place.",
+                postcode_label: "Code Postal du logement (facultatif) :",
+                postcode_error: "Le code postal doit comporter exactement 5 chiffres.",
+                btn_whatsapp: "Contacter par WhatsApp",
+                btn_phone: "Appeler ElectroMarjal",
+                btn_email: "Envoyer un e-mail",
+                zero_storage_note: "🔒 PanelSafe ne stocke aucun numéro, nom ou code postal. Le contact s'établit directement depuis votre application WhatsApp ou téléphonique.",
+                btn_restart: "← Analyser une autre photo",
+                footer_text: "Outil PanelSafe · <a href='/'>panelsafe.cv</a>",
+                degraded_notice: "<strong>Service dégradé :</strong> L'analyse n'a pas pu être effectuée en raison d'une interruption temporaire du service d'inférence. Aucun score n'est disponible.",
+                duplicate_notice: "<strong>Photo déjà analysée :</strong> Cette photo a déjà été traitée sur PanelSafe.",
+                no_score_label: "Sans score",
+                err_invalid_image: "Ce fichier n'est pas une photo lisible — choisissez-en une autre.",
+                err_file_too_large: "Cette photo est trop volumineuse — essayez avec une plus petite ou une capture d'écran.",
+                wa_greeting: "Bonjour ElectroMarjal, j'ai vérifié mon tableau électrique avec l'outil PanelSafe.",
+                wa_duplicate_greeting: "Bonjour ElectroMarjal, j'ai essayé de vérifier mon tableau électrique avec l'outil PanelSafe, mais cette photo avait déjà été analysée précédemment.",
+                wa_result_label: "Résultat",
+                wa_tracking_label: "Identifiant",
+                wa_postcode_label: "Code Postal",
+                wa_attach_photo: "Je joins la photo de mon tableau afin que vous puissiez l'examiner."
+            }
+        };
+
+        async function loadConfig() {
+            try {
+                const res = await fetch('config.json');
+                if (res.ok) {
+                    configData = await res.json();
+                    applyConfig();
+                }
+            } catch (err) {
+                console.warn('Could not load config.json, using defaults:', err);
+            }
+        }
+
+        function applyConfig() {
+            if (!configData) return;
+            if (configData.displayName) {
+                document.getElementById('nav-title').textContent = configData.displayName;
+            }
+            if (configData.logo) {
+                document.getElementById('nav-logo').src = configData.logo;
+            }
+            if (configData.serviceArea) {
+                document.getElementById('service-area-text').textContent = configData.serviceArea;
+            }
+            // Licence number: only show if non-null
+            const licContainer = document.getElementById('license-badge-container');
+            const licText = document.getElementById('license-badge-text');
+            if (configData.licenseNumber) {
+                licText.textContent = `Instalador autorizado nº ${configData.licenseNumber}`;
+                licContainer.style.display = 'inline-flex';
+            } else {
+                licContainer.style.display = 'none';
+            }
+
+            // Phone button
+            if (configData.channels && configData.channels.phone) {
+                const phoneBtn = document.getElementById('btn-phone');
+                phoneBtn.href = `tel:${configData.channels.phone}`;
+                phoneBtn.style.display = 'flex';
+            } else {
+                document.getElementById('btn-phone').style.display = 'none';
+            }
+
+            // Email button (only if configured)
+            const emailBtn = document.getElementById('btn-email');
+            if (configData.channels && configData.channels.email) {
+                emailBtn.style.display = 'flex';
+            } else {
+                emailBtn.style.display = 'none';
+            }
+
+            updateContactLinks();
+        }
+
+        let currentFormErrorKey = null;
+
+        function showFormError(errorKey) {
+            currentFormErrorKey = errorKey;
+            const t = translations[currentLang] || translations.es;
+            const banner = document.getElementById('form-error-banner');
+            const bannerText = document.getElementById('form-error-text');
+            bannerText.textContent = t[errorKey] || errorKey;
+            banner.style.display = 'flex';
+
+            // Reopen photo picker: clear selected file and preview, show picker
+            selectedFile = null;
+            document.getElementById('file-input').value = '';
+            document.getElementById('preview-box').style.display = 'none';
+            document.getElementById('photo-picker').style.display = 'block';
+            updateSubmitButtonState();
+        }
+
+        function hideFormError() {
+            currentFormErrorKey = null;
+            const banner = document.getElementById('form-error-banner');
+            if (banner) banner.style.display = 'none';
+        }
+
+        function setLanguage(lang) {
+            if (!translations[lang]) lang = 'es';
+            currentLang = lang;
+
+            const navLang = document.getElementById('nav-lang');
+            if (navLang) navLang.value = lang;
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang] && translations[lang][key]) {
+                    el.innerHTML = translations[lang][key];
+                }
+            });
+
+            if (currentFormErrorKey) {
+                const bannerText = document.getElementById('form-error-text');
+                if (bannerText && translations[lang][currentFormErrorKey]) {
+                    bannerText.textContent = translations[lang][currentFormErrorKey];
+                }
+            }
+
+            localStorage.setItem('breakerLang', lang);
+            updateContactLinks();
+        }
+
+        function triggerFileInput() {
+            document.getElementById('file-input').click();
+        }
+
+        function handleFileSelected(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+
+            hideFormError();
+
+            selectedFile = file;
+            const previewBox = document.getElementById('preview-box');
+            const picker = document.getElementById('photo-picker');
+            const previewImg = document.getElementById('preview-img');
+
+            const reader = new FileReader();
+            reader.onload = e => {
+                previewImg.src = e.target.result;
+                picker.style.display = 'none';
+                previewBox.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+
+            updateSubmitButtonState();
+        }
+
+        function toggleRcdOptions() {
+            const cb = document.getElementById('rcd-tested-checkbox');
+            const container = document.getElementById('rcd-options-container');
+            if (cb.checked) {
+                container.style.display = 'flex';
+            } else {
+                container.style.display = 'none';
+                selectedRcdResult = 'Not Tested';
+                document.querySelectorAll('input[name="rcd_test_result"]').forEach(r => r.checked = false);
+            }
+        }
+
+        function updateRcdResult() {
+            const checkedRadio = document.querySelector('input[name="rcd_test_result"]:checked');
+            selectedRcdResult = checkedRadio ? checkedRadio.value : 'Not Tested';
+        }
+
+        function toggleConsent() {
+            updateSubmitButtonState();
+        }
+
+        function updateSubmitButtonState() {
+            const consentChecked = document.getElementById('consent-checkbox').checked;
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = !(consentChecked && selectedFile);
+        }
+
+        function togglePrivacyPanel() {
+            const p = document.getElementById('privacy-panel');
+            p.style.display = (p.style.display === 'block') ? 'none' : 'block';
+        }
+
+        function validatePostcode(val) {
+            if (!val || val.trim() === '') return { valid: true, value: '' };
+            const clean = val.trim();
+            const valid = /^[0-9]{5}$/.test(clean);
+            return { valid, value: clean };
+        }
+
+        function handlePostcodeChange() {
+            const input = document.getElementById('postcode-input');
+            const errEl = document.getElementById('postcode-error');
+            const check = validatePostcode(input.value);
+
+            if (!check.valid) {
+                errEl.style.display = 'block';
+            } else {
+                errEl.style.display = 'none';
+            }
+            updateContactLinks();
+        }
+
+        function isRealTrackingId(id) {
+            if (!id || typeof id !== 'string') return false;
+            const trimmed = id.trim();
+            if (!trimmed) return false;
+            if (trimmed === 'ALREADY-UPLOADED' || trimmed === 'ERROR-OFFLINE' || trimmed === 'N/A' || trimmed === '--') {
+                return false;
+            }
+            return true;
+        }
+
+        function updateContactLinks() {
+            if (!configData || !currentResult) return;
+            const t = translations[currentLang] || translations.es;
+
+            // Postcode validation
+            const postcodeRaw = document.getElementById('postcode-input').value;
+            const check = validatePostcode(postcodeRaw);
+            const validPostcode = check.valid ? check.value : '';
+
+            const isDuplicate = Boolean(currentResult.duplicate);
+            const hasRealId = isRealTrackingId(currentResult.tracking_id);
+            const trackingId = hasRealId ? currentResult.tracking_id.trim() : '';
+
+            // Build plain text message
+            let lines = [];
+
+            if (isDuplicate) {
+                // For a duplicate, message says photo was already analysed earlier, without a score line
+                lines.push(t.wa_duplicate_greeting);
+            } else {
+                lines.push(t.wa_greeting);
+
+                let scoreStr = t.no_score_label;
+                if (currentResult.score !== null && currentResult.score !== undefined) {
+                    scoreStr = `${currentResult.score}/100`;
+                }
+                lines.push(`${t.wa_result_label}: ${scoreStr}`);
+            }
+
+            // Omit tracking-ID line entirely when there is no real ID
+            if (hasRealId) {
+                lines.push(`${t.wa_tracking_label}: ${trackingId}`);
+            }
+
+            if (validPostcode) {
+                lines.push(`${t.wa_postcode_label}: ${validPostcode}`);
+            }
+
+            lines.push(t.wa_attach_photo);
+            const fullMessage = lines.join('\n');
+            const encodedMessage = encodeURIComponent(fullMessage);
+
+            // 1. WhatsApp link
+            const waNumber = (configData.channels && configData.channels.whatsapp) || '34684173115';
+            const waBtn = document.getElementById('btn-whatsapp');
+            waBtn.href = `https://wa.me/${waNumber}?text=${encodedMessage}`;
+
+            // 2. Email link (if configured)
+            if (configData.channels && configData.channels.email) {
+                const emailBtn = document.getElementById('btn-email');
+                const emailSubject = hasRealId
+                    ? `Consulta PanelSafe - ${trackingId}`
+                    : 'Consulta PanelSafe';
+                emailBtn.href = `mailto:${configData.channels.email}?subject=${encodeURIComponent(emailSubject)}&body=${encodedMessage}`;
+            }
+        }
+
+        async function submitUpload() {
+            if (!selectedFile) return;
+
+            hideFormError();
+
+            const submitBtn = document.getElementById('submit-btn');
+            const spinner = document.getElementById('upload-spinner');
+            submitBtn.disabled = true;
+            spinner.style.display = 'block';
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('country', 'ES'); // Fixed to Spain for ElectroMarjal
+            formData.append('rcd_test_result', selectedRcdResult);
+
+            try {
+                const response = await fetch('/upload/', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.status === 400 || response.status === 413) {
+                    try {
+                        const errData = await response.json();
+                        if (errData && errData.detail) {
+                            console.warn(`Server rejected upload (${response.status}):`, errData.detail);
+                        }
+                    } catch (_) {}
+
+                    const errorKey = (response.status === 400) ? 'err_invalid_image' : 'err_file_too_large';
+                    showFormError(errorKey);
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}`);
+                }
+
+                const data = await response.json();
+                renderResult(data);
+            } catch (err) {
+                console.error('Upload failed:', err);
+                renderResult({
+                    status: 'degraded',
+                    inference_ok: false
+                });
+            } finally {
+                spinner.style.display = 'none';
+            }
+        }
+
+        function renderResult(data) {
+            currentResult = data;
+            const t = translations[currentLang] || translations.es;
+
+            document.getElementById('form-container').style.display = 'none';
+            const resultContainer = document.getElementById('result-container');
+            resultContainer.style.display = 'flex';
+
+            const scoreNumber = document.getElementById('score-number');
+            const scoreCard = document.getElementById('score-card');
+            const feedbackDisplay = document.getElementById('feedback-display');
+            const trackingBox = document.getElementById('tracking-box');
+            const trackingIdText = document.getElementById('tracking-id-text');
+
+            if (isRealTrackingId(data.tracking_id)) {
+                trackingIdText.textContent = data.tracking_id;
+                trackingBox.style.display = 'flex';
+            } else {
+                trackingIdText.textContent = '';
+                trackingBox.style.display = 'none';
+            }
+
+            if (data.duplicate) {
+                // Duplicate case
+                scoreNumber.textContent = '--';
+                feedbackDisplay.innerHTML = `<p>${t.duplicate_notice}</p>`;
+            } else if (data.inference_ok === false || data.status === 'degraded' || data.score === undefined || data.score === null) {
+                // Degraded / error case
+                scoreNumber.textContent = '--';
+                feedbackDisplay.innerHTML = `<p>${t.degraded_notice}</p>`;
+            } else {
+                // Normal success with score
+                scoreNumber.textContent = data.score;
+                feedbackDisplay.innerHTML = data.feedback || '';
+            }
+
+            // Conflict-of-interest Rule 1: Contact card is ALWAYS displayed
+            document.getElementById('contact-card').style.display = 'block';
+
+            updateContactLinks();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetForm() {
+            hideFormError();
+            selectedFile = null;
+            currentResult = null;
+            document.getElementById('file-input').value = '';
+            document.getElementById('preview-box').style.display = 'none';
+            document.getElementById('photo-picker').style.display = 'block';
+            document.getElementById('consent-checkbox').checked = false;
+            document.getElementById('postcode-input').value = '';
+            document.getElementById('postcode-error').style.display = 'none';
+
+            document.getElementById('result-container').style.display = 'none';
+            document.getElementById('form-container').style.display = 'block';
+            updateSubmitButtonState();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedLang = localStorage.getItem('breakerLang') || 'es';
+            setLanguage(savedLang);
+            loadConfig();
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
+</body>
+
+</html>
