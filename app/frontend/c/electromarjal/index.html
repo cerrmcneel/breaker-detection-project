@@ -1144,6 +1144,11 @@
 
             localStorage.setItem('breakerLang', lang);
             updateContactLinks();
+
+            // A result already on screen was rendered in the old language.
+            if (currentResult && document.getElementById('result-container').style.display === 'flex') {
+                renderResult(currentResult);
+            }
         }
 
         function triggerFileInput() {
@@ -1342,6 +1347,20 @@
             }
         }
 
+        // The server sends the findings as one HTML string holding an English and a
+        // Spanish block. Show only the block for the chosen language (French has no
+        // block yet and falls back to English). Same approach as the main page.
+        function pickReport(feedbackHtml, lang) {
+            const tpl = document.createElement('template');
+            tpl.innerHTML = feedbackHtml;
+            const block = tpl.content.querySelector(lang === 'es' ? '.lang-es-report' : '.lang-en-report');
+            if (!block) return tpl.content;
+            // Its headline repeats the score card above it.
+            block.querySelector(':scope > strong')?.remove();
+            block.querySelector(':scope > br')?.remove();
+            return block;
+        }
+
         function renderResult(data) {
             currentResult = data;
             const t = translations[currentLang] || translations.es;
@@ -1375,7 +1394,7 @@
             } else {
                 // Normal success with score
                 scoreNumber.textContent = data.score;
-                feedbackDisplay.innerHTML = data.feedback || '';
+                feedbackDisplay.replaceChildren(pickReport(data.feedback || '', currentLang));
             }
 
             // Conflict-of-interest Rule 1: Contact card is ALWAYS displayed
