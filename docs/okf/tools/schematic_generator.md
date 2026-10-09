@@ -44,7 +44,7 @@ graph TD
 ### Inference Worker (`src/model/inference_server.py`)
 - A standalone **Python `http.server` (`ThreadingHTTPServer`)** exposing `POST /predict` and an identity `GET /` (model MD5, classes, git commit). It is **not** FastAPI and currently has no rate-limiting or caching layer.
 - It runs `PanelSafePipeline`: YOLO26 detection → optional crop classifier (`classifier_mode`, currently `single_stage`) → EasyOCR text reads → HMM Viterbi correction (`use_hmm`, currently **`false`** — see [hmm_decoder](/models/hmm_decoder.md) for why).
-- **The OCR step is gated on `use_hmm`**, so with HMM off no text is read and every `ocr_text` is empty (verified against the live worker 2026-09-17).
+- **OCR runs on its own `use_ocr` flag** (`true` in production since 2026-09-29), independent of `use_hmm`, so `ocr_text` carries cleaned ratings such as `C16` (verified live 2026-10-09). Before that release it was gated on `use_hmm` and always empty.
 
 ### Deployment (verified 2026-09-17)
 - **Current:** the worker runs as a **native Windows Python process** on the RTX 3060 workstation (CUDA), started and auto-restarted by the `PanelSafeInference` Scheduled Task via `scripts/start_inference.ps1`. The gateway on VM 101 reaches it at `gpu-worker:8088` over Tailscale.

@@ -77,9 +77,8 @@ See the [HMM Decoder](/models/hmm_decoder.md) for post-processing error correcti
 — **currently disabled in production** (as of 2026-07-04, evidence-based: it measurably
 reduced real-world classification accuracy on the full validation set).
 
-> **Side effect worth knowing (verified 2026-09-17):** in `src/model/pipeline.py` the OCR step
-> (EasyOCR over each crop) only runs when `use_hmm` is true. With HMM disabled, production
-> responses carry an empty `ocr_text` for every device, so breaker ratings and the `SI` marker
-> are not read live. The regex cleaning in `ocr_reader._clean_ocr_text` is tested and was
-> measured offline, but it does not affect production output until OCR is decoupled from the
-> HMM flag.
+> **OCR history (updated 2026-10-09):** until 2026-09-29 the OCR step in `src/model/pipeline.py`
+> (EasyOCR over each crop) only ran when `use_hmm` was true, so with HMM disabled production
+> returned an empty `ocr_text` for every device. It now has its own `use_ocr` key (`true` in
+> production, `prod/2026-09-29-release`), so ratings and the `SI` marker are read live and
+> cleaned by `ocr_reader._clean_ocr_text`.

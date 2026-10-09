@@ -58,7 +58,7 @@ Solving." Practicing this mode deliberately, rather than defaulting to
 
 `directives/production_hardening_roadmap.md` is the living plan: phase
 status, what's done, what's next, and a **CURRENT STATE** section at the
-top with uncommitted work, the deployment topology, and gotchas that will
+top (a verified snapshot, then the prioritised open work) with uncommitted work, the deployment topology, and gotchas that will
 bite you (notably: `C:\ironhack\labs\marjal-website` is a stale,
 commit-less snapshot — pushing from it would destroy published work).
 
@@ -80,8 +80,24 @@ Known-good invariants worth not rediscovering the hard way:
   Windows process started by the `PanelSafeInference` Scheduled Task
   (`scripts/start_inference.ps1`); `yolo-inference-deployment.yaml` is the May 2026
   K3s setup. `curl http://localhost:8088/` shows what is actually being served.
-- **OCR is off in production as a side effect of `use_hmm: false`** (the OCR step
-  in `src/model/pipeline.py` is gated on that flag), so `ocr_text` is always empty.
+- **OCR is on in production** (since `prod/2026-09-29-release`): `use_ocr: true` in
+  `src/model/pipeline_config.json`, independent of `use_hmm` (still `false`). Known
+  confidently-wrong reads exist (a C40 read as `C4`), so ratings always need human review.
+- **The GPU worker runs from the main working tree** (`C:\ironhack\labs\breaker-detection-project`,
+  detached at the worker's release commit). Whatever is checked out there goes live at the
+  worker's next restart, so never switch branches in it: work in a `git worktree`. Its
+  `CLAUDE.md` is therefore the release-time copy; the current one is on `origin/main`.
+- **Gateway deploys are git tags** `prod/YYYY-MM-DD-<name>`, checked out detached on VM 101
+  (Tailscale `100.103.11.109`). `app/frontend` is bind-mounted (live on checkout); changes
+  under `app/` or `src/` need `docker compose up -d --build web`. `requirements.txt` is
+  unpinned, so a rebuild drifts dependencies until it is pinned. The VM carries an
+  uncommitted `docker-compose.yml` hotfix that keeps the public sites up: never
+  `reset --hard`, `stash` or `checkout -- .` there. Commands and rollbacks:
+  `C:\ironhack\labs\panelsafe-ops\README.md` (outside the repo on purpose).
+- **`/metodologia/` is stamped with a hash of `grade_panel_layout`'s source.** Any edit to
+  that function, even formatting, must restamp `<code id="score-version">` in
+  `app/frontend/metodologia/index.html` in the same commit
+  (`src/tests/test_score_methodology.py` fails otherwise).
 - The full test suite is expected to be **green** (`python -m pytest
   src/tests/ -q`). If something fails on arrival, it's a regression or
   rot, not the normal state.

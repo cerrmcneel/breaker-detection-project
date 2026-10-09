@@ -22,13 +22,16 @@ Science & ML bootcamp and has since been hardened into a small production servic
 | **Consumer analyzer** (`/`, `/upload/`) | Photo → detected devices → REBT-based safety score and feedback. Refuses to invent a score when inference is unavailable. |
 | **HITL workspace** (`analysis.html`, `/predict/`) | An electrician corrects boxes, classes and ratings on a pan/zoom canvas. Corrections are saved via `/active-learning/save` and linked to the original prediction. |
 | **Unifilar generator** (`/unifilar/`) | A deterministic React/Vite app renders the corrected panel as an SVG single-line diagram (no LLM involved). |
+| **Camera viewfinder** (`/viewfinder/`) | A 1-class board detector (YOLO26-Nano, 320 px, ONNX) runs in the browser (onnxruntime-web, WASM) and helps the user frame the whole panel before capture. |
+| **Electrician's own panel-check page** (`/c/electromarjal/`) | The consumer analyzer branded for one electrician (config in `config.json`). Every result offers that electrician's contact; PanelSafe stores no contact data. |
+| **Score methodology** (`/metodologia/`) | Public description of exactly how the score is computed, stamped with a hash of `grade_panel_layout`; a test fails if the code changes without the page. |
 
 Detected classes (`data.yaml`): `MCB` (PIA), `RCD` (diferencial), `RCD_SI` (superinmunizado),
 `MAINBREAKER` (IGA), `OVERSURGE` (surge protection), `OTHER`.
 
 ---
 
-## Architecture (as deployed, verified 2026-09-17)
+## Architecture (as deployed, verified 2026-10-09)
 
 ```mermaid
 graph TD
@@ -82,12 +85,13 @@ to [`docs/okf/methodology/ablation_study.md`](docs/okf/methodology/ablation_stud
   [`evaluation_rigor.md`](docs/okf/methodology/evaluation_rigor.md).
 
 ### Known limitations
-- **Breaker text (ratings like `C16`, the `SI` marker) is not read in production.** The OCR step
-  in `pipeline.py` only runs when `use_hmm` is true, and HMM is disabled. The improved text
-  cleaning (`_clean_ocr_text`, precision 69.1% → 94.4% on 1,060 real crops) is measured offline
-  and tested, but does not reach production output until OCR is decoupled from the HMM flag.
+- **Breaker text is read in production since 2026-09-29** (`use_ocr: true`, decoupled from the
+  HMM flag). Text cleaning (`_clean_ocr_text`) measured 69.1% → 94.4% precision on 1,060 real
+  crops. On 8 unseen phone photos, 27 of 64 detections got text and 25 of 27 reads were right;
+  the two errors were confidently wrong (a C40 read as `C4`), so ratings still need human review.
 - **Installation-era estimation** uses REBT composition rules. Its manufacturer-catalog branch
-  needs OCR text, so it is currently inactive; its production-year table is also unverified.
+  is unreachable even with OCR on, because the cleaner keeps only ratings/`30MA`/`SI`/`ICP-M` and
+  drops the brand tokens the catalog needs.
 - **Data is scarce.** Some classes (`RCD_SI`, `OVERSURGE`) have very few real examples.
   Automated retraining is deliberately deferred until every class has ≥100 real examples.
 
@@ -96,7 +100,7 @@ to [`docs/okf/methodology/ablation_study.md`](docs/okf/methodology/ablation_stud
 ## Engineering
 
 - **CI** (`.github/workflows/ci.yml`): `ruff` lint → `pytest` → Docker build.
-- **Tests:** `python -m pytest src/tests/ -q` (203 passing on 2026-09-17).
+- **Tests:** `python -m pytest src/tests/ -q` (229 passed, 3 skipped on `main`, 2026-10-09).
 - **API contracts:** Pydantic response models for `/predict/`, published in OpenAPI.
 - **MLOps:** MLflow autologging (`src/model/train.py`); version registration and rollback
   (`src/tools/manage_model_version.py`).
