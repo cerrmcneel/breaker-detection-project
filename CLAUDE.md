@@ -90,7 +90,7 @@ Known-good invariants worth not rediscovering the hard way:
 - **Gateway deploys are git tags** `prod/YYYY-MM-DD-<name>`, checked out detached on VM 101
   (Tailscale `100.103.11.109`). `app/frontend` is bind-mounted (live on checkout); changes
   under `app/` or `src/` need `docker compose up -d --build web`. `requirements.txt` is
-  unpinned, so a rebuild drifts dependencies until it is pinned. The VM carries an
+  pinned to the live image's versions; upgrade them only on purpose. The VM carries an
   uncommitted `docker-compose.yml` hotfix that keeps the public sites up: never
   `reset --hard`, `stash` or `checkout -- .` there. Commands and rollbacks:
   `C:\ironhack\labs\panelsafe-ops\README.md` (outside the repo on purpose).
