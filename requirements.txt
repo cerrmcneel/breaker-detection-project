@@ -1,12 +1,19 @@
-fastapi
-uvicorn
-python-multipart
-python-dotenv
+# Lean gateway manifest (Dockerfile, Azure App Service). Pinned to the versions
+# running in production (breaker-detection-project-web:latest on VM 101, read with
+# `pip freeze` on 2026-10-11, Python 3.10). Unpinned, a rebuild silently upgraded
+# fastapi/starlette/uvicorn on 2026-10-06. To upgrade: bump here deliberately,
+# rebuild, and run a real /predict/ before tagging the deploy.
+fastapi==0.142.2
+# fastapi allows a starlette range; pinned too because it drifted with fastapi.
+starlette==1.7.0
+uvicorn==0.54.0
+python-multipart==0.0.32
+python-dotenv==1.2.4
 # Required by fastapi.testclient (src/tests/test_main.py). starlette >= 1.3 moved
 # its TestClient transport to httpx2; starlette 1.0.x used httpx, so an existing
 # local env may satisfy this already and hide the gap.
-httpx2
-opencv-python-headless
-numpy
-requests
-pydantic
+httpx2==2.13.1
+opencv-python-headless==5.0.0.93
+numpy==2.2.6
+requests==2.34.2
+pydantic==2.13.5
