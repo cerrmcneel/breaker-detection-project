@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 .venv/
 .venv2/
+.venv-e2e/
 env/
 venv/
 .env
