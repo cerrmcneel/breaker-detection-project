@@ -90,9 +90,11 @@ Known-good invariants worth not rediscovering the hard way:
 - **Gateway deploys are git tags** `prod/YYYY-MM-DD-<name>`, checked out detached on VM 101
   (Tailscale `100.103.11.109`). `app/frontend` is bind-mounted (live on checkout); changes
   under `app/` or `src/` need `docker compose up -d --build web`. `requirements.txt` is
-  pinned to the live image's versions; upgrade them only on purpose. The VM carries an
-  uncommitted `docker-compose.yml` hotfix that keeps the public sites up: never
-  `reset --hard`, `stash` or `checkout -- .` there. Commands and rollbacks:
+  pinned to the live image's versions; upgrade them only on purpose. cloudflared runs with
+  `--protocol http2` (committed 2026-10-13; QUIC fails on that LAN). **Tags older than
+  `prod/2026-10-13-compose-http2` carry the old QUIC file**, so after checking one out on the
+  VM, restore it with `git checkout prod/2026-10-13-compose-http2 -- docker-compose.yml`
+  before any `docker compose up`, or the public sites go down. Commands and rollbacks:
   `C:\ironhack\labs\panelsafe-ops\README.md` (outside the repo on purpose).
 - **`/metodologia/` is stamped with a hash of `grade_panel_layout`'s source.** Any edit to
   that function, even formatting, must restamp `<code id="score-version">` in
