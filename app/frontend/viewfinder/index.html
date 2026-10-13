@@ -87,6 +87,32 @@
       gap: 10px;
     }
 
+    .hud-left {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      pointer-events: auto;
+    }
+
+    .hud-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+      pointer-events: auto;
+    }
+
+    .btn-back {
+      padding: 6px 14px;
+      min-height: 44px;
+      font-size: 0.84rem;
+      text-decoration: none;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
     .badge-status {
       display: inline-flex;
       align-items: center;
@@ -120,21 +146,83 @@
       box-shadow: 0 0 8px var(--danger);
     }
 
+    .btn-stats-toggle {
+      min-height: 44px;
+      min-width: 44px;
+      padding: 6px 12px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      border-radius: 9999px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      color: var(--muted);
+      gap: 5px;
+      pointer-events: auto;
+      transition: all 0.2s ease;
+    }
+    .btn-stats-toggle:hover {
+      color: var(--text);
+      border-color: var(--accent);
+    }
+    .btn-stats-toggle.active {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: rgba(56, 189, 248, 0.15);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+    }
+
     .hud-telemetry {
-      background: var(--card-bg);
+      display: none; /* Collapsed by default to avoid obstructing camera view */
+      background: rgba(15, 23, 42, 0.88);
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 10px 14px;
-      display: flex;
+      padding: 8px 12px;
       flex-direction: column;
-      gap: 4px;
+      gap: 3px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 0.78rem;
-      min-width: 195px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      font-size: 0.74rem;
+      width: 195px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+      pointer-events: auto;
     }
+    .hud-telemetry.visible {
+      display: flex;
+    }
+
+    .hud-telemetry-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+      padding-bottom: 4px;
+      margin-bottom: 2px;
+    }
+    .hud-telemetry-title {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .btn-close-stats {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.85rem;
+      line-height: 1;
+      padding: 4px 6px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.15s;
+    }
+    .btn-close-stats:hover, .btn-close-stats:active {
+      color: #fff;
+    }
+
     .tel-row {
       display: flex;
       justify-content: space-between;
@@ -244,17 +332,29 @@
         top: max(10px, env(safe-area-inset-top, 10px));
         left: max(10px, env(safe-area-inset-left, 10px));
         right: max(10px, env(safe-area-inset-right, 10px));
-        flex-direction: column;
+        flex-direction: row;
+        justify-content: space-between;
         align-items: flex-start;
-        gap: 6px;
+        gap: 8px;
+      }
+      .hud-left .btn {
+        flex: none;
+      }
+      .hud-right .btn {
+        flex: none;
+      }
+      .btn-stats-toggle {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 6px 10px;
+        font-size: 0.78rem;
       }
       .hud-telemetry {
-        min-width: unset;
-        width: 100%;
-        max-width: 250px;
-        font-size: 0.72rem;
-        padding: 8px 10px;
-        gap: 3px;
+        width: 175px;
+        max-width: 185px;
+        font-size: 0.68rem;
+        padding: 6px 10px;
+        gap: 2px;
       }
       .controls-bar {
         bottom: max(16px, env(safe-area-inset-bottom, 16px));
@@ -262,7 +362,7 @@
         right: max(10px, env(safe-area-inset-right, 10px));
         gap: 8px;
       }
-      .btn {
+      .controls-bar .btn {
         flex: 1 1 0;
         padding: 12px 14px;
         font-size: 0.85rem;
@@ -282,17 +382,25 @@
         justify-content: space-between;
         align-items: flex-start;
       }
+      .hud-left .btn, .hud-right .btn {
+        flex: none;
+      }
+      .btn-stats-toggle {
+        min-height: 44px;
+        padding: 6px 10px;
+        font-size: 0.76rem;
+      }
       .hud-telemetry {
         padding: 6px 10px;
-        font-size: 0.70rem;
+        font-size: 0.68rem;
         gap: 2px;
-        min-width: 175px;
+        width: 165px;
       }
       .controls-bar {
         bottom: max(8px, env(safe-area-inset-bottom, 8px));
         gap: 8px;
       }
-      .btn {
+      .controls-bar .btn {
         min-height: 44px;
         padding: 8px 16px;
         font-size: 0.82rem;
@@ -311,46 +419,57 @@
 
   <!-- Floating HUD -->
   <div class="hud-header">
-    <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 8px; pointer-events: auto;">
-      <a id="backToAnalysisLink" href="/analysis.html" class="btn" style="display: none; padding: 6px 14px; min-height: 44px; font-size: 0.84rem; text-decoration: none; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);">← Back to analysis</a>
+    <div class="hud-left">
+      <a id="backToAnalysisLink" href="/analysis.html" class="btn btn-back" style="display: none;">← Back to analysis</a>
       <div class="badge-status">
         <div id="statusDot" class="status-dot"></div>
         <span id="statusText">INITIALIZING...</span>
       </div>
     </div>
 
-    <div class="hud-telemetry">
-      <div class="tel-row">
-        <span class="tel-lbl">Inference:</span>
-        <span id="infTime" class="tel-val accent">— ms</span>
-      </div>
-      <div class="tel-row">
-        <span class="tel-lbl">Pipeline FPS:</span>
-        <span id="uiFps" class="tel-val success">—</span>
-      </div>
-      <div class="tel-row">
-        <span class="tel-lbl">Confidence:</span>
-        <span id="boardConf" class="tel-val">—</span>
-      </div>
-      <div class="tel-row">
-        <span class="tel-lbl">DIN Rows:</span>
-        <span id="rowCount" class="tel-val">—</span>
-      </div>
-      <div class="tel-row">
-        <span class="tel-lbl">Union Fill:</span>
-        <span id="fillFraction" class="tel-val">—</span>
-      </div>
-      <div class="tel-row">
-        <span class="tel-lbl">WASM Threads:</span>
-        <span id="wasmThreads" class="tel-val">—</span>
-      </div>
-      <div class="tel-row">
-        <span class="tel-lbl">Isolated:</span>
-        <span id="isIsolated" class="tel-val">—</span>
-      </div>
-      <div class="tel-row">
-        <span class="tel-lbl">Offline:</span>
-        <span id="offlineStatus" class="tel-val">—</span>
+    <div class="hud-right">
+      <button id="toggleStatsBtn" class="btn btn-stats-toggle" type="button" aria-expanded="false" aria-controls="hudTelemetry" aria-label="Toggle technical statistics overlay" title="Toggle telemetry stats">
+        <span>📊</span>
+        <span>Stats</span>
+      </button>
+
+      <div class="hud-telemetry" id="hudTelemetry" role="region" aria-label="Telemetry statistics">
+        <div class="hud-telemetry-header">
+          <span class="hud-telemetry-title">Telemetry</span>
+          <button id="closeTelemetryBtn" class="btn-close-stats" type="button" aria-label="Close telemetry overlay" title="Close stats">✕</button>
+        </div>
+        <div class="tel-row">
+          <span class="tel-lbl">Inference:</span>
+          <span id="infTime" class="tel-val accent">— ms</span>
+        </div>
+        <div class="tel-row">
+          <span class="tel-lbl">Pipeline FPS:</span>
+          <span id="uiFps" class="tel-val success">—</span>
+        </div>
+        <div class="tel-row">
+          <span class="tel-lbl">Confidence:</span>
+          <span id="boardConf" class="tel-val">—</span>
+        </div>
+        <div class="tel-row">
+          <span class="tel-lbl">DIN Rows:</span>
+          <span id="rowCount" class="tel-val">—</span>
+        </div>
+        <div class="tel-row">
+          <span class="tel-lbl">Union Fill:</span>
+          <span id="fillFraction" class="tel-val">—</span>
+        </div>
+        <div class="tel-row">
+          <span class="tel-lbl">WASM Threads:</span>
+          <span id="wasmThreads" class="tel-val">—</span>
+        </div>
+        <div class="tel-row">
+          <span class="tel-lbl">Isolated:</span>
+          <span id="isIsolated" class="tel-val">—</span>
+        </div>
+        <div class="tel-row">
+          <span class="tel-lbl">Offline:</span>
+          <span id="offlineStatus" class="tel-val">—</span>
+        </div>
       </div>
     </div>
   </div>
@@ -440,10 +559,72 @@
   offCanvas.height = TARGET_SIZE;
   const offCtx = offCanvas.getContext("2d", { willReadFrequently: true });
 
+  // Telemetry Overlay Toggle Elements & Logic
+  const toggleStatsBtn = document.getElementById("toggleStatsBtn");
+  const hudTelemetry = document.getElementById("hudTelemetry");
+  const closeTelemetryBtn = document.getElementById("closeTelemetryBtn");
+  let isStatsVisible = false;
+
+  function setStatsVisible(visible, savePreference = false) {
+    isStatsVisible = !!visible;
+    if (hudTelemetry) {
+      if (isStatsVisible) {
+        hudTelemetry.classList.add("visible");
+      } else {
+        hudTelemetry.classList.remove("visible");
+      }
+    }
+    if (toggleStatsBtn) {
+      if (isStatsVisible) {
+        toggleStatsBtn.classList.add("active");
+        toggleStatsBtn.setAttribute("aria-expanded", "true");
+      } else {
+        toggleStatsBtn.classList.remove("active");
+        toggleStatsBtn.setAttribute("aria-expanded", "false");
+      }
+    }
+    if (savePreference) {
+      try {
+        localStorage.setItem("panelsafe_viewfinder_stats", isStatsVisible ? "true" : "false");
+      } catch (e) {
+        // Ignore localStorage quota / private browsing errors
+      }
+    }
+  }
+
+  function initStatsToggle() {
+    const params = new URLSearchParams(window.location.search);
+    let shouldShow = false;
+    // URL parameters (benchmarks, tests, debug) override default
+    if (params.has("stats") || params.has("mobile_test") || params.has("benchmark")) {
+      shouldShow = true;
+    } else {
+      try {
+        shouldShow = localStorage.getItem("panelsafe_viewfinder_stats") === "true";
+      } catch (e) {
+        shouldShow = false;
+      }
+    }
+    setStatsVisible(shouldShow, false);
+
+    if (toggleStatsBtn) {
+      toggleStatsBtn.addEventListener("click", () => {
+        setStatsVisible(!isStatsVisible, true);
+      });
+    }
+    if (closeTelemetryBtn) {
+      closeTelemetryBtn.addEventListener("click", () => {
+        setStatsVisible(false, true);
+      });
+    }
+  }
+
   // Update Cross-Origin Isolation HUD status immediately
-  isIsolatedEl.textContent = window.crossOriginIsolated ? "true (COOP/COEP)" : "false (No SharedArrayBuffer)";
-  if (!window.crossOriginIsolated) {
-    isIsolatedEl.style.color = "var(--warning)";
+  if (isIsolatedEl) {
+    isIsolatedEl.textContent = window.crossOriginIsolated ? "true (COOP/COEP)" : "false (No SharedArrayBuffer)";
+    if (!window.crossOriginIsolated) {
+      isIsolatedEl.style.color = "var(--warning)";
+    }
   }
 
   // --- Service Worker & Offline Cache Tracking ---
@@ -1408,8 +1589,10 @@
           const orientation = vpW > vpH ? "landscape" : "portrait";
           const hasHorizontalScroll = document.documentElement.scrollWidth > vpW || document.body.scrollWidth > vpW;
 
-          // 2. Measure touch target button sizes
-          const buttons = Array.from(document.querySelectorAll(".btn")).map((b) => {
+          // 2. Measure touch target button sizes for visible interactive buttons
+          const buttons = Array.from(document.querySelectorAll(".btn"))
+            .filter((b) => b.offsetParent !== null && window.getComputedStyle(b).display !== "none")
+            .map((b) => {
             const rect = b.getBoundingClientRect();
             return {
               id: b.id,
@@ -1542,6 +1725,9 @@
   window.addEventListener("DOMContentLoaded", async () => {
     // 0. Register service worker for offline basement support
     initServiceWorker();
+
+    // Initialize telemetry stats toggle state & persistence
+    initStatsToggle();
 
     // 1. Kick off overlay 60 FPS animation loop
     renderOverlay();
