@@ -181,6 +181,29 @@ def test_unified_estimate_without_ocr_falls_back_to_composition():
     assert "REBT-2002 Installation Era" in result.era_label
 
 
+# --- Spanish report wording (found in review 2026-10-13) ---------------------------------
+# feedback_es used the English era label, range and age ("REBT-2002 Installation Era
+# (2002–2019, aprox. 7–24 years)"), so the Spanish report carried an English line.
+_ENGLISH_LEAKS = ("Installation Era", "years", "Present", "Pre-Normative", "Catalog Match", "Obsolete")
+
+
+@pytest.mark.parametrize("preds, ocr_texts", [
+    ([{"class": "MCB"}], []),                                                    # Pre-1973
+    ([{"class": "RCD"}, {"class": "MCB"}], []),                                  # 1973-2002
+    ([{"class": "MAINBREAKER"}, {"class": "RCD"}, {"class": "MCB"}], []),        # 2002-2019
+    ([{"class": "MAINBREAKER"}, {"class": "OVERSURGE"}, {"class": "RCD"}], []),  # 2020+
+    ([{"class": "MAINBREAKER"}, {"class": "RCD"}, {"class": "MCB"}],             # catalog, ongoing
+     ["SCHNEIDER Acti9 iC60N C16"]),
+])
+def test_spanish_feedback_has_no_english(preds, ocr_texts):
+    result = estimate_panel_era(preds, ocr_texts, current_year=2026)
+    leaks = [w for w in _ENGLISH_LEAKS if w in result.feedback_es]
+    assert not leaks, f"English in feedback_es: {leaks} -> {result.feedback_es}"
+    assert "años" in result.feedback_es
+    # The English report and fields are unchanged.
+    assert "years" in result.feedback_en and "years" in result.estimated_age_range
+
+
 def test_era_estimate_serialization():
     preds = [{"class": "MAINBREAKER"}, {"class": "RCD"}, {"class": "MCB"}]
     ocr_texts = ["Legrand DX3 C16"]

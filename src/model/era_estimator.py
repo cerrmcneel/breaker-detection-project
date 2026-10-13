@@ -184,6 +184,13 @@ def match_catalog_signatures(text: str) -> List[CatalogMatch]:
     return matches
 
 
+# Spanish names for the standards returned by estimate_rebt_composition_era(). The
+# others are already Spanish legal names and pass through unchanged.
+_REBT_STANDARD_ES = {
+    "Pre-REBT 1973 (Obsolete)": "Anterior al REBT 1973 (obsoleta)",
+}
+
+
 def estimate_rebt_composition_era(predictions: List[Dict[str, Any]]) -> Tuple[str, str, List[str]]:
     """
     Infers the installation era baseline from panel component composition
@@ -287,25 +294,24 @@ def estimate_panel_era(
 
         if max_end_candidates and not has_ongoing:
             max_end = max(max_end_candidates)
-            era_range = f"{min_start}–{max_end}"
+            era_range = era_range_es = f"{min_start}–{max_end}"
             min_age = current_year - max_end
             max_age = current_year - min_start
             age_range = f"{min_age}–{max_age} years"
-            era_label = f"Catalog Match ({era_range})"
-        elif has_ongoing and max_end_candidates:
-            era_range = f"{min_start}–Present"
-            max_age = current_year - min_start
-            age_range = f"0–{max_age} years"
-            era_label = f"Catalog Match ({era_range})"
+            age_range_es = f"{min_age}–{max_age} años"
         elif has_ongoing:
             era_range = f"{min_start}–Present"
+            era_range_es = f"{min_start}–actualidad"
             max_age = current_year - min_start
             age_range = f"0–{max_age} years"
-            era_label = f"Catalog Match ({era_range})"
+            age_range_es = f"0–{max_age} años"
         else:
             era_range = f"~{min_start}s"
+            era_range_es = f"década de {min_start}"
             age_range = f"~{current_year - min_start} years"
-            era_label = f"Catalog Match ({era_range})"
+            age_range_es = f"~{current_year - min_start} años"
+        era_label = f"Catalog Match ({era_range})"
+        era_label_es = "Coincidencia de catálogo"  # the range follows in the sentence
 
         for cm in catalog_matches:
             end_str = str(cm.era_end) if cm.era_end else "Present"
@@ -335,31 +341,37 @@ def estimate_panel_era(
             )
     else:
         # Fallback strictly to composition era
+        # The Spanish wording matches the era names on /metodologia/.
         if "Pre-1973" in comp_era:
-            era_range = "Pre-1973"
-            age_range = ">50 years"
+            era_range, era_range_es = "Pre-1973", "anterior a 1973"
+            age_range, age_range_es = ">50 years", "más de 50 años"
             era_label = "Pre-Normative (~1970s or earlier)"
+            era_label_es = "Pre-normativa (años 70 o antes)"
             confidence = "medium"
         elif "1973–2002" in comp_era:
-            era_range = "1973–2002"
-            age_range = "24–53 years"
+            era_range = era_range_es = "1973–2002"
+            age_range, age_range_es = "24–53 years", "24–53 años"
             era_label = "REBT-1973 Installation Era"
+            era_label_es = "Época REBT-1973"
             confidence = "medium"
         elif "2020" in comp_era:
-            era_range = "2020–Present"
-            age_range = "<6 years"
+            era_range, era_range_es = "2020–Present", "2020–actualidad"
+            age_range, age_range_es = "<6 years", "menos de 6 años"
             era_label = "Modern REBT Installation Era (Surge Protected)"
+            era_label_es = "REBT actualizado (con protección contra sobretensiones)"
             confidence = "high"
         else:  # 2002–2019
-            era_range = "2002–2019"
-            age_range = "7–24 years"
+            era_range = era_range_es = "2002–2019"
+            age_range, age_range_es = "7–24 years", "7–24 años"
             era_label = "REBT-2002 Installation Era"
+            era_label_es = "Época REBT-2002"
             confidence = "medium"
 
-    # Format feedback summaries (ES / EN)
+    # Format feedback summaries (ES / EN). Each language gets its own label, range
+    # and age wording; the English fields on EraEstimate stay as they were.
     feedback_es = (
-        f"📅 <strong>Estimación de Época de Instalación:</strong> {era_label} ({era_range}, aprox. {age_range}). "
-        f"Normativa de referencia: <em>{rebt_std}</em>."
+        f"📅 <strong>Estimación de Época de Instalación:</strong> {era_label_es} ({era_range_es}, aprox. {age_range_es}). "
+        f"Normativa de referencia: <em>{_REBT_STANDARD_ES.get(rebt_std, rebt_std)}</em>."
     )
     feedback_en = (
         f"📅 <strong>Estimated Installation Era:</strong> {era_label} ({era_range}, approx. {age_range}). "
