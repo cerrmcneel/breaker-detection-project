@@ -139,6 +139,48 @@ def test_dialog_is_full_screen_on_phones(page, base_url, width):
     assert box["height"] == pytest.approx(844, abs=1), f"dialog is {box['height']:.0f}px tall"
 
 
+@pytest.mark.parametrize("width", [360, 1024])
+def test_dialog_controls_stay_inside_the_form_column(page, base_url, width):
+    """The form column scrolls (overflow-y), which clips anything wider than it."""
+    open_landing(page, base_url, width, height=844)
+    page.evaluate("openUploadModal()")
+    # Open the optional sections too, so their controls are measured.
+    page.evaluate(
+        "() => { const t = document.getElementById('rcd-tested-checkbox');"
+        " t.checked = true; t.dispatchEvent(new Event('change', {bubbles: true})); }"
+    )
+
+    sticking_out = page.evaluate(
+        """() => {
+          const col = document.querySelector('.upload-modal-content > .container');
+          const edge = col.getBoundingClientRect();
+          const bad = [];
+          col.querySelectorAll('*').forEach(el => {
+            const b = el.getBoundingClientRect();
+            if (b.width === 0 || b.height === 0) return;
+            const over = Math.max(b.right - edge.right, edge.left - b.left);
+            if (over > 0.5) bad.push(`${el.tagName.toLowerCase()}#${el.id} +${Math.round(over)}px`);
+          });
+          return bad;
+        }"""
+    )
+
+    assert not sticking_out, f"wider than the form column at {width}px: {sticking_out}"
+
+
+@pytest.mark.parametrize("width", [390, 1024])
+def test_dialog_close_button_works(page, base_url, width):
+    """click() fails if another element covers the button, which is the point."""
+    open_landing(page, base_url, width, height=844)
+    page.evaluate("openUploadModal()")
+    overlay = page.locator("#upload-modal")
+    assert "open" in overlay.get_attribute("class")
+
+    page.locator(".modal-close-btn").click(timeout=3000)
+
+    assert "open" not in overlay.get_attribute("class")
+
+
 @pytest.mark.parametrize("width", TABLET_UP_WIDTHS)
 def test_dialog_is_a_centered_card_from_tablet_up(page, base_url, width):
     open_landing(page, base_url, width)
