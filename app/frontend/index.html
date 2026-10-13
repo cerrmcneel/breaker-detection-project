@@ -32,6 +32,24 @@
             --danger: #ff4a4a;
             --radius: 16px;
             --shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(145, 55, 175, 0.1);
+
+            /* Layout. --nav-h is the navbar's own height, not a measurement of it:
+               everything that sits below the fixed nav hangs off this value. */
+            --nav-h: 4rem;
+            --page-pad: 20px;
+            --content-max: 1100px;
+            --dialog-max: 500px;
+            --form-max: 440px;
+
+            /* Space scale in rem, so it follows the user's text size. */
+            --space-1: 0.5rem;
+            --space-2: 1rem;
+            --space-3: 1.5rem;
+            --space-4: 2rem;
+            --space-5: 2.5rem;
+
+            /* Fluid hero size: rem keeps it zoomable, vw makes it scale. */
+            --text-hero: clamp(2rem, 1.2rem + 4vw, 3rem);
         }
 
         body {
@@ -45,7 +63,7 @@
             justify-content: flex-start;
             min-height: 100vh;
             margin: 0;
-            padding: 20px;
+            padding: var(--page-pad);
             color: var(--text);
             -webkit-tap-highlight-color: transparent;
         }
@@ -54,14 +72,14 @@
             background: var(--card-bg);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            padding: 2.5rem 2rem;
+            padding: var(--space-5) var(--space-4);
             border-radius: var(--radius);
             box-shadow: var(--shadow);
             border: 1px solid rgba(145, 55, 175, 0.2);
             text-align: center;
-            max-width: 440px;
+            max-width: var(--form-max);
             width: 100%;
-            margin-top: 80px;
+            margin-top: calc(var(--nav-h) + var(--space-2));
             transition: transform 0.3s ease;
         }
 
@@ -70,7 +88,7 @@
             color: var(--text);
             font-weight: 800;
             letter-spacing: -0.025em;
-            margin-bottom: 1rem;
+            margin-bottom: var(--space-2);
             font-size: 2rem;
         }
 
@@ -121,7 +139,7 @@
             width: 100%;
             border-radius: 12px;
             overflow: hidden;
-            margin-bottom: 1.5rem;
+            margin-bottom: var(--space-3);
             display: none;
             background: #000;
             aspect-ratio: 3/4;
@@ -179,7 +197,7 @@
             border-left: 4px solid var(--primary);
             border: 1px solid rgba(145, 55, 175, 0.25);
             padding: 1.25rem;
-            margin-bottom: 2rem;
+            margin-bottom: var(--space-4);
             border-radius: 8px;
             text-align: left;
             font-size: 14px;
@@ -205,11 +223,11 @@
         }
 
         .instruction-card li {
-            margin-bottom: 0.5rem;
+            margin-bottom: var(--space-1);
         }
 
         .progress-container {
-            margin-bottom: 2rem;
+            margin-bottom: var(--space-4);
             background: #141219;
             padding: 1.25rem;
             border-radius: 12px;
@@ -261,7 +279,8 @@
             background: rgba(11, 10, 13, 0.8);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            padding: 1rem 1.5rem;
+            height: var(--nav-h);
+            padding: 0 var(--space-3);
             z-index: 1000;
             display: flex;
             justify-content: space-between;
@@ -311,7 +330,7 @@
         .nav-lang option { background: #141219; color: var(--text); }
 
         @media (max-width: 480px) {
-            .navbar { padding: 0.75rem 0.75rem; }
+            .navbar { padding: 0 0.75rem; }
             .nav-links { gap: 2px; }
             .nav-link { padding: 6px 6px; font-size: 0.8rem; }
             .nav-lang { padding: 4px 4px; font-size: 12px; }
@@ -330,8 +349,8 @@
             background: rgba(20, 18, 25, 0.6);
             border: 1px solid rgba(145, 55, 175, 0.2);
             border-radius: 12px;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
+            padding: var(--space-2);
+            margin-bottom: var(--space-3);
             text-align: left;
         }
 
@@ -359,7 +378,7 @@
             display: flex;
             justify-content: center;
             gap: 6px;
-            margin-bottom: 1rem;
+            margin-bottom: var(--space-2);
         }
 
         .lang-btn {
@@ -414,7 +433,7 @@
             border: 1px solid #E2E8F0;
             font-size: 16px;
             background-color: #fff;
-            margin-bottom: 1.5rem;
+            margin-bottom: var(--space-3);
             appearance: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748B'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
             background-repeat: no-repeat;
@@ -424,7 +443,7 @@
 
         #status {
             margin-top: 1.5rem;
-            padding: 1rem;
+            padding: var(--space-2);
             border-radius: 12px;
             display: none;
             font-weight: 600;
@@ -653,14 +672,14 @@
 
         /* Dashboard Portal Layout */
         .dashboard-container {
-            max-width: 1100px;
+            max-width: var(--content-max);
             width: 100%;
-            margin-top: 100px;
+            margin-top: calc(var(--nav-h) + var(--space-5));
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 2.5rem;
-            padding: 0 20px;
+            gap: var(--space-5);
+            padding: 0 var(--page-pad);
             box-sizing: border-box;
         }
 
@@ -671,7 +690,7 @@
 
         .hero-title {
             font-family: 'Outfit', sans-serif;
-            font-size: 3rem;
+            font-size: var(--text-hero);
             font-weight: 800;
             margin: 0;
             background: linear-gradient(135deg, #ffffff 30%, #c084fc 100%);
@@ -884,7 +903,7 @@
             display: none;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: var(--page-pad);
             box-sizing: border-box;
         }
 
@@ -898,7 +917,7 @@
             border: 1px solid rgba(145, 55, 175, 0.3);
             border-radius: var(--radius);
             box-shadow: var(--shadow);
-            max-width: 500px;
+            max-width: var(--dialog-max);
             width: 100%;
             padding: 2rem;
             box-sizing: border-box;
