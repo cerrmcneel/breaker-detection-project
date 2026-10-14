@@ -99,6 +99,41 @@ def test_interactive_controls_are_tappable(page, base_url, width):
     assert not too_small, f"controls under {MIN_TAP_TARGET_PX}px tall at {width}px: {too_small}"
 
 
+@pytest.mark.parametrize("width", PHONE_WIDTHS)
+def test_collapsed_menu_opens_and_its_links_are_tappable(page, base_url, width):
+    open_landing(page, base_url, width, height=844)
+    links = page.locator("nav.navbar .nav-link")
+
+    assert not visible(links), "nav links should start collapsed on a phone"
+
+    page.locator("nav.navbar summary").click()
+    shown = visible(links)
+    assert len(shown) == 4, f"expected 4 links in the open menu, saw {len(shown)}"
+    for link in shown:
+        box = link.bounding_box()
+        assert box["height"] >= MIN_TAP_TARGET_PX, f"link is {box['height']:.0f}px tall"
+        assert box["x"] >= 0 and box["x"] + box["width"] <= width, "link leaves the viewport"
+
+    page.keyboard.press("Escape")
+    assert not visible(links), "Escape should close the menu"
+
+
+@pytest.mark.parametrize("width", TABLET_UP_WIDTHS)
+def test_nav_links_are_always_shown_on_wide_screens(page, base_url, width):
+    open_landing(page, base_url, width)
+
+    assert len(visible(page.locator("nav.navbar .nav-link"))) == 4
+    assert not page.locator("nav.navbar summary").is_visible(), "menu button on a wide screen"
+
+
+def test_language_selector_in_the_nav_still_switches_the_nav(page, base_url):
+    open_landing(page, base_url, 1024)
+
+    page.select_option("#nav-lang", "fr")
+
+    assert page.locator("nav.navbar .nav-link").first.inner_text() == "Accueil"
+
+
 def test_hero_title_scales_with_width(page, base_url):
     sizes = {}
     for width in WIDTHS:

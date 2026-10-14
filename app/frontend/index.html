@@ -298,45 +298,105 @@
             display: flex;
             align-items: center;
             gap: 4px;
+            min-height: var(--tap-min);
         }
 
-        .nav-links {
+        /* Mobile first: language selector and a menu button in the bar, the links
+           in a panel under it. A native <details> gives open/close, keyboard and
+           screen-reader behaviour without script; the small script below only
+           keeps it open from 768px up, where the links are always shown. */
+        .nav-end {
             display: flex;
-            gap: 8px;
+            align-items: center;
+            gap: var(--space-1);
         }
-
-        .nav-link {
-            text-decoration: none;
-            color: var(--text-muted);
-            font-weight: 600;
-            font-size: 0.875rem;
-            padding: 8px 12px;
-            border-radius: 8px;
-            transition: all 0.2s;
-        }
-
-        .nav-links { align-items: center; }
 
         .nav-lang {
-            padding: 6px 8px;
+            min-height: var(--tap-min);
+            padding: 0 var(--space-1);
             border-radius: 8px;
             border: 1px solid rgba(145, 55, 175, 0.3);
             background: transparent;
             color: var(--text-muted);
-            font-size: 13px;
+            font-size: 16px; /* below 16px iOS Safari zooms the page on focus */
             font-weight: 700;
             cursor: pointer;
         }
 
         .nav-lang option { background: #141219; color: var(--text); }
 
+        .nav-toggle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-height: var(--tap-min);
+            padding: 0 var(--space-2);
+            border: 1px solid rgba(145, 55, 175, 0.3);
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            font-weight: 700;
+            cursor: pointer;
+            list-style: none;
+        }
+
+        .nav-toggle::-webkit-details-marker { display: none; }
+
+        .nav-menu[open] > .nav-toggle {
+            color: var(--secondary);
+            background-color: var(--primary-light);
+        }
+
+        /* Narrow: a panel hanging under the bar. .nav-menu is not positioned, so
+           the panel anchors to the fixed navbar and spans the full width. */
+        .nav-links {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding: var(--space-1) var(--space-3) var(--space-2);
+            background: var(--bg);
+            border-bottom: 1px solid rgba(145, 55, 175, 0.15);
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            min-height: var(--tap-min);
+            padding: 0 var(--space-2);
+            text-decoration: none;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.875rem;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        /* Wide: links inline in the bar (a plain number, as in every media
+           query), language selector after them as before. */
+        @media (min-width: 768px) {
+            .nav-end { gap: var(--space-2); }
+            .nav-lang { order: 2; }
+            .nav-toggle { display: none; }
+
+            .nav-links {
+                position: static;
+                flex-direction: row;
+                align-items: center;
+                gap: 8px;
+                padding: 0;
+                background: none;
+                border: 0;
+            }
+        }
+
         @media (max-width: 480px) {
             .navbar { padding: 0 0.75rem; }
-            .nav-links { gap: 2px; }
-            .nav-link { padding: 6px 6px; font-size: 0.8rem; }
-            .nav-lang { padding: 4px 4px; font-size: 12px; }
             /* The page heading right below already says "PanelSafe Portal", so the
-               bar keeps only the bolt and makes room for the language selector. */
+               bar keeps only the bolt and makes room for the controls. */
             .nav-brand-text { display: none; }
         }
 
@@ -996,16 +1056,21 @@
             </svg>
             PanelSafe
         </a>
-        <div class="nav-links">
-            <a href="/" class="nav-link active" data-i18n="nav_home">Inicio</a>
-            <a href="/analysis.html" class="nav-link" data-i18n="nav_analysis">Analizador IA</a>
-            <a href="/unifilar/" class="nav-link" data-i18n="nav_unifilar">Generador Unifilar</a>
-            <a href="/blog.html" class="nav-link" data-i18n="nav_blog">Blog</a>
+        <div class="nav-end">
             <select id="nav-lang" class="nav-lang" aria-label="Language / Idioma / Langue" onchange="setLanguage(this.value)">
                 <option value="en">EN</option>
                 <option value="es">ES</option>
                 <option value="fr">FR</option>
             </select>
+            <details class="nav-menu" id="nav-menu">
+                <summary class="nav-toggle"><span aria-hidden="true">&#9776;</span> <span data-i18n="nav_menu">Menu</span></summary>
+                <div class="nav-links">
+                    <a href="/" class="nav-link active" data-i18n="nav_home">Inicio</a>
+                    <a href="/analysis.html" class="nav-link" data-i18n="nav_analysis">Analizador IA</a>
+                    <a href="/unifilar/" class="nav-link" data-i18n="nav_unifilar">Generador Unifilar</a>
+                    <a href="/blog.html" class="nav-link" data-i18n="nav_blog">Blog</a>
+                </div>
+            </details>
         </div>
     </nav>
 
@@ -1469,6 +1534,7 @@
                 photo_by: "Photo by",
                 on_unsplash: "on Unsplash",
                 nav_brand: '⚡ <span class="nav-brand-text">PanelSafe</span>',
+                nav_menu: "Menu",
                 nav_home: "Home",
                 nav_blog: "Blog",
                 nav_analysis: "AI Analyzer",
@@ -1562,6 +1628,7 @@
                 photo_by: "Foto de",
                 on_unsplash: "en Unsplash",
                 nav_brand: '⚡ <span class="nav-brand-text">PanelSafe</span>',
+                nav_menu: "Menú",
                 nav_home: "Inicio",
                 nav_blog: "Blog",
                 nav_analysis: "Analizador IA",
@@ -1655,6 +1722,7 @@
                 photo_by: "Photo de",
                 on_unsplash: "sur Unsplash",
                 nav_brand: '⚡ <span class="nav-brand-text">PanelSafe</span>',
+                nav_menu: "Menu",
                 nav_home: "Accueil",
                 nav_blog: "Blog",
                 nav_analysis: "Analyseur IA",
@@ -2147,6 +2215,17 @@
         function closeUploadModal() {
             document.getElementById('upload-modal').classList.remove('open');
         }
+
+        // The nav collapses into its menu below 768px and is always open above it.
+        // Without script the menu simply stays a closed <details>: still usable.
+        const navMenu = document.getElementById('nav-menu');
+        const wideNav = window.matchMedia('(min-width: 768px)');
+        function syncNavMenu() { navMenu.open = wideNav.matches; }
+        wideNav.addEventListener('change', syncNavMenu);
+        syncNavMenu();
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !wideNav.matches) navMenu.open = false;
+        });
 
         // Initialize Lucide icons on page load
         document.addEventListener('DOMContentLoaded', () => {
