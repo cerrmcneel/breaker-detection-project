@@ -741,7 +741,7 @@
             flex-direction: column;
             align-items: center;
             gap: var(--space-5);
-            padding: 0 var(--page-pad);
+            padding: var(--space-5) var(--page-pad);
             box-sizing: border-box;
         }
 
@@ -768,12 +768,60 @@
             line-height: 1.6;
         }
 
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 24px;
+        /* Professional tools: one column, then two, then three. The columns are
+           explicit (not auto-fit) so the last card never sits alone on a row:
+           in the two-column step it spans both columns. */
+        .pro-tools {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-3);
             width: 100%;
             max-width: 1000px;
+        }
+
+        .pro-tools-header {
+            text-align: center;
+        }
+
+        .section-label {
+            margin: 0;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .pro-tools-subtitle {
+            margin: var(--space-1) 0 0;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+            width: 100%;
+        }
+
+        @media (min-width: 560px) {
+            .dashboard-grid { grid-template-columns: repeat(2, 1fr); }
+            .dashboard-grid > :last-child { grid-column: 1 / -1; }
+        }
+
+        @media (min-width: 900px) {
+            .dashboard-grid { grid-template-columns: repeat(3, 1fr); }
+            .dashboard-grid > :last-child { grid-column: auto; }
+        }
+
+        .hero-cta {
+            width: min(100%, 24rem);
+            min-height: var(--tap-min);
+            margin-top: var(--space-4);
+            padding: var(--space-2) var(--space-3);
+            font-size: 1.125rem;
+            text-wrap: balance;
         }
 
         .dashboard-card {
@@ -871,11 +919,6 @@
         .dashboard-card.accent-card-blue:hover { border-color: rgba(96, 165, 250, 0.4); box-shadow: 0 12px 30px rgba(96, 165, 250, 0.15), 0 0 20px rgba(96, 165, 250, 0.05); }
         .dashboard-card.accent-card-blue:hover::before { background: radial-gradient(circle at 10% 10%, rgba(96, 165, 250, 0.12), transparent 60%); }
 
-        .card-icon-wrapper.accent-green { background: rgba(115, 200, 60, 0.1); border-color: rgba(115, 200, 60, 0.25); color: var(--secondary); }
-        .dashboard-card:hover .card-icon-wrapper.accent-green { background: var(--secondary-dark); color: #fff; }
-        .card-cta.cta-green { color: var(--secondary); }
-        .dashboard-card.accent-card-green:hover { border-color: rgba(115, 200, 60, 0.4); box-shadow: 0 12px 30px rgba(115, 200, 60, 0.15), 0 0 20px rgba(115, 200, 60, 0.05); }
-        .dashboard-card.accent-card-green:hover::before { background: radial-gradient(circle at 10% 10%, rgba(115, 200, 60, 0.12), transparent 60%); }
 
         /* --- Blog card: deliberately looks like "content to read", not "a
            tool to launch" -- dashed border, no lift, circular muted icon,
@@ -1075,54 +1118,55 @@
     </nav>
 
     <!-- New Premium Dashboard Container -->
-    <div class="dashboard-container" id="dashboard-view" style="display: flex; flex-direction: column; align-items: center; padding: 40px 20px;">
-        <div class="hero-section" style="text-align: center; margin-bottom: 40px;">
-            <h1 class="hero-title">PanelSafe Portal</h1>
-            <p class="hero-subtitle" data-i18n="hero_subtitle">Inteligencia Artificial y Cumplimiento Normativo REBT para Cuadros Eléctricos</p>
+    <div class="dashboard-container" id="dashboard-view">
+        <!-- Consumer first: one headline, one obvious action. -->
+        <div class="hero-section">
+            <h1 class="hero-title" data-i18n="hero_title">Is your electrical panel safe?</h1>
+            <p class="hero-subtitle" data-i18n="card_audit_desc">Upload a photo and get an automated safety score with recommendations. No cost, no signup.</p>
+            <button type="button" class="btn btn-primary hero-cta" data-testid="primary-action"
+                onclick="openUploadModal()" data-i18n="card_audit_cta">Evaluate My Panel &rarr;</button>
         </div>
 
-        <div class="dashboard-grid">
-            <!-- Card 1: AI Analyzer -->
-            <a href="/analysis.html" class="dashboard-card">
-                <div class="card-icon-wrapper">
-                    <i data-lucide="scan-eye"></i>
-                </div>
-                <h2 class="card-title" data-i18n="card_analyzer_title">Analizador de Cuadros (IA)</h2>
-                <p class="card-desc" data-i18n="card_analyzer_desc">Sube una foto del cuadro eléctrico. La Inteligencia Artificial detectará, clasificará y extraerá automáticamente los interruptores magnetotérmicos (PIAs) y diferenciales.</p>
-                <div class="card-cta" data-i18n="card_analyzer_cta">Iniciar Analizador &rarr;</div>
-            </a>
-
-            <!-- Card 2: Unifilar Generator -->
-            <a href="/unifilar/" class="dashboard-card accent-card-blue">
-                <div class="card-icon-wrapper accent-blue">
-                    <i data-lucide="layout-template"></i>
-                </div>
-                <h2 class="card-title" data-i18n="card_unifilar_title">Generador Unifilar (CAD)</h2>
-                <p class="card-desc" data-i18n="card_unifilar_desc">Genera esquemas unifilares profesionales que cumplen la normativa de Industria. Modifica valores en tiempo real y descarga en PDF vectorial y PNG.</p>
-                <div class="card-cta cta-blue" data-i18n="card_unifilar_cta">Abrir Editor Unifilar &rarr;</div>
-            </a>
-
-            <!-- Card 3: Compliance Blog (intentionally styled as content, not a tool) -->
-            <a href="/blog.html" class="dashboard-card blog-card">
-                <div class="blog-eyebrow" data-i18n="blog_eyebrow">Artículos</div>
-                <div class="card-icon-wrapper">
-                    <i data-lucide="book-open"></i>
-                </div>
-                <h2 class="card-title" data-i18n="card_blog_title">Blog de Normativa REBT</h2>
-                <p class="card-desc" data-i18n="card_blog_desc">Consulta artículos técnicos e instrucciones sobre el Reglamento Electrotécnico de Baja Tensión (REBT) y cumplimiento de la ITC-BT-25.</p>
-                <div class="card-cta" data-i18n="card_blog_cta">Ver Artículos</div>
-            </a>
-
-            <!-- Card 4: Consumer Safety Audit -->
-            <div class="dashboard-card accent-card-green" onclick="openUploadModal()" style="cursor: pointer;">
-                <div class="card-icon-wrapper accent-green">
-                    <i data-lucide="shield-check"></i>
-                </div>
-                <h2 class="card-title" data-i18n="card_audit_title">Evaluar mi Cuadro</h2>
-                <p class="card-desc" data-i18n="card_audit_desc">Sube una foto y obtén una puntuación de seguridad automatizada con recomendaciones.</p>
-                <div class="card-cta cta-green" data-i18n="card_audit_cta">Evaluar mi Cuadro &rarr;</div>
+        <!-- Professional tools, kept together under their own label. -->
+        <section class="pro-tools" data-testid="pro-tools">
+            <div class="pro-tools-header">
+                <h2 class="section-label" data-i18n="pro_tools_heading">For installers and technicians</h2>
+                <p class="pro-tools-subtitle" data-i18n="hero_subtitle">Artificial Intelligence and REBT Compliance for Electrical Panels</p>
             </div>
-        </div>
+
+            <div class="dashboard-grid">
+                <!-- Card 1: AI Analyzer -->
+                <a href="/analysis.html" class="dashboard-card">
+                    <div class="card-icon-wrapper">
+                        <i data-lucide="scan-eye"></i>
+                    </div>
+                    <h2 class="card-title" data-i18n="card_analyzer_title">Analizador de Cuadros (IA)</h2>
+                    <p class="card-desc" data-i18n="card_analyzer_desc">Sube una foto del cuadro eléctrico. La Inteligencia Artificial detectará, clasificará y extraerá automáticamente los interruptores magnetotérmicos (PIAs) y diferenciales.</p>
+                    <div class="card-cta" data-i18n="card_analyzer_cta">Iniciar Analizador &rarr;</div>
+                </a>
+
+                <!-- Card 2: Unifilar Generator -->
+                <a href="/unifilar/" class="dashboard-card accent-card-blue">
+                    <div class="card-icon-wrapper accent-blue">
+                        <i data-lucide="layout-template"></i>
+                    </div>
+                    <h2 class="card-title" data-i18n="card_unifilar_title">Generador Unifilar (CAD)</h2>
+                    <p class="card-desc" data-i18n="card_unifilar_desc">Genera esquemas unifilares profesionales que cumplen la normativa de Industria. Modifica valores en tiempo real y descarga en PDF vectorial y PNG.</p>
+                    <div class="card-cta cta-blue" data-i18n="card_unifilar_cta">Abrir Editor Unifilar &rarr;</div>
+                </a>
+
+                <!-- Card 3: Compliance Blog (intentionally styled as content, not a tool) -->
+                <a href="/blog.html" class="dashboard-card blog-card">
+                    <div class="blog-eyebrow" data-i18n="blog_eyebrow">Artículos</div>
+                    <div class="card-icon-wrapper">
+                        <i data-lucide="book-open"></i>
+                    </div>
+                    <h2 class="card-title" data-i18n="card_blog_title">Blog de Normativa REBT</h2>
+                    <p class="card-desc" data-i18n="card_blog_desc">Consulta artículos técnicos e instrucciones sobre el Reglamento Electrotécnico de Baja Tensión (REBT) y cumplimiento de la ITC-BT-25.</p>
+                    <div class="card-cta" data-i18n="card_blog_cta">Ver Artículos</div>
+                </a>
+            </div>
+        </section>
 
         <div class="compliance-checklist">
             <div class="compliance-item">
@@ -1539,6 +1583,8 @@
                 nav_blog: "Blog",
                 nav_analysis: "AI Analyzer",
                 nav_unifilar: "Diagram Generator",
+                hero_title: "Is your electrical panel safe?",
+                pro_tools_heading: "For installers and technicians",
                 hero_subtitle: "Artificial Intelligence and REBT Compliance for Electrical Panels",
                 card_analyzer_title: "Panel Analyzer (AI)",
                 card_analyzer_desc: "Upload a photo of the electrical panel. The AI will automatically detect, classify and extract the circuit breakers (MCBs) and residual-current devices (RCDs).",
@@ -1555,9 +1601,8 @@
                 badge_export: "Direct PDF/PNG Export",
                 title: "Inference Portal",
                 phase: "Safety Assessment Portal",
-                card_audit_title: "Evaluate My Panel — 100% Free",
                 card_audit_desc: "Upload a photo and get an automated safety score with recommendations. No cost, no signup.",
-                card_audit_cta: "Evaluate My Panel &rarr;",
+                card_audit_cta: "Evaluate My Panel&nbsp;&rarr;",
                 modal_audit_title: "Panel Safety Audit",
                 tips_title: "Tips for a Perfect Photo 📸",
                 tip_1: "<strong>⚡ Cover Open:</strong> Please open the plastic cover so the switches are visible.",
@@ -1633,6 +1678,8 @@
                 nav_blog: "Blog",
                 nav_analysis: "Analizador IA",
                 nav_unifilar: "Generador Unifilar",
+                hero_title: "¿Es seguro tu cuadro eléctrico?",
+                pro_tools_heading: "Para instaladores y técnicos",
                 hero_subtitle: "Inteligencia Artificial y Cumplimiento Normativo REBT para Cuadros Eléctricos",
                 card_analyzer_title: "Analizador de Cuadros (IA)",
                 card_analyzer_desc: "Sube una foto del cuadro eléctrico. La Inteligencia Artificial detectará, clasificará y extraerá automáticamente los interruptores magnetotérmicos (PIAs) y diferenciales.",
@@ -1649,9 +1696,8 @@
                 badge_export: "Exportación Directa PDF/PNG",
                 title: "Portal de Inferencia",
                 phase: "Portal de Evaluación de Seguridad",
-                card_audit_title: "Evaluar mi Cuadro — 100% Gratis",
                 card_audit_desc: "Sube una foto y obtén una puntuación de seguridad automatizada con recomendaciones. Sin coste, sin registro.",
-                card_audit_cta: "Evaluar mi Cuadro &rarr;",
+                card_audit_cta: "Evaluar mi Cuadro&nbsp;&rarr;",
                 modal_audit_title: "Auditoría de Seguridad",
                 tips_title: "Consejos para una Foto Perfecta 📸",
                 tip_1: "<strong>⚡ Cubierta Abierta:</strong> Por favor, abra la cubierta de plástico para que los interruptores sean visibles.",
@@ -1727,6 +1773,8 @@
                 nav_blog: "Blog",
                 nav_analysis: "Analyseur IA",
                 nav_unifilar: "Générateur de schéma",
+                hero_title: "Votre tableau électrique est-il sûr ?",
+                pro_tools_heading: "Pour les installateurs et techniciens",
                 hero_subtitle: "Intelligence artificielle et conformité REBT pour tableaux électriques",
                 card_analyzer_title: "Analyseur de tableaux (IA)",
                 card_analyzer_desc: "Importez une photo du tableau électrique. L'intelligence artificielle détectera, classera et extraira automatiquement les disjoncteurs magnétothermiques et les interrupteurs différentiels.",
@@ -1743,9 +1791,8 @@
                 badge_export: "Export direct PDF/PNG",
                 title: "Portail d'inférence",
                 phase: "Portail d'Évaluation de Sécurité",
-                card_audit_title: "Évaluer mon Tableau — 100% Gratuit",
                 card_audit_desc: "Téléchargez une photo pour obtenir un score de sécurité automatisé et des conseils. Sans frais, sans inscription.",
-                card_audit_cta: "Évaluer mon Tableau &rarr;",
+                card_audit_cta: "Évaluer mon Tableau&nbsp;&rarr;",
                 modal_audit_title: "Audit de Sécurité",
                 tips_title: "Conseils pour une photo parfaite 📸",
                 tip_1: "<strong>⚡ Couvercle ouvert :</strong> Veuillez ouvrir le couvercle en plastique pour que les interrupteurs soient visibles.",
