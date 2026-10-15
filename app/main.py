@@ -576,6 +576,10 @@ def grade_panel_layout(predictions, rcd_test_result, country="Unknown"):
     # the photo, and the page labels each line with its source.
     form_reported = len(feedback_en)
 
+    # Pressing an RCD's test button proves one is installed, whatever the photo
+    # shows: any answer other than "Not Tested" is a test the user carried out.
+    rcd_confirmed_by_test = rcd_test_result in ("Responsive", "Slow", "Unresponsive")
+
     # Count components
     rcd_count = sum(1 for p in predictions if p.get("class") in ["RCD", "RCD_SI"])
     mcb_count = sum(1 for p in predictions if p.get("class") == "MCB")
@@ -583,7 +587,7 @@ def grade_panel_layout(predictions, rcd_test_result, country="Unknown"):
     oversurge_count = sum(1 for p in predictions if p.get("class") == "OVERSURGE")
 
     # Presence checks
-    if rcd_count == 0:
+    if rcd_count == 0 and not rcd_confirmed_by_test:
         score -= 25
         feedback_es.append("⚠️ <strong>No se detectó Diferencial (RCD):</strong> No pudimos identificar un diferencial en la foto. Verifique si su cuadro tiene un interruptor con botón de test (marcado con 'T').")
         feedback_en.append("⚠️ <strong>No RCD detected:</strong> We couldn't identify a differential (RCD) in the photo. Please verify if your panel has a breaker with a test button (marked 'T').")

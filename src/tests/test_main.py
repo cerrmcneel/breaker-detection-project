@@ -734,12 +734,43 @@ def test_rcd_test_finding_is_marked_as_reported_by_the_user(rcd_result):
 def test_findings_derived_from_the_photo_are_marked_as_such():
     from app.main import grade_panel_layout
 
-    # The user says the RCD tripped; the photo shows no RCD and no MCBs.
+    # The user says the RCD tripped; the photo shows no RCD and no MCBs. The test
+    # answer proves an RCD exists (S1), so only the MCB miss is a photo finding.
     _score, report = grade_panel_layout([], "Responsive", country="FR")
     en_sources, _es_sources = _sources_by_language(report)
 
-    assert en_sources == ["form", "photo", "photo"]
-    assert "RCD Working" in report and "No RCD detected" in report
+    assert en_sources == ["form", "photo"]
+    assert "RCD Working" in report and "No RCD detected" not in report
+
+
+# --- S1 (2026-10-13): a tested RCD exists, whatever the photo shows -----------------------
+# Pressing an RCD's test button proves the device is there. The photo check used to
+# deduct -25 and say "No RCD detected" anyway, so one report could say both
+# "RCD working" and "No RCD detected" (a tested-OK panel with the RCD missed scored 65).
+_PANEL_WITHOUT_RCD = [{"class": "MAINBREAKER"}, {"class": "MCB"}, {"class": "MCB"}]
+
+
+@pytest.mark.parametrize("rcd_result", ["Responsive", "Slow", "Unresponsive"])
+def test_rcd_test_answer_counts_as_evidence_the_rcd_exists(rcd_result):
+    from app.main import grade_panel_layout
+
+    score_missed, report = grade_panel_layout(_PANEL_WITHOUT_RCD, rcd_result, country="ES")
+    score_seen, _ = grade_panel_layout(_PANEL_WITHOUT_RCD + [{"class": "RCD"}], rcd_result, country="ES")
+
+    assert "No RCD detected" not in report and "No se detectó Diferencial" not in report
+    # The rule itself, without hard-coding a total: once the user has tested the
+    # RCD, the photo missing it changes nothing.
+    assert score_missed == score_seen
+
+
+def test_untested_panel_still_reports_a_missing_rcd():
+    from app.main import grade_panel_layout
+
+    score_missed, report = grade_panel_layout(_PANEL_WITHOUT_RCD, "Not Tested", country="ES")
+    score_seen, _ = grade_panel_layout(_PANEL_WITHOUT_RCD + [{"class": "RCD"}], "Not Tested", country="ES")
+
+    assert "No RCD detected" in report
+    assert score_missed < score_seen
 
 
 def test_era_estimate_is_marked_as_derived_from_the_photo():
