@@ -763,6 +763,39 @@ def test_rcd_test_answer_counts_as_evidence_the_rcd_exists(rcd_result):
     assert score_missed == score_seen
 
 
+# --- S3 (2026-10-15): an untested RCD costs -10 and tells the user how to test ----------
+# At -5, "not tested" was so cheap that skipping the test was the best-scoring option
+# for anyone whose RCD might be faulty. The score must rank what we know: a working
+# test beats no test, and no test beats a test that showed a problem.
+_FULL_PANEL = [{"class": "MAINBREAKER"}, {"class": "OVERSURGE"}, {"class": "RCD"}, {"class": "MCB"}]
+
+
+def test_untested_rcd_costs_ten_points():
+    from app.main import grade_panel_layout
+
+    tested, _ = grade_panel_layout(_FULL_PANEL, "Responsive", country="ES")
+    untested, _ = grade_panel_layout(_FULL_PANEL, "Not Tested", country="ES")
+
+    assert tested - untested == 10
+
+
+def test_score_ranks_rcd_answers_by_what_they_prove():
+    from app.main import grade_panel_layout
+
+    score = {r: grade_panel_layout(_FULL_PANEL, r, country="ES")[0]
+             for r in ("Responsive", "Not Tested", "Slow", "Unresponsive")}
+
+    assert score["Responsive"] > score["Not Tested"] > score["Slow"] > score["Unresponsive"]
+
+
+def test_untested_rcd_finding_explains_how_to_test():
+    from app.main import grade_panel_layout
+
+    _score, report = grade_panel_layout(_FULL_PANEL, "Not Tested", country="ES")
+
+    assert "'T'" in report and "electrician" in report and "electricista" in report
+
+
 def test_untested_panel_still_reports_a_missing_rcd():
     from app.main import grade_panel_layout
 

@@ -564,9 +564,12 @@ def grade_panel_layout(predictions, rcd_test_result, country="Unknown"):
         feedback_es.append("⚠️ <strong>ADVERTENCIA:</strong> El diferencial (RCD) tardó en dispararse. Se recomienda que un electricista lo inspeccione, ya que la degradación mecánica puede impedir que actúe a tiempo.")
         feedback_en.append("⚠️ <strong>WARNING:</strong> The RCD (differential) responded slowly. It is recommended to have it inspected, as mechanical degradation can prevent timely protection.")
     elif rcd_test_result == "Not Tested":
-        score -= 5
-        feedback_es.append("⚠️ <strong>Diferencial no probado:</strong> Le recomendamos presionar el botón 'T' de su interruptor diferencial mensualmente para asegurarse de que funciona activamente.")
-        feedback_en.append("⚠️ <strong>RCD Not Tested:</strong> We recommend pressing the 'T' test button on your differential (RCD) monthly to ensure it actively trips.")
+        # -10 (was -5): an untested RCD is an unknown on the device that protects
+        # people, so it costs as much as a missing IGA. It stays above "Slow" (-15)
+        # because a test that showed a problem is worse than no test.
+        score -= 10
+        feedback_es.append("⚠️ <strong>Diferencial sin probar:</strong> Pulse el botón de prueba 'T' de su diferencial: debe cortar la corriente al instante. Se apagarán los circuitos que protege; después, vuelva a subir la palanca. Si no corta, llame a un electricista. Pruébelo una vez al mes. Mientras no lo pruebe, la puntuación descuenta 10 puntos.")
+        feedback_en.append("⚠️ <strong>RCD not tested:</strong> Press the 'T' test button on your RCD: it should cut the power instantly. The circuits it protects will switch off; push the lever back up afterwards. If it doesn't trip, call an electrician. Test it once a month. Until you test it, the score is 10 points lower.")
     else: # Responsive
         feedback_es.append("✅ <strong>Diferencial funcionando:</strong> El botón de prueba disparó el RCD al instante. ¡Excelente hábito de seguridad mensual!")
         feedback_en.append("✅ <strong>RCD Working:</strong> The test button tripped the RCD instantly. Great job maintaining your monthly safety checks!")
