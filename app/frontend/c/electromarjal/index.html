@@ -780,12 +780,18 @@
                 <label class="consent-label">
                     <input type="checkbox" id="consent-checkbox" onchange="toggleConsent()">
                     <span>
-                        <span data-i18n="consent_text">Consiento la recogida de la foto de mi cuadro y metadatos para el análisis de seguridad bajo la</span>
+                        <span data-i18n="consent_text">Acepto que se analice la foto de mi cuadro para calcular mi puntuación de seguridad, según la</span>
                         <button type="button" class="privacy-toggle-btn" onclick="togglePrivacyPanel()" data-i18n="privacy_link">Política de Privacidad</button>.
+                        <span data-i18n="consent_required">(Obligatorio)</span>
                     </span>
                 </label>
+                <!-- Separate, optional consent for training use (GDPR). Never pre-ticked. -->
+                <label class="consent-label" style="margin-top: 10px;">
+                    <input type="checkbox" id="training-consent-checkbox">
+                    <span data-i18n="training_consent_text">Opcional: conservar también mi foto para que PanelSafe mejore su modelo de detección. Si no lo marcas, la foto se analiza y no se guarda.</span>
+                </label>
                 <div id="privacy-panel" data-i18n="privacy_content">
-                    Aviso de Privacidad (GDPR/ePrivacy): Procesamos la imagen de su cuadro únicamente para estimar la puntuación de seguridad y mejorar el modelo de visión. No utilizamos cookies de seguimiento. Las imágenes se procesan de forma segura en la UE.
+                    Aviso de Privacidad (RGPD/ePrivacy): analizamos la foto de tu cuadro para calcular la puntuación de seguridad. Solo la guardamos para mejorar el modelo de detección si marcas la casilla opcional; si no, se analiza y no se guarda. No utilizamos cookies de seguimiento. Las imágenes guardadas se almacenan de forma segura en la UE y puedes pedir que las borremos con tu ID de seguimiento.
                 </div>
             </div>
 
@@ -836,6 +842,8 @@
                 <div id="feedback-display" class="feedback-content">
                     <!-- Injected server feedback HTML -->
                 </div>
+
+                <p id="photo-note" style="display: none; margin: 12px 0 0; font-size: 0.85rem; color: var(--text-muted);"></p>
 
                 <div class="tracking-box" id="tracking-box">
                     <span data-i18n="tracking_label">ID de seguimiento:</span>
@@ -920,9 +928,13 @@
                 rcd_opt_responsive: "Responde (Disparó instantáneamente)",
                 rcd_opt_slow: "Lento (Tardó en disparar)",
                 rcd_opt_unresponsive: "No responde (No disparó)",
-                consent_text: "Consiento la recogida de la foto de mi cuadro y metadatos para el análisis de seguridad bajo la",
+                consent_text: "Acepto que se analice la foto de mi cuadro para calcular mi puntuación de seguridad, según la",
+                consent_required: "(Obligatorio)",
+                training_consent_text: "Opcional: conservar también mi foto para que PanelSafe mejore su modelo de detección. Si no lo marcas, la foto se analiza y no se guarda.",
+                photo_not_stored_note: "Tu foto se ha analizado y no se ha guardado.",
+                photo_stored_note: "Tu foto se ha guardado para mejorar el modelo. Para que la borremos, indícanos tu ID de seguimiento.",
                 privacy_link: "Política de Privacidad",
-                privacy_content: "Aviso de Privacidad (GDPR/ePrivacy): Procesamos la imagen de su cuadro únicamente para estimar la puntuación de seguridad y mejorar el modelo de visión. No utilizamos cookies de seguimiento. Las imágenes se procesan de forma segura en la UE.",
+                privacy_content: "Aviso de Privacidad (RGPD/ePrivacy): analizamos la foto de tu cuadro para calcular la puntuación de seguridad. Solo la guardamos para mejorar el modelo de detección si marcas la casilla opcional; si no, se analiza y no se guarda. No utilizamos cookies de seguimiento. Las imágenes guardadas se almacenan de forma segura en la UE y puedes pedir que las borremos con tu ID de seguimiento.",
                 btn_analyze: "Analizar mi Cuadro Gratis",
                 analyzing_wait: "Analizando cuadro eléctrico con PanelSafe IA...",
                 result_educational_heading: "Esto es lo que vemos en tu foto — pide a un electricista autorizado que lo confirme",
@@ -965,9 +977,13 @@
                 rcd_opt_responsive: "Responsive (Tripped instantly)",
                 rcd_opt_slow: "Slow (Took a moment to trip)",
                 rcd_opt_unresponsive: "Unresponsive (Did not trip)",
-                consent_text: "I consent to the collection of my panel photo and country metadata for safety analysis under the",
+                consent_text: "I agree to my panel photo being analysed to calculate my safety score, under the",
+                consent_required: "(Required)",
+                training_consent_text: "Optional: also keep my photo so PanelSafe can improve its detection model. If you leave this unticked, the photo is analysed and not kept.",
+                photo_not_stored_note: "Your photo was analysed and not kept.",
+                photo_stored_note: "Your photo was kept to improve the model. To have it deleted, give us your tracking ID.",
                 privacy_link: "Privacy Policy",
-                privacy_content: "Privacy Notice (GDPR/ePrivacy compliant): We process your panel image solely to estimate a safety score and improve our computer vision model. No tracking cookies are used. Images are securely hosted in the EU.",
+                privacy_content: "Privacy Notice (GDPR/ePrivacy): we analyse your panel photo to calculate the safety score. We only keep it to improve our detection model if you tick the optional box; otherwise it is analysed and not kept. No tracking cookies are used. Kept images are stored securely in the EU, and you can ask us to delete them with your tracking ID.",
                 btn_analyze: "Analyze My Panel for Free",
                 analyzing_wait: "Analyzing electrical panel with PanelSafe AI...",
                 result_educational_heading: "Here's what we can see in your photo — have a licensed electrician confirm it",
@@ -1010,9 +1026,13 @@
                 rcd_opt_responsive: "Réactif (a déclenché instantanément)",
                 rcd_opt_slow: "Lent (a mis un moment à déclencher)",
                 rcd_opt_unresponsive: "Sans réaction (n'a pas déclenché)",
-                consent_text: "Je consens à la collecte de la photo de mon tableau pour l'analyse de sécurité selon la",
+                consent_text: "J'accepte que la photo de mon tableau soit analysée pour calculer mon score de sécurité, conformément à la",
+                consent_required: "(Obligatoire)",
+                training_consent_text: "Facultatif : conserver aussi ma photo pour que PanelSafe améliore son modèle de détection. Si vous ne cochez pas cette case, la photo est analysée et n'est pas conservée.",
+                photo_not_stored_note: "Votre photo a été analysée et n'a pas été conservée.",
+                photo_stored_note: "Votre photo a été conservée pour améliorer le modèle. Pour la faire supprimer, indiquez-nous votre identifiant de suivi.",
                 privacy_link: "Politique de Confidentialité",
-                privacy_content: "Avis de confidentialité (RGPD/ePrivacy) : Nous traitons l'image de votre tableau uniquement pour estimer le score de sécurité et améliorer le modèle IA. Aucun cookie de suivi n'est utilisé. Hébergement sécurisé dans l'UE.",
+                privacy_content: "Avis de confidentialité (RGPD/ePrivacy) : nous analysons la photo de votre tableau pour calculer le score de sécurité. Nous ne la conservons pour améliorer notre modèle de détection que si vous cochez la case facultative ; sinon, elle est analysée et n'est pas conservée. Aucun cookie de suivi n'est utilisé. Les images conservées sont stockées en toute sécurité dans l'UE et vous pouvez demander leur suppression avec votre identifiant de suivi.",
                 btn_analyze: "Analyser Mon Tableau Gratuitement",
                 analyzing_wait: "Analyse du tableau électrique en cours avec PanelSafe IA...",
                 result_educational_heading: "Voici ce que nous voyons sur votre photo — faites-le confirmer par un électricien agréé",
@@ -1248,7 +1268,8 @@
             const check = validatePostcode(postcodeRaw);
             const validPostcode = check.valid ? check.value : '';
 
-            const isDuplicate = Boolean(currentResult.duplicate);
+            const isDuplicate = Boolean(currentResult.duplicate) &&
+                (currentResult.score === null || currentResult.score === undefined);
             const hasRealId = isRealTrackingId(currentResult.tracking_id);
             const trackingId = hasRealId ? currentResult.tracking_id.trim() : '';
 
@@ -1310,6 +1331,10 @@
             formData.append('file', selectedFile);
             formData.append('country', 'ES'); // Fixed to Spain for ElectroMarjal
             formData.append('rcd_test_result', selectedRcdResult);
+            // Only an explicit tick keeps the photo for training; the server treats
+            // anything else as no.
+            formData.append('training_consent',
+                document.getElementById('training-consent-checkbox').checked ? 'true' : 'false');
 
             try {
                 const response = await fetch('/upload/', {
@@ -1383,8 +1408,8 @@
                 trackingBox.style.display = 'none';
             }
 
-            if (data.duplicate) {
-                // Duplicate case
+            if (data.duplicate && (data.score === undefined || data.score === null)) {
+                // Duplicate refused by an older server (no score)
                 scoreNumber.textContent = '--';
                 feedbackDisplay.innerHTML = `<p>${t.duplicate_notice}</p>`;
             } else if (data.inference_ok === false || data.status === 'degraded' || data.score === undefined || data.score === null) {
@@ -1395,6 +1420,14 @@
                 // Normal success with score
                 scoreNumber.textContent = data.score;
                 feedbackDisplay.replaceChildren(pickReport(data.feedback || '', currentLang));
+            }
+
+            const photoNote = document.getElementById('photo-note');
+            if (typeof data.photo_stored === 'boolean') {
+                photoNote.textContent = data.photo_stored ? t.photo_stored_note : t.photo_not_stored_note;
+                photoNote.style.display = 'block';
+            } else {
+                photoNote.style.display = 'none';
             }
 
             // Conflict-of-interest Rule 1: Contact card is ALWAYS displayed
@@ -1412,6 +1445,7 @@
             document.getElementById('preview-box').style.display = 'none';
             document.getElementById('photo-picker').style.display = 'block';
             document.getElementById('consent-checkbox').checked = false;
+            document.getElementById('training-consent-checkbox').checked = false;
             document.getElementById('postcode-input').value = '';
             document.getElementById('postcode-error').style.display = 'none';
 
