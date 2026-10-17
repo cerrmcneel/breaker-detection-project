@@ -659,34 +659,55 @@ def grade_panel_layout(predictions, rcd_test_result, country="Unknown"):
 """
     return score, report
 
+def _parse_consent(value: Optional[str]) -> bool:
+    """True only for an explicit yes. Anything else, including a missing field, is no."""
+    return (value or "").strip().lower() in ("true", "1", "yes", "on")
+
+
 @app.post("/upload/")
-async def upload_image(request: Request, file: UploadFile = File(...), country: str = Form(default="Unknown"), rcd_test_result: str = Form(default="Not Tested")):
+async def upload_image(
+    request: Request,
+    file: UploadFile = File(...),
+    country: str = Form(default="Unknown"),
+    rcd_test_result: str = Form(default="Not Tested"),
+    training_consent: Optional[str] = Form(default=None),
+):
+    # Two separate consents (GDPR, see directives/business_plan.md "Legal &
+    # compliance"): sending the form is consent to ANALYSE the photo; keeping it
+    # as training data needs its own explicit opt-in, `training_consent`. Without
+    # it the photo is analysed and never written to the dataset. A missing field
+    # counts as no, so a page cached from before this change cannot opt anyone in.
+    keep_photo = _parse_consent(training_consent)
     try:
         file_bytes = await read_upload_limited(file)
         validate_image_upload(file_bytes)
         # Pixel fingerprint, so a re-exported copy with rewritten EXIF is still
         # recognised as the panel we already have.
         file_hash = image_content_hash(file_bytes)
-        
-        # Check against currently scanned hashes for up-to-date de-duplication.
-        # This walks three directories and SHA-256s every image, so it goes to a
-        # worker thread rather than stalling the event loop on disk I/O.
-        _, current_hashes = await run_in_threadpool(get_unique_dataset_count)
-        global seen_hashes
-        seen_hashes = current_hashes
-        
-        if file_hash in seen_hashes:
-            return {"status": "success", "duplicate": True, "filename": "DUPLICATE", "tracking_id": "ALREADY-UPLOADED"}
+
+        # De-duplication only decides whether the photo is STORED again; the
+        # analysis always runs. (It used to refuse the analysis outright, so a
+        # homeowner re-checking the same photo got no score at all.) Skipped when
+        # nothing will be stored. The scan walks three directories and hashes
+        # every image, so it goes to a worker thread.
+        already_stored = False
+        if keep_photo:
+            _, current_hashes = await run_in_threadpool(get_unique_dataset_count)
+            global seen_hashes
+            seen_hashes = current_hashes
+            already_stored = file_hash in seen_hashes
 
         # Sanitize country before it becomes part of a filesystem path (traversal guard).
         safe_country = re.sub(r"[^A-Za-z0-9_-]", "", country).upper() or "UNKNOWN"
         safe_ext = os.path.splitext(file.filename or "")[1].lower()
         if safe_ext not in ALLOWED_EXTENSIONS:
             safe_ext = ".jpg"
-        unique_filename = f"{safe_country}_{uuid.uuid4()}{safe_ext}"
-        file_path = os.path.join(UPLOAD_DIR, unique_filename)
 
-        await run_in_threadpool(_write_bytes, file_path, file_bytes)
+        photo_stored = keep_photo and not already_stored
+        unique_filename = None
+        if photo_stored:
+            unique_filename = f"{safe_country}_{uuid.uuid4()}{safe_ext}"
+            await run_in_threadpool(_write_bytes, os.path.join(UPLOAD_DIR, unique_filename), file_bytes)
 
         tracking_id = _generate_tracking_id()
 
@@ -732,12 +753,18 @@ async def upload_image(request: Request, file: UploadFile = File(...), country: 
         else:
             auto_score, auto_feedback = None, None
 
-        # Log metadata. The image itself is still kept either way -- a failed
-        # analysis is no reason to discard training data the user just gave us.
+        # Log metadata. A stored photo stays stored even if the analysis failed:
+        # the user opted in to training use, and a failed analysis doesn't undo that.
+        # `training_consent` + `timestamp` are the record of that opt-in (GDPR
+        # expects consent to be demonstrable). No original filename is kept when the
+        # photo isn't: a phone's file name can carry a date and time.
         entry = {
             "timestamp": datetime.now().isoformat(),
-            "original_filename": file.filename,
+            "original_filename": file.filename if photo_stored else None,
             "saved_filename": unique_filename,
+            "training_consent": keep_photo,
+            "photo_stored": photo_stored,
+            "duplicate": already_stored,
             "country": country,
             "hash": file_hash,
             "rcd_test_result": rcd_test_result,
@@ -754,7 +781,8 @@ async def upload_image(request: Request, file: UploadFile = File(...), country: 
         # process. NOTE: asyncio.Lock is process-local -- see the roadmap; running
         # multiple uvicorn workers would reintroduce the clobbering it prevents.
         async with upload_lock:
-            seen_hashes.add(file_hash)
+            if photo_stored:
+                seen_hashes.add(file_hash)
             await run_in_threadpool(_append_log_entry, LOG_FILE, entry)
 
         # Predictions audit trail (see src/storage/predictions_store.py). Records
@@ -779,6 +807,10 @@ async def upload_image(request: Request, file: UploadFile = File(...), country: 
         payload = {
             "status": "success" if inference_ok else "degraded",
             "filename": unique_filename,
+            # Whether THIS photo is now in the training data: true if it was
+            # stored now or was already there, false if it was only analysed.
+            "photo_stored": photo_stored or already_stored,
+            "duplicate": already_stored,
             "tracking_id": tracking_id,
             "inference_ok": inference_ok,
             "inference_detail": inference_detail,

@@ -105,6 +105,13 @@ def test_predict_returns_503_when_inference_unreachable(client):
 
 # --- /upload/ ---
 
+def _remove_stored_upload(body):
+    """Delete the file /upload/ wrote, if it wrote one (only with training consent)."""
+    if body.get("filename"):
+        for path in glob.glob(os.path.join("data", "images", "raw_uploads", body["filename"])):
+            os.remove(path)
+
+
 def test_upload_success(client):
     fake_response = MagicMock()
     fake_response.raise_for_status.return_value = None
@@ -121,13 +128,11 @@ def test_upload_success(client):
     assert resp.status_code == 200
     body = resp.json()
     assert body["status"] == "success"
-    assert "duplicate" not in body  # only the early-return dedup path sets this
-
-    # Clean up the file this endpoint actually wrote to disk.
-    saved = body.get("filename")
-    if saved:
-        for path in glob.glob(os.path.join("data", "images", "raw_uploads", saved)):
-            os.remove(path)
+    assert body["duplicate"] is False
+    # No training consent was sent, so the photo was analysed but not stored.
+    assert body["photo_stored"] is False
+    assert body["filename"] is None
+    _remove_stored_upload(body)
 
 
 def test_upload_rejects_oversized_file(client):
@@ -157,16 +162,25 @@ def test_upload_detects_duplicate(client):
     # Dedup is keyed on decoded pixels now, not the file bytes.
     file_hash = main_module.image_content_hash(payload)
 
-    with patch("app.main.get_unique_dataset_count", return_value=(0, {file_hash})):
+    with patch("app.main.requests.post", return_value=_ok_response({"predictions": []})), \
+         patch("app.main.get_unique_dataset_count", return_value=(0, {file_hash})), \
+         patch("app.main._write_bytes") as write:
         resp = client.post(
             "/upload/",
             files={"file": ("panel.jpg", payload, "image/jpeg")},
+            data={"training_consent": "true"},
         )
 
     assert resp.status_code == 200
     body = resp.json()
     assert body["duplicate"] is True
-    assert body["filename"] == "DUPLICATE"
+    # Not stored a second time...
+    write.assert_not_called()
+    assert body["filename"] is None
+    assert body["photo_stored"] is True  # ...because it is already in the training data
+    # ...but the homeowner still gets the analysis (it used to be refused).
+    assert body["status"] == "success"
+    assert isinstance(body["score"], int)
 
 
 # --- /active-learning/save ---
@@ -236,7 +250,7 @@ def test_upload_does_not_fabricate_a_score_when_inference_fails(client):
         resp = client.post(
             "/upload/",
             files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
-            data={"country": "ES", "rcd_test_result": "Responsive"},
+            data={"country": "ES", "rcd_test_result": "Responsive", "training_consent": "true"},
         )
 
     assert resp.status_code == 200          # the upload itself succeeded
@@ -249,10 +263,11 @@ def test_upload_does_not_fabricate_a_score_when_inference_fails(client):
     assert "score" not in body
     assert "feedback" not in body
 
-    # The image is still kept -- a failed analysis is no reason to bin training data.
-    assert body["filename"] != "DUPLICATE"
-    for path in glob.glob(os.path.join("data", "images", "raw_uploads", body["filename"])):
-        os.remove(path)
+    # The user opted in to training use, so the image is still kept: a failed
+    # analysis doesn't undo that consent.
+    assert body["photo_stored"] is True
+    assert body["filename"]
+    _remove_stored_upload(body)
 
 
 def test_upload_still_scores_normally_when_inference_succeeds(client):
@@ -274,8 +289,7 @@ def test_upload_still_scores_normally_when_inference_succeeds(client):
     assert isinstance(body["score"], int)
     assert body["feedback"]
 
-    for path in glob.glob(os.path.join("data", "images", "raw_uploads", body["filename"])):
-        os.remove(path)
+    _remove_stored_upload(body)
 
 
 # --- event loop must stay responsive during slow upstream calls -----------------------
@@ -387,8 +401,7 @@ def test_upload_fails_over_to_azure_when_primary_is_down(client):
     assert body["inference_engine"] == main_module.FAILOVER_ENGINE
     assert isinstance(body["score"], int)
 
-    for path in glob.glob(os.path.join("data", "images", "raw_uploads", body["filename"])):
-        os.remove(path)
+    _remove_stored_upload(body)
 
 
 def test_upload_degrades_only_when_both_backends_fail(client):
@@ -406,8 +419,7 @@ def test_upload_degrades_only_when_both_backends_fail(client):
     assert body["inference_engine"] is None
     assert "score" not in body          # still never fabricates one
 
-    for path in glob.glob(os.path.join("data", "images", "raw_uploads", body["filename"])):
-        os.remove(path)
+    _remove_stored_upload(body)
 
 
 def test_failover_is_skipped_when_the_time_budget_is_exhausted():
@@ -653,15 +665,19 @@ def test_upload_rejects_a_re_exported_copy_of_a_stored_photo(client):
     re_exported = _jpeg_with_trailing_metadata(base, b"\xff\xfe" + b"EXIF" * 8)
     assert hashlib.sha256(re_exported).digest() != hashlib.sha256(base).digest()
 
-    with patch("app.main.get_unique_dataset_count", return_value=(0, {stored_hash})):
+    with patch("app.main.requests.post", return_value=_ok_response({"predictions": []})), \
+         patch("app.main.get_unique_dataset_count", return_value=(0, {stored_hash})), \
+         patch("app.main._write_bytes") as write:
         resp = client.post(
             "/upload/",
             files={"file": ("re_export.jpg", re_exported, "image/jpeg")},
+            data={"training_consent": "true"},
         )
 
     body = resp.json()
     assert body["duplicate"] is True, "a re-exported copy slipped past de-duplication"
-    assert body["filename"] == "DUPLICATE"
+    write.assert_not_called()
+    assert body["filename"] is None
 
 
 # --- grade_panel_layout (found in review 2026-08-16) -----------------------------------
@@ -900,8 +916,7 @@ def test_upload_success_records_tracking_id_and_score(client, tmp_path):
     assert row["rcd_test_result"] == "Responsive"
     assert row["computed_score"] == body["score"]
 
-    for path in glob.glob(os.path.join("data", "images", "raw_uploads", body["filename"])):
-        os.remove(path)
+    _remove_stored_upload(body)
 
 
 def test_upload_degraded_records_null_score(client, tmp_path):
@@ -921,8 +936,7 @@ def test_upload_degraded_records_null_score(client, tmp_path):
     assert row["computed_score"] is None
     assert row["computed_feedback"] is None
 
-    for path in glob.glob(os.path.join("data", "images", "raw_uploads", body["filename"])):
-        os.remove(path)
+    _remove_stored_upload(body)
 
 
 def test_upload_still_succeeds_when_the_audit_trail_write_fails(client):
@@ -944,8 +958,7 @@ def test_upload_still_succeeds_when_the_audit_trail_write_fails(client):
     assert resp.status_code == 200
     mock_record.assert_called_once()
     body = resp.json()
-    for path in glob.glob(os.path.join("data", "images", "raw_uploads", body["filename"])):
-        os.remove(path)
+    _remove_stored_upload(body)
 
 
 # --- tracking_id linking for corrections (2026-08-26) -----------------------------------
@@ -1126,5 +1139,69 @@ def test_upload_success_reports_the_configured_primary_engine(client):
     body = resp.json()
     assert body["inference_engine"] == main_module.PRIMARY_ENGINE
 
-    for path in glob.glob(os.path.join("data", "images", "raw_uploads", body["filename"])):
-        os.remove(path)
+    _remove_stored_upload(body)
+
+
+# --- /upload/ consent: analysis vs training data (GDPR, added 2026-10-16) -----------
+
+def _post_upload(client, data):
+    """POST a photo to /upload/ with inference mocked.
+
+    Returns (body, write_mock, scan_mock, logged_entries).
+    """
+    logged = []
+    with patch("app.main.requests.post", return_value=_ok_response({"predictions": []})), \
+         patch("app.main.get_unique_dataset_count", return_value=(0, set())) as scan, \
+         patch("app.main._write_bytes") as write, \
+         patch("app.main._append_log_entry", side_effect=lambda _f, e: logged.append(e)):
+        resp = client.post(
+            "/upload/",
+            files={"file": ("PXL_20261016_101500.jpg", make_jpeg_bytes(), "image/jpeg")},
+            data=data,
+        )
+    assert resp.status_code == 200
+    return resp.json(), write, scan, logged
+
+
+def test_upload_without_training_consent_analyses_but_never_stores(client):
+    body, write, scan, logged = _post_upload(client, {"country": "ES", "rcd_test_result": "Responsive"})
+
+    assert body["status"] == "success" and isinstance(body["score"], int)
+    write.assert_not_called()          # nothing reaches the training folder
+    scan.assert_not_called()           # no dataset scan when nothing will be stored
+    assert body["photo_stored"] is False and body["filename"] is None
+    # The log keeps the score but not the phone's file name (it can carry a date).
+    assert logged[-1]["training_consent"] is False
+    assert logged[-1]["photo_stored"] is False
+    assert logged[-1]["original_filename"] is None
+
+
+def test_upload_with_training_consent_stores_and_records_the_consent(client):
+    body, write, _scan, logged = _post_upload(client, {"country": "ES", "training_consent": "true"})
+
+    write.assert_called_once()
+    stored_path = write.call_args[0][0]
+    assert os.path.dirname(stored_path) == main_module.UPLOAD_DIR
+    assert os.path.basename(stored_path) == body["filename"]
+    assert body["photo_stored"] is True
+    # The opt-in is recorded with its timestamp, so the consent can be demonstrated.
+    assert logged[-1]["training_consent"] is True
+    assert logged[-1]["timestamp"]
+    assert logged[-1]["original_filename"] == "PXL_20261016_101500.jpg"
+
+
+@pytest.mark.parametrize("value", [None, "", "false", "0", "no", "off", "maybe", "TRUEISH"])
+def test_upload_treats_anything_but_an_explicit_yes_as_no_training_consent(client, value):
+    data = {"country": "ES"}
+    if value is not None:
+        data["training_consent"] = value
+    body, write, _scan, _logged = _post_upload(client, data)
+    write.assert_not_called()
+    assert body["photo_stored"] is False
+
+
+@pytest.mark.parametrize("value", ["true", "TRUE", "1", "yes", "on", " true "])
+def test_upload_accepts_the_explicit_yes_forms_of_training_consent(client, value):
+    body, write, _scan, _logged = _post_upload(client, {"country": "ES", "training_consent": value})
+    write.assert_called_once()
+    assert body["photo_stored"] is True
