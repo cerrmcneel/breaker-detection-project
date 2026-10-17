@@ -309,6 +309,12 @@
             border: 1px solid rgba(255, 184, 0, 0.3);
         }
 
+        .score-deduct-low {
+            background: rgba(255, 184, 0, 0.08);
+            color: #e8c56a;
+            border: 1px solid rgba(255, 184, 0, 0.2);
+        }
+
         .score-neutral {
             background: rgba(115, 200, 60, 0.15);
             color: var(--secondary);
@@ -389,7 +395,7 @@
             </p>
             <div class="version-badge">
                 <i data-lucide="shield-check" style="width: 16px; height: 16px;"></i>
-                <code id="score-version">Versión del cálculo: 85b64ffdeff5 (2026-10-16)</code>
+                <code id="score-version">Versión del cálculo: 0e246981ef67 (2026-10-17)</code>
             </div>
         </div>
 
@@ -459,8 +465,8 @@
                         <tr>
                             <td><strong data-i18n="rule_no_rcd_name">Presencia de Diferencial (RCD)</strong></td>
                             <td data-i18n="rule_no_rcd_cond">No se detecta ningún diferencial en la foto y el usuario no ha probado su botón de test</td>
-                            <td><span class="score-pill score-deduct-severe">-25 pts</span></td>
-                            <td data-i18n="rule_no_rcd_why">Falta de protección diferencial básica para salvaguardar la vida de las personas contra contactos indirectos.</td>
+                            <td><span class="score-pill score-deduct-med">-15 pts</span></td>
+                            <td data-i18n="rule_no_rcd_why">La foto no basta para saber si hay diferencial: puede quedar fuera del encuadre o no reconocerse. Por eso no se trata como una ausencia confirmada, pero resta lo suficiente para que un cuadro que quizá no tenga esta protección nunca aparezca como «bien». Compruebe que tiene uno y que dispara.</td>
                         </tr>
                         <tr>
                             <td><strong data-i18n="rule_no_mcb_name">Magnetotérmicos (MCB / PIAs)</strong></td>
@@ -470,15 +476,15 @@
                         </tr>
                         <tr>
                             <td><strong data-i18n="rule_no_iga_name">Interruptor General (IGA)</strong></td>
-                            <td data-i18n="rule_no_iga_cond">Cuadro en España sin IGA detectado</td>
+                            <td data-i18n="rule_no_iga_cond">País indicado por el usuario: España, y no se detecta IGA en la foto</td>
                             <td><span class="score-pill score-deduct-med">-10 pts</span></td>
                             <td data-i18n="rule_no_iga_why">El REBT exige un IGA específico para cortar la alimentación total de la instalación en caso de emergencia.</td>
                         </tr>
                         <tr>
                             <td><strong data-i18n="rule_no_surge_name">Protector de Sobretensiones</strong></td>
-                            <td data-i18n="rule_no_surge_cond">Cuadro en España sin sobretensiones detectado</td>
-                            <td><span class="score-pill score-deduct-med">-10 pts</span></td>
-                            <td data-i18n="rule_no_surge_why">La normativa REBT actual exige protección de sobretensiones para proteger electrodomésticos y equipos ante picos de tensión.</td>
+                            <td data-i18n="rule_no_surge_cond">País indicado por el usuario: España, y no se ve protector de sobretensiones en la foto</td>
+                            <td><span class="score-pill score-deduct-low">-3 pts</span></td>
+                            <td data-i18n="rule_no_surge_why">El REBT actual exige protección contra sobretensiones. Como a menudo va integrada en otro dispositivo y no se distingue en la foto, no verla apenas resta puntos: pida a un electricista que lo confirme.</td>
                         </tr>
                         <tr>
                             <td><strong data-i18n="rule_bounds_name">Rango final de puntuación</strong></td>
@@ -586,16 +592,16 @@
                 rule_rcd_ok_why: "Excelente hábito: el mecanismo de disparo electromecánico responde de inmediato.",
                 rule_no_rcd_name: "Presencia de Diferencial (RCD)",
                 rule_no_rcd_cond: "No se detecta ningún diferencial en la foto y el usuario no ha probado su botón de test",
-                rule_no_rcd_why: "Falta de protección diferencial básica para salvaguardar la vida de las personas contra contactos indirectos.",
+                rule_no_rcd_why: "La foto no basta para saber si hay diferencial: puede quedar fuera del encuadre o no reconocerse. Por eso no se trata como una ausencia confirmada, pero resta lo suficiente para que un cuadro que quizá no tenga esta protección nunca aparezca como «bien». Compruebe que tiene uno y que dispara.",
                 rule_no_mcb_name: "Magnetotérmicos (MCB / PIAs)",
                 rule_no_mcb_cond: "No se detecta ningún magnetotérmico en la foto",
                 rule_no_mcb_why: "No se identifican los interruptores individuales que protegen los circuitos de la vivienda contra sobrecargas y cortocircuitos.",
                 rule_no_iga_name: "Interruptor General (IGA)",
-                rule_no_iga_cond: "Cuadro en España sin IGA detectado",
+                rule_no_iga_cond: "País indicado por el usuario: España, y no se detecta IGA en la foto",
                 rule_no_iga_why: "El REBT exige un IGA específico para cortar la alimentación total de la instalación en caso de emergencia.",
                 rule_no_surge_name: "Protector de Sobretensiones",
-                rule_no_surge_cond: "Cuadro en España sin sobretensiones detectado",
-                rule_no_surge_why: "La normativa REBT actual exige protección de sobretensiones para proteger electrodomésticos y equipos ante picos de tensión.",
+                rule_no_surge_cond: "País indicado por el usuario: España, y no se ve protector de sobretensiones en la foto",
+                rule_no_surge_why: "El REBT actual exige protección contra sobretensiones. Como a menudo va integrada en otro dispositivo y no se distingue en la foto, no verla apenas resta puntos: pida a un electricista que lo confirme.",
                 rule_bounds_name: "Rango final de puntuación",
                 rule_bounds_cond: "Acotación numérica estricta",
                 rule_bounds_why: "La puntuación final se limita matemáticamente entre un mínimo de 0 y un máximo de 100 puntos.",
@@ -655,16 +661,16 @@
                 rule_rcd_ok_why: "Good safety practice: the electromechanical trip mechanism operates promptly.",
                 rule_no_rcd_name: "RCD Presence",
                 rule_no_rcd_cond: "No differential (RCD) detected in the photo, and the user has not tested one",
-                rule_no_rcd_why: "Missing essential residual-current protection to guard against electrical shocks and leakage fires.",
+                rule_no_rcd_why: "A photo can't prove there is no RCD: it may be out of frame or not recognised. So this isn't treated as a confirmed absence, but it costs enough that a panel which may lack this protection never shows as 'good'. Check that you have one and that it trips.",
                 rule_no_mcb_name: "Circuit Breakers (MCBs)",
                 rule_no_mcb_cond: "No individual circuit breakers detected in the photo",
                 rule_no_mcb_why: "Individual breakers protecting household circuits against overloads and short circuits were not identified.",
                 rule_no_iga_name: "Main Breaker (IGA)",
-                rule_no_iga_cond: "Spanish panel layout with no main breaker detected",
+                rule_no_iga_cond: "Country entered by the user is Spain, and no main breaker is detected in the photo",
                 rule_no_iga_why: "Spanish regulations require a dedicated general switch to cut total power to the dwelling in emergencies.",
                 rule_no_surge_name: "Surge Protector (DPS)",
-                rule_no_surge_cond: "Spanish panel layout with no surge protector detected",
-                rule_no_surge_why: "Current regulations require surge protection to safeguard appliances and electronics from grid voltage spikes.",
+                rule_no_surge_cond: "Country entered by the user is Spain, and no surge protector is seen in the photo",
+                rule_no_surge_why: "Current Spanish regulations (REBT) require surge protection. Because it is often built into another device and hard to spot in a photo, not seeing it barely lowers the score: ask an electrician to confirm.",
                 rule_bounds_name: "Final score range",
                 rule_bounds_cond: "Strict mathematical bounds",
                 rule_bounds_why: "The final score is strictly capped between a minimum of 0 and a maximum of 100 points.",
@@ -724,16 +730,16 @@
                 rule_rcd_ok_why: "Excellente habitude : le mécanisme de déclenchement fonctionne promptement.",
                 rule_no_rcd_name: "Présence de différentiel (RCD)",
                 rule_no_rcd_cond: "Aucun différentiel détecté sur la photo et l'utilisateur n'en a pas testé",
-                rule_no_rcd_why: "Absence de protection différentielle essentielle pour prémunir les personnes contre les contacts indirects.",
+                rule_no_rcd_why: "Une photo ne suffit pas à prouver l'absence de différentiel : il peut être hors cadre ou non reconnu. Ce n'est donc pas traité comme une absence confirmée, mais la déduction suffit pour qu'un tableau peut-être dépourvu de cette protection n'apparaisse jamais comme « bon ». Vérifiez que vous en avez un et qu'il déclenche.",
                 rule_no_mcb_name: "Disjoncteurs (MCB)",
                 rule_no_mcb_cond: "Aucun disjoncteur divisionnaire détecté sur la photo",
                 rule_no_mcb_why: "Les disjoncteurs individuels protégeant les circuits contre les surcharges et courts-circuits n'ont pas été identifiés.",
                 rule_no_iga_name: "Disjoncteur général (IGA)",
-                rule_no_iga_cond: "Tableau espagnol sans interrupteur général détecté",
+                rule_no_iga_cond: "Pays indiqué par l'utilisateur : Espagne, et aucun interrupteur général détecté sur la photo",
                 rule_no_iga_why: "La norme exige un disjoncteur général dédié pour couper l'ensemble de l'alimentation en cas d'urgence.",
                 rule_no_surge_name: "Parasurtenseur (DPS)",
-                rule_no_surge_cond: "Tableau espagnol sans parasurtenseur détecté",
-                rule_no_surge_why: "La réglementation moderne exige une protection contre les surtensions pour protéger les appareils électroniques.",
+                rule_no_surge_cond: "Pays indiqué par l'utilisateur : Espagne, et aucun parasurtenseur visible sur la photo",
+                rule_no_surge_why: "La réglementation espagnole actuelle (REBT) exige une protection contre les surtensions. Comme elle est souvent intégrée à un autre appareil et difficile à repérer sur une photo, ne pas la voir ne retire presque aucun point : faites-la confirmer par un électricien.",
                 rule_bounds_name: "Plage de score final",
                 rule_bounds_cond: "Encadrement mathématique strict",
                 rule_bounds_why: "Le score final est strictement borné entre 0 et 100 points.",

@@ -7,6 +7,7 @@ import random
 import re
 import string
 import time
+import unicodedata
 import urllib.parse
 import uuid
 from contextlib import asynccontextmanager
@@ -549,6 +550,26 @@ async def predict_panel(request: Request, file: UploadFile = File(...)):
         logger.error(f"Prediction Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+_SPAIN_ALIASES = {"es", "esp", "spain", "espana", "espagne"}
+
+
+def normalise_country(value) -> str:
+    """The country as the user entered it, reduced to a code the scoring rules test.
+
+    Case- and accent-insensitive: "España", "spain", "ES" and "Espagne" all become
+    "ES". Anything else comes back stripped and upper-cased, and an empty value is
+    "UNKNOWN". The country is never inferred from the photo (S4): only what the user
+    told us decides which country's rules apply.
+    """
+    text = unicodedata.normalize("NFKD", str(value or "")).encode("ascii", "ignore").decode()
+    text = text.strip().lower()
+    if not text:
+        return "UNKNOWN"
+    if text in _SPAIN_ALIASES:
+        return "ES"
+    return text.upper()
+
+
 def grade_panel_layout(predictions, rcd_test_result, country="Unknown"):
     score = 100
     feedback_es = []
@@ -589,20 +610,27 @@ def grade_panel_layout(predictions, rcd_test_result, country="Unknown"):
     main_breaker_count = sum(1 for p in predictions if p.get("class") == "MAINBREAKER")
     oversurge_count = sum(1 for p in predictions if p.get("class") == "OVERSURGE")
 
-    # Presence checks
+    # Presence checks. "Not seen in the photo" is not "absent": a device can be out of
+    # frame, hidden or simply missed by the model (S2). So a missing detection is
+    # reported as something to check, not as a confirmed absence.
     if rcd_count == 0 and not rcd_confirmed_by_test:
-        score -= 25
-        feedback_es.append("⚠️ <strong>No se detectó Diferencial (RCD):</strong> No pudimos identificar un diferencial en la foto. Verifique si su cuadro tiene un interruptor con botón de test (marcado con 'T').")
-        feedback_en.append("⚠️ <strong>No RCD detected:</strong> We couldn't identify a differential (RCD) in the photo. Please verify if your panel has a breaker with a test button (marked 'T').")
-    
+        # -15 (was -25): no longer treated as a confirmed absence, but still enough
+        # that a panel which may have no RCD at all never lands in the "good" band
+        # (85+). A false high score is the dangerous direction on a safety product.
+        score -= 15
+        feedback_es.append("⚠️ <strong>No vemos un diferencial (RCD) en la foto:</strong> Asegúrese de que su cuadro tiene un diferencial (un interruptor con botón de prueba 'T') y compruebe que dispara. Si no tiene ninguno, llame a un electricista: es la protección que salva vidas frente a las descargas.")
+        feedback_en.append("⚠️ <strong>RCD not seen in the photo:</strong> Make sure your panel has an RCD (a switch with a 'T' test button) and check that it trips. If there isn't one, call an electrician: it is the device that protects people from electric shock.")
+
     if mcb_count == 0:
         score -= 10
         feedback_es.append("⚠️ <strong>No se detectaron térmicos (MCBs):</strong> No se identificaron interruptores individuales en el cuadro. Asegúrese de que la foto muestre claramente los interruptores.")
         feedback_en.append("⚠️ <strong>No MCBs detected:</strong> We couldn't identify individual circuit breakers (MCBs) in the panel. Ensure the photo clearly shows all breakers.")
 
-    # Spanish market rules (if Spain or Spain-like panel layout)
-    is_spain = country.upper() in ["ES", "SPAIN"] or (main_breaker_count > 0 or oversurge_count > 0)
-    
+    # Spanish rules apply only when the USER says the panel is in Spain (S4). They
+    # used to also switch on whenever an IGA or a surge protector was detected,
+    # which guessed the country from the photo.
+    is_spain = normalise_country(country) == "ES"
+
     if is_spain:
         if main_breaker_count == 0:
             score -= 10
@@ -610,9 +638,12 @@ def grade_panel_layout(predictions, rcd_test_result, country="Unknown"):
             feedback_en.append("ℹ️ <strong>No Main Breaker (IGA) detected:</strong> We did not identify a dedicated General automatic breaker. Spanish standards require an IGA to cut power to the entire house.")
         
         if oversurge_count == 0:
-            score -= 10
-            feedback_es.append("ℹ️ <strong>Sin protector contra sobretensiones:</strong> No detectamos un protector de sobretensiones. La normativa española actual (REBT) exige su instalación para proteger los electrodomésticos contra picos de tensión.")
-            feedback_en.append("ℹ️ <strong>No Surge Protector (Sobretensiones) detected:</strong> Modern Spanish regulations require a surge protector to shield appliances from voltage spikes.")
+            # -3 (was -10): required by the REBT, but often built into another device
+            # (e.g. a combined IGA+DPS) and easy to miss in a photo, so not seeing it
+            # barely moves the score (S2).
+            score -= 3
+            feedback_es.append("ℹ️ <strong>No vemos protector contra sobretensiones en la foto:</strong> La normativa española actual (REBT) exige uno para proteger los aparatos contra picos de tensión. A veces va integrado en otro dispositivo y no se distingue en la foto; pida a un electricista que lo confirme.")
+            feedback_en.append("ℹ️ <strong>Surge protector not seen in the photo:</strong> Current Spanish regulations (REBT) require one to protect appliances from voltage spikes. It is sometimes built into another device and hard to spot in a photo; ask an electrician to confirm.")
 
         # Installation-Era estimation (Catalog lookup + REBT baseline). Deliberately
         # INSIDE is_spain: every string this module produces -- the composition
