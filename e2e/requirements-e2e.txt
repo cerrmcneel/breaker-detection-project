@@ -1,0 +1,10 @@
+# Browser tests for the static front end (app/frontend). Deliberately separate
+# from requirements-training.txt: CI's `pytest src/tests/` never installs or
+# collects these, so they cannot slow or break the main pipeline.
+#
+#   python -m venv .venv-e2e
+#   .venv-e2e/Scripts/pip install -r e2e/requirements-e2e.txt     (Windows)
+#   .venv-e2e/Scripts/playwright install chromium
+#   .venv-e2e/Scripts/python -m pytest e2e/ -v
+pytest
+pytest-playwright
