@@ -690,8 +690,7 @@ def test_upload_rejects_a_re_exported_copy_of_a_stored_photo(client):
 def test_surge_protector_warning_present_in_both_languages():
     from app.main import grade_panel_layout
 
-    # is_spain is inferred from country OR from Spain-shaped composition; force it via
-    # a MAINBREAKER present with no OVERSURGE, and country=ES to be unambiguous.
+    # Spanish rules apply only when the user says the panel is in Spain (S4).
     predictions = [
         {"class": "MAINBREAKER", "box": [0, 0, 1, 1], "conf": 0.9},
         {"class": "RCD", "box": [0, 0, 1, 1], "conf": 0.9},
@@ -699,8 +698,8 @@ def test_surge_protector_warning_present_in_both_languages():
     ]
     _score, report = grade_panel_layout(predictions, "Responsive", country="ES")
 
-    assert "Sin protector contra sobretensiones" in report   # Spanish half
-    assert "No Surge Protector" in report                    # English half -- was missing
+    assert "No vemos protector contra sobretensiones" in report   # Spanish half
+    assert "Surge protector not seen" in report                   # English half -- was once missing
 
 
 def test_era_estimation_feedback_only_appears_for_spain():
@@ -756,7 +755,7 @@ def test_findings_derived_from_the_photo_are_marked_as_such():
     en_sources, _es_sources = _sources_by_language(report)
 
     assert en_sources == ["form", "photo"]
-    assert "RCD Working" in report and "No RCD detected" not in report
+    assert "RCD Working" in report and "RCD not seen" not in report
 
 
 # --- S1 (2026-10-13): a tested RCD exists, whatever the photo shows -----------------------
@@ -773,7 +772,7 @@ def test_rcd_test_answer_counts_as_evidence_the_rcd_exists(rcd_result):
     score_missed, report = grade_panel_layout(_PANEL_WITHOUT_RCD, rcd_result, country="ES")
     score_seen, _ = grade_panel_layout(_PANEL_WITHOUT_RCD + [{"class": "RCD"}], rcd_result, country="ES")
 
-    assert "No RCD detected" not in report and "No se detectó Diferencial" not in report
+    assert "RCD not seen" not in report and "No vemos un diferencial" not in report
     # The rule itself, without hard-coding a total: once the user has tested the
     # RCD, the photo missing it changes nothing.
     assert score_missed == score_seen
@@ -818,7 +817,7 @@ def test_untested_panel_still_reports_a_missing_rcd():
     score_missed, report = grade_panel_layout(_PANEL_WITHOUT_RCD, "Not Tested", country="ES")
     score_seen, _ = grade_panel_layout(_PANEL_WITHOUT_RCD + [{"class": "RCD"}], "Not Tested", country="ES")
 
-    assert "No RCD detected" in report
+    assert "RCD not seen in the photo" in report
     assert score_missed < score_seen
 
 
@@ -1205,3 +1204,85 @@ def test_upload_accepts_the_explicit_yes_forms_of_training_consent(client, value
     body, write, _scan, _logged = _post_upload(client, {"country": "ES", "training_consent": value})
     write.assert_called_once()
     assert body["photo_stored"] is True
+
+
+# --- S2 (2026-10-17): "not seen in the photo" is not "absent" ---------------------------
+# The model misses devices: the owner's own combined surge protector was missed on
+# 2026-10-13. A missing detection is reported as something to check, with a smaller
+# deduction, instead of as a confirmed absence.
+
+def test_surge_protector_not_seen_barely_moves_the_score():
+    from app.main import grade_panel_layout
+
+    with_surge, _ = grade_panel_layout(_FULL_PANEL, "Responsive", country="ES")
+    without, report = grade_panel_layout(
+        [p for p in _FULL_PANEL if p["class"] != "OVERSURGE"], "Responsive", country="ES")
+
+    assert with_surge - without == 3
+    # Still says the REBT requires one, and asks for a check rather than asserting absence.
+    assert "REBT" in report and "electrician" in report and "electricista" in report
+
+
+def test_rcd_not_seen_and_not_tested_is_a_check_not_a_confirmed_absence():
+    from app.main import grade_panel_layout
+
+    seen, _ = grade_panel_layout(_FULL_PANEL, "Not Tested", country="ES")
+    missed, report = grade_panel_layout(
+        [p for p in _FULL_PANEL if p["class"] != "RCD"], "Not Tested", country="ES")
+
+    assert seen - missed == 15                       # was 25
+    assert "RCD not seen in the photo" in report and "No vemos un diferencial" in report
+    assert "check that it trips" in report and "compruebe que dispara" in report
+
+
+def test_a_panel_that_may_have_no_rcd_never_scores_in_the_good_band():
+    # The front end shows "good" from 85 up. An untested panel whose RCD the photo
+    # doesn't show could have no RCD at all; it must not be reported as fine.
+    from app.main import grade_panel_layout
+
+    score, _ = grade_panel_layout(
+        [p for p in _FULL_PANEL if p["class"] != "RCD"], "Not Tested", country="ES")
+    assert score < 85
+
+
+# --- S4 (2026-10-17): the country comes only from the user ------------------------------
+
+@pytest.mark.parametrize("entered", ["ES", "es", " Spain ", "España", "ESPAÑA", "espana", "Espagne", "esp"])
+def test_normalise_country_recognises_spain_however_it_is_written(entered):
+    from app.main import normalise_country
+
+    assert normalise_country(entered) == "ES"
+
+
+@pytest.mark.parametrize("entered, expected", [
+    ("FR", "FR"), ("France", "FRANCE"), ("Portugal", "PORTUGAL"),
+    ("", "UNKNOWN"), (None, "UNKNOWN"), ("Unknown", "UNKNOWN"),
+])
+def test_normalise_country_keeps_other_answers(entered, expected):
+    from app.main import normalise_country
+
+    assert normalise_country(entered) == expected
+
+
+@pytest.mark.parametrize("country", ["FR", "Unknown", "", "Portugal"])
+def test_spanish_rules_never_switch_on_from_what_the_photo_shows(country):
+    # A main breaker in the photo used to make the panel "Spanish". Now only the
+    # user's answer does: no IGA/surge checks and no REBT citation otherwise.
+    from app.main import grade_panel_layout
+
+    panel = [{"class": "MAINBREAKER"}, {"class": "RCD"}, {"class": "MCB"}]
+    score, report = grade_panel_layout(panel, "Responsive", country=country)
+
+    assert score == 100
+    assert "REBT" not in report and "IGA" not in report
+
+
+@pytest.mark.parametrize("country", ["España", "spain", " ES "])
+def test_spanish_rules_apply_when_the_user_says_spain_in_any_spelling(country):
+    from app.main import grade_panel_layout
+
+    panel = [{"class": "RCD"}, {"class": "MCB"}]          # no IGA, no surge protector
+    score, report = grade_panel_layout(panel, "Responsive", country=country)
+
+    assert score == 100 - 10 - 3                          # IGA -10, surge not seen -3
+    assert "REBT" in report
