@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import time
+from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
 import cv2
@@ -16,6 +17,8 @@ from starlette.concurrency import run_in_threadpool
 import app.main as main_module
 from app.main import MAX_FILE_SIZE, app, validate_image_upload
 from app.main import UPLOAD_CHUNK_SIZE as UPLOAD_CHUNK
+
+CONSENT = {"training_consent": "true"}
 
 
 def make_jpeg_bytes(width=20, height=20):
@@ -189,7 +192,7 @@ def test_active_learning_save_success(client):
     resp = client.post(
         "/active-learning/save",
         files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
-        data={"annotations": json.dumps({"boxes": []})},
+        data={**CONSENT, "annotations": json.dumps({"boxes": []})},
     )
 
     assert resp.status_code == 200
@@ -206,7 +209,7 @@ def test_active_learning_save_rejects_oversized_file(client):
     resp = client.post(
         "/active-learning/save",
         files={"file": ("panel.jpg", oversized, "image/jpeg")},
-        data={"annotations": "{}"},
+        data={**CONSENT, "annotations": "{}"},
     )
     assert resp.status_code == 413
 
@@ -215,7 +218,7 @@ def test_active_learning_save_rejects_invalid_image(client):
     resp = client.post(
         "/active-learning/save",
         files={"file": ("panel.jpg", b"not an image", "image/jpeg")},
-        data={"annotations": "{}"},
+        data={**CONSENT, "annotations": "{}"},
     )
     assert resp.status_code == 400
 
@@ -224,7 +227,7 @@ def test_active_learning_save_rejects_malformed_annotations(client):
     resp = client.post(
         "/active-learning/save",
         files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
-        data={"annotations": "{not valid json"},
+        data={**CONSENT, "annotations": "{not valid json"},
     )
     assert resp.status_code == 400
 
@@ -233,10 +236,78 @@ def test_active_learning_save_blocks_cross_origin(client):
     resp = client.post(
         "/active-learning/save",
         files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
-        data={"annotations": "{}"},
+        data={**CONSENT, "annotations": "{}"},
         headers={"origin": "https://evil.example.com", "host": "testserver"},
     )
     assert resp.status_code == 403
+
+
+# --- /active-learning/save: training consent (T18) -------------------------------------
+# "Send to Vault" keeps a photo and its corrections for retraining, so it needs the same
+# explicit, separate opt-in as /upload/. These run in tmp_path so "nothing was written"
+# can be asserted on the real filesystem instead of on a mock.
+
+VAULT_ANNOTATIONS = [{"class": "RCD", "box": [1, 2, 3, 4]}]
+
+
+def _vault_post(client, data):
+    return client.post(
+        "/active-learning/save",
+        files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
+        data={"annotations": json.dumps(VAULT_ANNOTATIONS), **data},
+    )
+
+
+def test_active_learning_save_without_consent_stores_nothing(client, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    with patch("app.main.find_prediction_id_by_tracking_id") as find, \
+            patch("app.main.record_correction") as record:
+        resp = _vault_post(client, {"tracking_id": "BKR-ANY"})
+
+    assert resp.status_code == 400
+    assert resp.json()["detail"] == "training consent required"
+    assert not (tmp_path / "data").exists()
+    # Nothing reaches the audit trail either: a refused correction is not a correction.
+    find.assert_not_called()
+    record.assert_not_called()
+
+
+@pytest.mark.parametrize("value", [None, "", "false", "0", "no", "off", "maybe", "TRUEISH"])
+def test_active_learning_save_treats_anything_but_an_explicit_yes_as_no_consent(
+    client, tmp_path, monkeypatch, value
+):
+    monkeypatch.chdir(tmp_path)
+    resp = _vault_post(client, {} if value is None else {"training_consent": value})
+
+    assert resp.status_code == 400
+    assert not (tmp_path / "data").exists()
+
+
+@pytest.mark.parametrize("value", ["true", "TRUE", "1", "yes", "on", " true "])
+def test_active_learning_save_accepts_the_explicit_yes_forms_of_consent(
+    client, tmp_path, monkeypatch, value
+):
+    monkeypatch.chdir(tmp_path)
+    resp = _vault_post(client, {"training_consent": value})
+
+    assert resp.status_code == 200
+    assert len(list((tmp_path / "data" / "active_learning").glob("correction_*.jpg"))) == 1
+
+
+def test_active_learning_save_records_the_consent_in_the_sidecar(client, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    before = datetime.now(timezone.utc)
+    resp = _vault_post(client, CONSENT)
+    after = datetime.now(timezone.utc)
+
+    assert resp.status_code == 200
+    (sidecar_path,) = (tmp_path / "data" / "active_learning").glob("correction_*.json")
+    sidecar = json.loads(sidecar_path.read_text(encoding="utf-8"))
+    assert sidecar["training_consent"] is True
+    assert sidecar["annotations"] == VAULT_ANNOTATIONS
+    stamp = datetime.fromisoformat(sidecar["timestamp"])
+    assert stamp.tzinfo is not None
+    assert before <= stamp <= after
 
 
 # --- degraded-inference contract (found by external review 2026-08-09) ----------------
@@ -990,7 +1061,7 @@ def test_active_learning_save_without_tracking_id_behaves_as_before(client):
     resp = client.post(
         "/active-learning/save",
         files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
-        data={"annotations": json.dumps({"boxes": []})},
+        data={**CONSENT, "annotations": json.dumps({"boxes": []})},
     )
     assert resp.status_code == 200
     body = resp.json()
@@ -1005,7 +1076,7 @@ def test_active_learning_save_with_unresolvable_tracking_id_still_succeeds(clien
     resp = client.post(
         "/active-learning/save",
         files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
-        data={"annotations": "{}", "tracking_id": "BKR-NOPE1"},
+        data={**CONSENT, "annotations": "{}", "tracking_id": "BKR-NOPE1"},
     )
     assert resp.status_code == 200
     body = resp.json()
@@ -1030,7 +1101,7 @@ def test_active_learning_save_links_a_correction_to_its_prediction(client, tmp_p
     resp = client.post(
         "/active-learning/save",
         files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
-        data={"annotations": json.dumps({"boxes": [{"class": "RCD"}]}), "tracking_id": tracking_id},
+        data={**CONSENT, "annotations": json.dumps({"boxes": [{"class": "RCD"}]}), "tracking_id": tracking_id},
     )
     body = resp.json()
     assert resp.status_code == 200
@@ -1070,7 +1141,7 @@ def test_active_learning_save_still_succeeds_when_the_link_lookup_returns_none(c
         resp = client.post(
             "/active-learning/save",
             files={"file": ("panel.jpg", make_jpeg_bytes(), "image/jpeg")},
-            data={"annotations": "{}", "tracking_id": "BKR-WHATEVER"},
+            data={**CONSENT, "annotations": "{}", "tracking_id": "BKR-WHATEVER"},
         )
     assert resp.status_code == 200
     assert resp.json()["linked_prediction_id"] is None

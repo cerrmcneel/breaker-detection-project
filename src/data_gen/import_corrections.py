@@ -56,7 +56,18 @@ def import_corrections(active_learning_dir="data/active_learning", output_dir="d
                 data = json.load(f)
             except Exception:
                 continue
-        
+
+        # Two sidecar shapes exist: the bare annotations list written before the vault
+        # asked for consent (T18), and {"training_consent", "timestamp", "annotations"}
+        # since. A record that does not say yes is never trained on.
+        if isinstance(data, dict):
+            if data.get("training_consent") is not True:
+                print(f"Warning: {json_path} has no training consent. Skipping.")
+                continue
+            data = data.get("annotations")
+        if not isinstance(data, list):
+            continue
+
         yolo_lines = []
         for item in data:
             cls_name = item.get("class", "MCB").upper()

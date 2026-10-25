@@ -548,6 +548,52 @@
             gap: 0.75rem;
         }
 
+        /* --- "SEND TO VAULT" TRAINING CONSENT (T18) ---
+           Inline panel in the footer, above the buttons. Capped and scrollable so
+           the confirm button stays reachable on a short phone screen. */
+        .vault-consent {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            max-height: 55vh;
+            overflow-y: auto;
+            padding: 0.85rem;
+            border: 1px solid var(--primary-border);
+            border-radius: 10px;
+            background: rgba(145, 55, 175, 0.1);
+            font-size: 0.8rem;
+            line-height: 1.45;
+            color: var(--text-dim);
+        }
+        .vault-consent[hidden] { display: none; }
+        .vault-consent-title { color: var(--text); font-size: 0.9rem; }
+        .vault-consent-check {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.65rem;
+            min-height: 44px;
+            cursor: pointer;
+            color: var(--text);
+        }
+        .vault-consent-check input {
+            flex-shrink: 0;
+            width: 22px;
+            height: 22px;
+            margin: 0;
+            accent-color: var(--secondary);
+            cursor: pointer;
+        }
+        .vault-consent-note { margin: 0; color: var(--text-dim); }
+        .vault-consent-actions { display: flex; gap: 0.75rem; }
+        .vault-consent-actions .btn { min-height: 44px; }
+        .vault-consent-actions .btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            filter: none;
+        }
+
         .btn {
             padding: 0.75rem 1.25rem;
             border-radius: 10px;
@@ -853,6 +899,20 @@
                 </div>
                 <span style="font-size: 0.75rem; color: var(--text-muted);">Auto-saved</span>
             </div>
+            <!-- "Send to Vault" keeps the photo and corrections for training, so it needs
+                 its own explicit, unticked opt-in (same rule as the homepage form). -->
+            <div class="vault-consent" id="vault-consent" role="group" aria-labelledby="vault-consent-title" hidden>
+                <strong class="vault-consent-title" id="vault-consent-title" data-i18n="vault_consent_title">Keep this photo for training?</strong>
+                <label class="vault-consent-check" for="vault-consent-checkbox">
+                    <input type="checkbox" id="vault-consent-checkbox">
+                    <span data-i18n="vault_consent_label">I agree that this photo and my corrections are kept to improve PanelSafe's detection model.</span>
+                </label>
+                <p class="vault-consent-note" data-i18n="vault_consent_note">Kept for as long as it is useful to train and evaluate our models, until you withdraw your consent. To withdraw consent and have a kept photo deleted, email marjalelectricista@gmail.com with your Tracking ID. Data controller: Eric McNeel (PanelSafe), marjalelectricista@gmail.com.</p>
+                <div class="vault-consent-actions">
+                    <button type="button" class="btn btn-secondary" id="vault-consent-cancel" data-i18n="vault_consent_cancel">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="vault-consent-confirm" data-i18n="vault_consent_confirm" disabled>Keep and send</button>
+                </div>
+            </div>
             <div class="footer-actions">
                 <button class="btn btn-secondary" id="export-btn">
                     <i data-lucide="database" style="width: 16px; height: 16px;"></i>
@@ -927,6 +987,10 @@
                 alert_no_elements: "No elements to serialize.",
                 alert_save_failed: "Failed to save to server.",
                 saving_text: "Saving...", vaulted_text: "Vaulted!",
+                vault_consent_title: "Keep this photo for training?",
+                vault_consent_label: "I agree that this photo and my corrections are kept to improve PanelSafe's detection model.",
+                vault_consent_note: "Kept for as long as it is useful to train and evaluate our models, until you withdraw your consent. To withdraw consent and have a kept photo deleted, email marjalelectricista@gmail.com with your Tracking ID. Data controller: Eric McNeel (PanelSafe), marjalelectricista@gmail.com.",
+                vault_consent_cancel: "Cancel", vault_consent_confirm: "Keep and send",
                 no_detections: "No components detected in this image.",
                 no_detections_hint: "Try a clearer photo with the panel cover open."
             },
@@ -946,6 +1010,10 @@
                 alert_no_elements: "No hay elementos para serializar.",
                 alert_save_failed: "No se pudo guardar en el servidor.",
                 saving_text: "Guardando...", vaulted_text: "¡Guardado!",
+                vault_consent_title: "¿Guardar esta foto para entrenamiento?",
+                vault_consent_label: "Acepto que esta foto y mis correcciones se conserven para mejorar el modelo de detección de PanelSafe.",
+                vault_consent_note: "Se conserva mientras sea útil para entrenar y evaluar nuestros modelos, hasta que retires tu consentimiento. Para retirar tu consentimiento y que borremos una foto guardada, escribe a marjalelectricista@gmail.com con tu ID de seguimiento. Responsable del tratamiento: Eric McNeel (PanelSafe), marjalelectricista@gmail.com.",
+                vault_consent_cancel: "Cancelar", vault_consent_confirm: "Guardar y enviar",
                 no_detections: "No se detectaron componentes en esta imagen.",
                 no_detections_hint: "Prueba con una foto más clara y la tapa del cuadro abierta."
             },
@@ -965,6 +1033,10 @@
                 alert_no_elements: "Aucun élément à sérialiser.",
                 alert_save_failed: "Échec de l'enregistrement sur le serveur.",
                 saving_text: "Enregistrement...", vaulted_text: "Enregistré !",
+                vault_consent_title: "Conserver cette photo pour l'entraînement ?",
+                vault_consent_label: "J'accepte que cette photo et mes corrections soient conservées pour améliorer le modèle de détection de PanelSafe.",
+                vault_consent_note: "Elle est conservée tant qu'elle est utile pour entraîner et évaluer nos modèles, jusqu'au retrait de votre consentement. Pour retirer votre consentement et faire supprimer une photo conservée, écrivez à marjalelectricista@gmail.com avec votre identifiant de suivi. Responsable du traitement : Eric McNeel (PanelSafe), marjalelectricista@gmail.com.",
+                vault_consent_cancel: "Annuler", vault_consent_confirm: "Conserver et envoyer",
                 no_detections: "Aucun composant détecté dans cette image.",
                 no_detections_hint: "Essayez une photo plus nette avec le couvercle du tableau ouvert."
             }
@@ -1257,6 +1329,7 @@
             if (!file) return;
             currentFile = file;
             currentTrackingId = null;  // reset -- see declaration above
+            closeVaultConsent();  // a consent given for the previous photo does not carry over
 
             const draftKey = `panelsafe_draft_${file.name}_${file.size}`;
             const existingDraft = localStorage.getItem(draftKey);
@@ -1591,7 +1664,51 @@
         });
 
         // SEND TO VAULT
-        document.getElementById('export-btn').onclick = async () => {
+        // Keeping a photo for training needs its own explicit, unticked opt-in (same
+        // rule as the homepage form), so the button only opens the consent panel. The
+        // panel's confirm button is the one thing that uploads, and it sends
+        // training_consent=true; Cancel and Escape send nothing. The server refuses
+        // the request without it (400), so this is the courtesy, not the control.
+        const exportBtn = document.getElementById('export-btn');
+        const vaultConsent = document.getElementById('vault-consent');
+        const vaultConsentCheckbox = document.getElementById('vault-consent-checkbox');
+        const vaultConsentConfirm = document.getElementById('vault-consent-confirm');
+
+        function closeVaultConsent() {
+            vaultConsent.hidden = true;
+            vaultConsentCheckbox.checked = false;
+            vaultConsentConfirm.disabled = true;
+        }
+
+        exportBtn.onclick = () => {
+            const file = currentFile || (fileInput.files && fileInput.files[0]);
+            if (!file || components.length === 0) return alert(T('alert_upload_first'));
+            vaultConsentCheckbox.checked = false;
+            vaultConsentConfirm.disabled = true;
+            vaultConsent.hidden = false;
+            vaultConsentCheckbox.focus();
+            vaultConsent.scrollIntoView({ block: 'nearest' });
+        };
+        vaultConsentCheckbox.onchange = () => {
+            vaultConsentConfirm.disabled = !vaultConsentCheckbox.checked;
+        };
+        document.getElementById('vault-consent-cancel').onclick = () => {
+            closeVaultConsent();
+            exportBtn.focus();
+        };
+        vaultConsent.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeVaultConsent();
+                exportBtn.focus();
+            }
+        });
+        vaultConsentConfirm.onclick = () => {
+            if (!vaultConsentCheckbox.checked) return;
+            closeVaultConsent();
+            sendToVault();
+        };
+
+        async function sendToVault() {
             const file = currentFile || (fileInput.files && fileInput.files[0]);
             if (!file || components.length === 0) return alert(T('alert_upload_first'));
 
@@ -1603,6 +1720,7 @@
             const formData = new FormData();
             formData.append('file', file);
             formData.append('annotations', JSON.stringify(components, null, 4));
+            formData.append('training_consent', 'true');  // only reached from the ticked panel
             // Optional: lets the server link this correction back to the prediction
             // it corrects (see src/storage/predictions_store.py). Absent when the
             // photo was resumed from a saved draft, since no tracking_id exists for

@@ -11,7 +11,7 @@ import unicodedata
 import urllib.parse
 import uuid
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 import cv2
@@ -870,6 +870,7 @@ async def save_active_learning(
     file: UploadFile = File(...),
     annotations: str = Form(...),
     tracking_id: Optional[str] = Form(default=None),
+    training_consent: Optional[str] = Form(default=None),
 ):
     try:
         # Lightweight same-origin check: this endpoint is anonymous/no-login by design
@@ -884,6 +885,14 @@ async def save_active_learning(
             origin_host = urllib.parse.urlparse(origin_header).netloc
             if origin_host and origin_host != request_host:
                 raise HTTPException(status_code=403, detail="Cross-origin request blocked.")
+
+        # This endpoint exists only to collect retraining data, so without the same
+        # explicit opt-in /upload/ asks for (GDPR: see `training_consent` there) there
+        # is nothing to do. Checked before the image is read or validated. A missing
+        # field counts as no, so a page cached from before this change cannot opt
+        # anyone in.
+        if not _parse_consent(training_consent):
+            raise HTTPException(status_code=400, detail="training consent required")
 
         file_bytes = await read_upload_limited(file)
         validate_image_upload(file_bytes)
@@ -903,12 +912,20 @@ async def save_active_learning(
         active_learning_dir = "data/active_learning"
         base_name = f"correction_{int(datetime.now().timestamp())}_{uuid.uuid4()}"
 
+        # The sidecar carries the record of consent next to the corrections it covers.
+        # It used to be the bare annotations list; import_corrections.py reads both.
+        sidecar = {
+            "training_consent": True,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "annotations": parsed_annotations,
+        }
+
         def _persist_correction():
             os.makedirs(active_learning_dir, exist_ok=True)
             with open(os.path.join(active_learning_dir, f"{base_name}{safe_ext}"), "wb") as f:
                 f.write(file_bytes)
             with open(os.path.join(active_learning_dir, f"{base_name}.json"), "w", encoding="utf-8") as f:
-                json.dump(parsed_annotations, f)
+                json.dump(sidecar, f)
 
         await run_in_threadpool(_persist_correction)
 
