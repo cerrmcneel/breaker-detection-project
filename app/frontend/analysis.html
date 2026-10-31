@@ -3,7 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PanelSafe | Human-in-the-Loop Analysis</title>
+    <title>Analizador de Cuadros Eléctricos con IA (REBT) | PanelSafe</title>
+    <meta name="description" content="Analizador interactivo de cuadros eléctricos con Inteligencia Artificial (YOLOv11 + OCR + HMM). Detecta IGA, diferenciales (RCD), magnetotérmicos (PIAs) y sobretensiones y exporta al Generador Unifilar REBT.">
+    <link rel="canonical" href="https://panelsafe.cv/analysis.html">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="PanelSafe">
+    <meta property="og:title" content="Analizador de Cuadros Eléctricos con IA (REBT) | PanelSafe">
+    <meta property="og:description" content="Detecta y clasifica automáticamente los interruptores de un cuadro eléctrico a partir de una foto y genera el esquema unifilar REBT.">
+    <meta property="og:url" content="https://panelsafe.cv/analysis.html">
+    <meta property="og:image" content="https://panelsafe.cv/assets/ui_banner.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "PanelSafe AI Breaker Panel Analyzer",
+      "url": "https://panelsafe.cv/analysis.html",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "All",
+      "inLanguage": ["es", "en", "fr"],
+      "isAccessibleForFree": true,
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR"
+      },
+      "author": {
+        "@type": "Person",
+        "name": "Eric Sean McNeel"
+      }
+    }
+    </script>
 
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="assets/favicon/favicon.ico">
@@ -825,7 +855,7 @@
             <div class="header-top">
                 <div class="sidebar-title">
                     <i data-lucide="shield-check" style="width: 20px; height: 20px; color: var(--primary);"></i>
-                    <span>PanelSafe Analysis</span>
+                    <h1 style="font-size: inherit; font-weight: inherit; margin: 0;">PanelSafe Analysis</h1>
                 </div>
                 
                 <div class="lang-switcher">
@@ -897,7 +927,7 @@
                     <div class="footer-status-dot"></div>
                     <span id="footer-count-text">Ready for export</span>
                 </div>
-                <span style="font-size: 0.75rem; color: var(--text-muted);">Auto-saved</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">Auto-saved &middot; <a href="/privacidad/" style="color: var(--text-dim); text-decoration: underline;">Privacidad</a></span>
             </div>
             <!-- "Send to Vault" keeps the photo and corrections for training, so it needs
                  its own explicit, unticked opt-in (same rule as the homepage form). -->

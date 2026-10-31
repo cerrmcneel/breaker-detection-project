@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="page_title">Política de Privacidad y Aviso Legal | PanelSafe</title>
+    <meta name="description" content="Política de Privacidad (RGPD Art. 13), Aviso Legal (LSSI Art. 10) y Política de Cookies de PanelSafe (panelsafe.cv). Información transparente sobre el análisis visual de cuadros eléctricos y consentimiento opcional de entrenamiento.">
+    <link rel="canonical" href="https://panelsafe.cv/privacidad/">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Política de Privacidad y Aviso Legal | PanelSafe">
+    <meta property="og:description" content="Información legal, protección de datos (RGPD) y consentimiento separado para análisis visual y entrenamiento opcional en PanelSafe.">
+    <meta property="og:url" content="https://panelsafe.cv/privacidad/">
+    <meta property="og:image" content="https://panelsafe.cv/assets/ui_banner.png">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/assets/favicon/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon/favicon-16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicon/favicon-180.png">
+    <link rel="stylesheet" href="/assets/fonts/fonts.css">
+    <script src="/vendor/lucide/lucide.min.js"></script>
+    <style>
+        :root {
+            --primary: #9137af;
+            --primary-dark: #6c2583;
+            --primary-light: rgba(145, 55, 175, 0.15);
+            --secondary: #73c83c;
+            --secondary-dark: #56972d;
+            --secondary-light: rgba(115, 200, 60, 0.15);
+            --bg: #0b0a0d;
+            --card-bg: rgba(20, 18, 25, 0.95);
+            --text: #ffffff;
+            --text-muted: #a9a6b0;
+            --success: #73c83c;
+            --warning: #ffb800;
+            --danger: #ff4a4a;
+            --radius: 16px;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(145, 55, 175, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            background-image: radial-gradient(at 0% 0%, rgba(145, 55, 175, 0.15) 0px, transparent 50%),
+                              radial-gradient(at 100% 100%, rgba(115, 200, 60, 0.1) 0px, transparent 50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0 20px 60px 20px;
+            color: var(--text);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(11, 10, 13, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 1rem 1.5rem;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+            border-bottom: 1px solid rgba(145, 55, 175, 0.15);
+        }
+
+        .nav-brand {
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.875rem;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            color: var(--secondary);
+            background-color: var(--primary-light);
+        }
+
+        .nav-lang {
+            padding: 6px 8px;
+            border-radius: 8px;
+            border: 1px solid rgba(145, 55, 175, 0.3);
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .nav-lang option {
+            background: #141219;
+            color: var(--text);
+        }
+
+        @media (max-width: 640px) {
+            .navbar { padding: 0.75rem 0.75rem; }
+            .nav-links { gap: 4px; }
+            .nav-link { padding: 6px 6px; font-size: 0.8rem; }
+            .nav-lang { padding: 4px 4px; font-size: 12px; }
+            .nav-brand-text { display: none; }
+        }
+
+        .content-container {
+            max-width: 900px;
+            width: 100%;
+            margin-top: 100px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.75rem;
+        }
+
+        .hero-section {
+            text-align: center;
+            padding: 20px 0 10px 0;
+        }
+
+        .hero-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.35rem;
+            font-weight: 800;
+            margin: 0;
+            background: linear-gradient(135deg, #ffffff 30%, #c084fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.03em;
+        }
+
+        .hero-subtitle {
+            font-size: 1.05rem;
+            color: var(--text-muted);
+            margin: 12px auto 0 auto;
+            max-width: 680px;
+            line-height: 1.6;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid rgba(145, 55, 175, 0.2);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .card h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-top: 0;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #ffffff;
+        }
+
+        .card h2 i {
+            color: var(--primary);
+        }
+
+        .card p, .card li {
+            font-size: 0.95rem;
+            color: #e2e8f0;
+            line-height: 1.65;
+        }
+
+        .card ul {
+            padding-left: 20px;
+            margin-bottom: 0;
+        }
+
+        .card li {
+            margin-bottom: 8px;
+        }
+
+        .card a {
+            color: var(--secondary);
+            text-decoration: none;
+        }
+
+        .card a:hover {
+            text-decoration: underline;
+        }
+
+        footer {
+            margin-top: 1.5rem;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        footer a {
+            color: var(--secondary);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="/" class="nav-brand" data-i18n="nav_brand">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 2px;">
+                <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span class="nav-brand-text">PanelSafe</span>
+        </a>
+        <div class="nav-links">
+            <a href="/" class="nav-link" data-i18n="nav_home">Inicio</a>
+            <a href="/analysis.html" class="nav-link" data-i18n="nav_analysis">Analizador IA</a>
+            <a href="/unifilar/" class="nav-link" data-i18n="nav_unifilar">Generador Unifilar</a>
+            <a href="/blog.html" class="nav-link" data-i18n="nav_blog">Blog</a>
+            <a href="/metodologia/" class="nav-link" data-i18n="nav_methodology">Metodología</a>
+            <select id="nav-lang" class="nav-lang" aria-label="Language / Idioma / Langue" onchange="setLanguage(this.value)">
+                <option value="es">ES</option>
+                <option value="en">EN</option>
+                <option value="fr">FR</option>
+            </select>
+        </div>
+    </nav>
+
+    <div class="content-container">
+        <div class="hero-section">
+            <h1 class="hero-title" data-i18n="hero_title">Política de Privacidad, Cookies y Aviso Legal</h1>
+            <p class="hero-subtitle" data-i18n="hero_subtitle">
+                Información transparente en cumplimiento del Reglamento General de Protección de Datos (RGPD Art. 13), la LOPDGDD (LO 3/2018) y la LSSI-CE (Ley 34/2002 Art. 10 y 22.2).
+            </p>
+        </div>
+
+        <!-- 1. Titular & Data Controller -->
+        <div class="card">
+            <h2><i data-lucide="user-check"></i> <span data-i18n="sec1_title">1. Titular del Sitio Web y Responsable del Tratamiento</span></h2>
+            <p data-i18n="sec1_intro">En cumplimiento del artículo 10 de la Ley 34/2002 (LSSI-CE) y del artículo 13 del Reglamento (UE) 2016/679 (RGPD), se informa de los datos identificativos del titular de <strong>panelsafe.cv</strong> y responsable del tratamiento:</p>
+            <ul>
+                <li data-i18n="sec1_li1"><strong>Titular y Responsable:</strong> Eric Sean McNeel (desarrollador de PanelSafe e instalador electricista habilitado con certificado CIBTB-01815).</li>
+                <li data-i18n="sec1_li2"><strong>Domicilio de contacto:</strong> Carrer Migjorn 12, ático 5, 12598 Peñíscola (Castellón), España.</li>
+                <li data-i18n="sec1_li3"><strong>Correo electrónico de contacto y ejercicio de derechos:</strong> <a href="mailto:marjalelectricista@gmail.com">marjalelectricista@gmail.com</a></li>
+                <li data-i18n="sec1_li4"><strong>Teléfono:</strong> +34 684 17 31 15</li>
+                <li data-i18n="sec1_li5"><strong>Relación profesional transparente:</strong> PanelSafe ha sido desarrollado por Eric Sean McNeel, quien dirige la empresa instaladora <a href="https://electromarjal.com" target="_blank" rel="noopener noreferrer">ElectroMarjal</a> (MARJAL INNOVACIONES ELECTRICAS, S.L.). La metodología de puntuación es pública, determinista e idéntica en todas las páginas (<a href="/metodologia/">ver Metodología</a>).</li>
+            </ul>
+        </div>
+
+        <!-- 2. Two Separate Consents -->
+        <div class="card">
+            <h2><i data-lucide="shield"></i> <span data-i18n="sec2_title">2. Datos que Tratamos y Doble Consentimiento Separado</span></h2>
+            <p data-i18n="sec2_intro">PanelSafe separa estrictamente la ejecución del análisis puntual del almacenamiento opcional para entrenamiento de inteligencia artificial:</p>
+            <ul>
+                <li data-i18n="sec2_li1"><strong>A) Análisis puntual de la fotografía (Obligatorio para usar la herramienta · RGPD Art. 6.1.a / 6.1.b):</strong> Cuando subes una foto de tu cuadro eléctrico e indicas el país y el resultado opcional del botón de test del diferencial, el modelo de visión artificial procesa la imagen exclusivamente para calcular la puntuación orientativa de seguridad o generar el borrador de esquema unifilar. <strong>Si no marcas la casilla opcional de entrenamiento, la fotografía se analiza en memoria y no se guarda en nuestro conjunto de datos (`photo_stored: false`).</strong></li>
+                <li data-i18n="sec2_li2"><strong>B) Conservación opcional para mejorar el modelo (`training_consent` · RGPD Art. 6.1.a):</strong> Únicamente si marcas de forma explícita y voluntaria la casilla opcional (en el formulario de evaluación o al pulsar «Enviar a Bóveda» en el Analizador IA), guardamos la fotografía, las anotaciones técnicas de los interruptores y el código de seguimiento (`tracking_id`) para entrenar y evaluar los modelos de detección de PanelSafe. Esta casilla nunca aparece premarcada.</li>
+                <li data-i18n="sec2_li3"><strong>C) Sin registro de datos personales de contacto en páginas de colaboradores:</strong> En las páginas de electricistas colaboradores (`/c/...`), PanelSafe no almacena en sus servidores tu nombre, número de teléfono ni código postal; cualquier consulta posterior se inicia directamente desde tu propia aplicación de WhatsApp, teléfono o correo electrónico.</li>
+            </ul>
+        </div>
+
+        <!-- 3. Hosting, Retention & Rights -->
+        <div class="card">
+            <h2><i data-lucide="database"></i> <span data-i18n="sec3_title">3. Almacenamiento en la UE, Plazo de Conservación y Derechos RGPD</span></h2>
+            <ul>
+                <li data-i18n="sec3_li1"><strong>Ubicación de los datos:</strong> Las imágenes y registros técnicos cuyos usuarios han autorizado su conservación se almacenan en servidores propios ubicados en España (Unión Europea), protegidos mediante control de acceso y cifrado en tránsito (TLS). En caso de contingencia técnica puntual del servidor principal, la inferencia visual puede procesarse de forma efímera sin almacenamiento permanente en infraestructura cloud de respaldo.</li>
+                <li data-i18n="sec3_li2"><strong>Plazo de conservación:</strong> Las fotografías sin consentimiento de entrenamiento se descartan tras el análisis. Las fotografías con consentimiento explícito de entrenamiento se conservan mientras sean útiles para entrenar y validar los modelos de visión artificial de PanelSafe, o hasta que el usuario retire su consentimiento.</li>
+                <li data-i18n="sec3_li3"><strong>Derecho de supresión inmediata con tu ID de seguimiento (`tracking_id`):</strong> Puedes retirar tu consentimiento y solicitar el borrado inmediato de cualquier fotografía guardada y sus metadatos escribiendo a <a href="mailto:marjalelectricista@gmail.com">marjalelectricista@gmail.com</a> e indicando tu <strong>ID de seguimiento</strong> (por ejemplo, `BKR-XXXXX`).</li>
+                <li data-i18n="sec3_li4"><strong>Ejercicio de derechos ARSOPOL:</strong> Puedes ejercer tus derechos de acceso, rectificación, supresión, oposición, limitación del tratamiento y portabilidad enviando un correo a <a href="mailto:marjalelectricista@gmail.com">marjalelectricista@gmail.com</a>. Asimismo, tienes derecho a presentar una reclamación ante la Agencia Española de Protección de Datos (<a href="https://www.aepd.es" target="_blank" rel="noopener noreferrer">www.aepd.es</a>).</li>
+            </ul>
+        </div>
+
+        <!-- 4. Cookies & Self-Hosted Assets -->
+        <div class="card">
+            <h2><i data-lucide="cookie"></i> <span data-i18n="sec4_title">4. Política de Cookies y Recursos Autoalojados</span></h2>
+            <ul>
+                <li data-i18n="sec4_li1"><strong>Cero cookies analíticas o publicitarias:</strong> PanelSafe no utiliza Google Analytics, píxeles de seguimiento ni cookies publicitarias de terceros.</li>
+                <li data-i18n="sec4_li2"><strong>Tipografías e iconos 100 % autoalojados:</strong> Las fuentes tipográficas (`Inter`, `Outfit`), los iconos (`Lucide`) y el motor de visor en navegador (`ONNX Runtime Web`) se sirven directamente desde nuestro propio servidor en `panelsafe.cv`, sin realizar conexiones automáticas a servidores de Google Fonts ni CDNs externos.</li>
+                <li data-i18n="sec4_li3"><strong>Almacenamiento local técnico (exento bajo LSSI Art. 22.2):</strong> El navegador utiliza únicamente `localStorage` y `sessionStorage` para recordar el idioma elegido (`breakerLang`), el último código de seguimiento o el borrador del esquema unifilar en el propio dispositivo del usuario, además de la cookie técnica de seguridad `__cf_bm` gestionada por Cloudflare para protección frente a tráfico automatizado malicioso.</li>
+            </ul>
+        </div>
+
+        <!-- 5. Non-Certification Legal Disclaimer -->
+        <div class="card">
+            <h2><i data-lucide="alert-triangle"></i> <span data-i18n="sec5_title">5. Descargo de Responsabilidad Técnica (No Certificación)</span></h2>
+            <p data-i18n="sec5_p1">
+                <strong>PanelSafe es una herramienta educativa y de asistencia al dibujo técnico.</strong> La puntuación de seguridad y los esquemas unifilares generados son borradores orientativos basados en el análisis visual de una imagen y <strong>nunca constituyen una inspección oficial, un dictamen técnico ni un Certificado de Instalación Eléctrica (Boletín / CIE).</strong>
+            </p>
+            <p data-i18n="sec5_p2">
+                Una fotografía no permite verificar conexiones flojas, secciones reales de cableado oculto, estado del aislamiento ni la resistencia física de la puesta a tierra. Cualquier intervención en un cuadro eléctrico o emisión de documentación oficial conforme al REBT (RD 842/2002) debe ser realizada, verificada in situ y firmada por un <strong>instalador electricista autorizado</strong>.
+            </p>
+        </div>
+
+        <footer>
+            <p data-i18n="footer_text">
+                PanelSafe · <a href="/">panelsafe.cv</a> · <a href="/metodologia/">Metodología</a> · <a href="/privacidad/">Privacidad y Aviso Legal</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        const translations = {
+            es: {
+                page_title: "Política de Privacidad y Aviso Legal | PanelSafe",
+                nav_brand: '⚡ <span class="nav-brand-text">PanelSafe</span>',
+                nav_home: "Inicio",
+                nav_analysis: "Analizador IA",
+                nav_unifilar: "Generador Unifilar",
+                nav_blog: "Blog",
+                nav_methodology: "Metodología",
+                hero_title: "Política de Privacidad, Cookies y Aviso Legal",
+                hero_subtitle: "Información transparente en cumplimiento del Reglamento General de Protección de Datos (RGPD Art. 13), la LOPDGDD (LO 3/2018) y la LSSI-CE (Ley 34/2002 Art. 10 y 22.2).",
+                sec1_title: "1. Titular del Sitio Web y Responsable del Tratamiento",
+                sec1_intro: "En cumplimiento del artículo 10 de la Ley 34/2002 (LSSI-CE) y del artículo 13 del Reglamento (UE) 2016/679 (RGPD), se informa de los datos identificativos del titular de <strong>panelsafe.cv</strong> y responsable del tratamiento:",
+                sec1_li1: "<strong>Titular y Responsable:</strong> Eric Sean McNeel (desarrollador de PanelSafe e instalador electricista habilitado con certificado CIBTB-01815).",
+                sec1_li2: "<strong>Domicilio de contacto:</strong> Carrer Migjorn 12, ático 5, 12598 Peñíscola (Castellón), España.",
+                sec1_li3: "<strong>Correo electrónico de contacto y ejercicio de derechos:</strong> <a href='mailto:marjalelectricista@gmail.com'>marjalelectricista@gmail.com</a>",
+                sec1_li4: "<strong>Teléfono:</strong> +34 684 17 31 15",
+                sec1_li5: "<strong>Relación profesional transparente:</strong> PanelSafe ha sido desarrollado por Eric Sean McNeel, quien dirige la empresa instaladora <a href='https://electromarjal.com' target='_blank' rel='noopener noreferrer'>ElectroMarjal</a> (MARJAL INNOVACIONES ELECTRICAS, S.L.). La metodología de puntuación es pública, determinista e idéntica en todas las páginas (<a href='/metodologia/'>ver Metodología</a>).",
+                sec2_title: "2. Datos que Tratamos y Doble Consentimiento Separado",
+                sec2_intro: "PanelSafe separa estrictamente la ejecución del análisis puntual del almacenamiento opcional para entrenamiento de inteligencia artificial:",
+                sec2_li1: "<strong>A) Análisis puntual de la fotografía (Obligatorio para usar la herramienta · RGPD Art. 6.1.a / 6.1.b):</strong> Cuando subes una foto de tu cuadro eléctrico e indicas el país y el resultado opcional del botón de test del diferencial, el modelo de visión artificial procesa la imagen exclusivamente para calcular la puntuación orientativa de seguridad o generar el borrador de esquema unifilar. <strong>Si no marcas la casilla opcional de entrenamiento, la fotografía se analiza en memoria y no se guarda en nuestro conjunto de datos (`photo_stored: false`).</strong>",
+                sec2_li2: "<strong>B) Conservación opcional para mejorar el modelo (`training_consent` · RGPD Art. 6.1.a):</strong> Únicamente si marcas de forma explícita y voluntaria la casilla opcional (en el formulario de evaluación o al pulsar «Enviar a Bóveda» en el Analizador IA), guardamos la fotografía, las anotaciones técnicas de los interruptores y el código de seguimiento (`tracking_id`) para entrenar y evaluar los modelos de detección de PanelSafe. Esta casilla nunca aparece premarcada.",
+                sec2_li3: "<strong>C) Sin registro de datos personales de contacto en páginas de colaboradores:</strong> En las páginas de electricistas colaboradores (`/c/...`), PanelSafe no almacena en sus servidores tu nombre, número de teléfono ni código postal; cualquier consulta posterior se inicia directamente desde tu propia aplicación de WhatsApp, teléfono o correo electrónico.",
+                sec3_title: "3. Almacenamiento en la UE, Plazo de Conservación y Derechos RGPD",
+                sec3_li1: "<strong>Ubicación de los datos:</strong> Las imágenes y registros técnicos cuyos usuarios han autorizado su conservación se almacenan en servidores propios ubicados en España (Unión Europea), protegidos mediante control de acceso y cifrado en tránsito (TLS). En caso de contingencia técnica puntual del servidor principal, la inferencia visual puede procesarse de forma efímera sin almacenamiento permanente en infraestructura cloud de respaldo.",
+                sec3_li2: "<strong>Plazo de conservación:</strong> Las fotografías sin consentimiento de entrenamiento se descartan tras el análisis. Las fotografías con consentimiento explícito de entrenamiento se conservan mientras sean útiles para entrenar y validar los modelos de visión artificial de PanelSafe, o hasta que el usuario retire su consentimiento.",
+                sec3_li3: "<strong>Derecho de supresión inmediata con tu ID de seguimiento (`tracking_id`):</strong> Puedes retirar tu consentimiento y solicitar el borrado inmediato de cualquier fotografía guardada y sus metadatos escribiendo a <a href='mailto:marjalelectricista@gmail.com'>marjalelectricista@gmail.com</a> e indicando tu <strong>ID de seguimiento</strong> (por ejemplo, `BKR-XXXXX`).",
+                sec3_li4: "<strong>Ejercicio de derechos ARSOPOL:</strong> Puedes ejercer tus derechos de acceso, rectificación, supresión, oposición, limitación del tratamiento y portabilidad enviando un correo a <a href='mailto:marjalelectricista@gmail.com'>marjalelectricista@gmail.com</a>. Asimismo, tienes derecho a presentar una reclamación ante la Agencia Española de Protección de Datos (<a href='https://www.aepd.es' target='_blank' rel='noopener noreferrer'>www.aepd.es</a>).",
+                sec4_title: "4. Política de Cookies y Recursos Autoalojados",
+                sec4_li1: "<strong>Cero cookies analíticas o publicitarias:</strong> PanelSafe no utiliza Google Analytics, píxeles de seguimiento ni cookies publicitarias de terceros.",
+                sec4_li2: "<strong>Tipografías e iconos 100 % autoalojados:</strong> Las fuentes tipográficas (`Inter`, `Outfit`), los iconos (`Lucide`) y el motor de visor en navegador (`ONNX Runtime Web`) se sirven directamente desde nuestro propio servidor en `panelsafe.cv`, sin realizar conexiones automáticas a servidores de Google Fonts ni CDNs externos.",
+                sec4_li3: "<strong>Almacenamiento local técnico (exento bajo LSSI Art. 22.2):</strong> El navegador utiliza únicamente `localStorage` y `sessionStorage` para recordar el idioma elegido (`breakerLang`), el último código de seguimiento o el borrador del esquema unifilar en el propio dispositivo del usuario, además de la cookie técnica de seguridad `__cf_bm` gestionada por Cloudflare para protección frente a tráfico automatizado malicioso.",
+                sec5_title: "5. Descargo de Responsabilidad Técnica (No Certificación)",
+                sec5_p1: "<strong>PanelSafe es una herramienta educativa y de asistencia al dibujo técnico.</strong> La puntuación de seguridad y los esquemas unifilares generados son borradores orientativos basados en el análisis visual de una imagen y <strong>nunca constituyen una inspección oficial, un dictamen técnico ni un Certificado de Instalación Eléctrica (Boletín / CIE).</strong>",
+                sec5_p2: "Una fotografía no permite verificar conexiones flojas, secciones reales de cableado oculto, estado del aislamiento ni la resistencia física de la puesta a tierra. Cualquier intervención en un cuadro eléctrico o emisión de documentación oficial conforme al REBT (RD 842/2002) debe ser realizada, verificada in situ y firmada por un <strong>instalador electricista autorizado</strong>.",
+                footer_text: "PanelSafe · <a href='/'>panelsafe.cv</a> · <a href='/metodologia/'>Metodología</a> · <a href='/privacidad/'>Privacidad y Aviso Legal</a>"
+            },
+            en: {
+                page_title: "Privacy Policy & Legal Notice | PanelSafe",
+                nav_brand: '⚡ <span class="nav-brand-text">PanelSafe</span>',
+                nav_home: "Home",
+                nav_analysis: "AI Analyzer",
+                nav_unifilar: "Single-Line Diagram",
+                nav_blog: "Blog",
+                nav_methodology: "Methodology",
+                hero_title: "Privacy Policy, Cookies & Legal Notice",
+                hero_subtitle: "Transparent information in compliance with the EU General Data Protection Regulation (GDPR Art. 13), Spanish Organic Law 3/2018 (LOPDGDD), and Law 34/2002 (LSSI-CE Art. 10 & 22.2).",
+                sec1_title: "1. Website Owner & Data Controller",
+                sec1_intro: "In compliance with Article 10 of Spanish Law 34/2002 (LSSI-CE) and Article 13 of Regulation (EU) 2016/679 (GDPR), the owner and data controller of <strong>panelsafe.cv</strong> is:",
+                sec1_li1: "<strong>Owner & Data Controller:</strong> Eric Sean McNeel (developer of PanelSafe and licensed electrical installer holding certificate CIBTB-01815).",
+                sec1_li2: "<strong>Contact Address:</strong> Carrer Migjorn 12, ático 5, 12598 Peñíscola (Castellón), Spain.",
+                sec1_li3: "<strong>Email for inquiries & GDPR rights:</strong> <a href='mailto:marjalelectricista@gmail.com'>marjalelectricista@gmail.com</a>",
+                sec1_li4: "<strong>Phone:</strong> +34 684 17 31 15",
+                sec1_li5: "<strong>Transparent relationship disclosure:</strong> PanelSafe is built by Eric Sean McNeel, who also runs the licensed electrical contracting company <a href='https://electromarjal.com' target='_blank' rel='noopener noreferrer'>ElectroMarjal</a> (MARJAL INNOVACIONES ELECTRICAS, S.L.). The scoring methodology is public, deterministic, and identical across all pages (<a href='/metodologia/'>see Methodology</a>).",
+                sec2_title: "2. Data We Process & Two Separate Consents",
+                sec2_intro: "PanelSafe strictly separates one-time image analysis from optional storage for AI model training:",
+                sec2_li1: "<strong>A) One-time photo analysis (Required to use the tool · GDPR Art. 6.1.a / 6.1.b):</strong> When you upload a photo of your electrical panel and indicate your country and optional RCD test-button result, our computer vision model processes the image solely to calculate the educational safety score or generate a single-line diagram draft. <strong>If you leave the optional training box unticked, your photo is analysed in memory and never stored in our dataset (`photo_stored: false`).</strong>",
+                sec2_li2: "<strong>B) Optional storage to improve the model (`training_consent` · GDPR Art. 6.1.a):</strong> Only when you explicitly tick the optional training consent checkbox (on the upload modal or the 'Send to Vault' dialog in the AI Analyzer) do we store the photo, breaker annotations, and tracking ID (`tracking_id`) to train and evaluate PanelSafe's detection models. This box is never pre-ticked.",
+                sec2_li3: "<strong>C) Zero contact-data storage on partner pages:</strong> On partner electrician pages (`/c/...`), PanelSafe never stores your name, phone number, or postcode on its servers; any follow-up message is sent directly from your own WhatsApp, phone, or email client.",
+                sec3_title: "3. EU Storage, Retention Period & Your GDPR Rights",
+                sec3_li1: "<strong>Data location:</strong> Images and technical logs for which users have granted training consent are stored on our own servers in Spain (European Union), protected by access controls and TLS encryption in transit. During temporary primary-server maintenance, visual inference may be processed ephemerally without permanent storage on fallback cloud infrastructure.",
+                sec3_li2: "<strong>Retention period:</strong> Photos uploaded without training consent are discarded immediately after analysis. Photos with explicit training consent are kept for as long as they remain useful to train and evaluate PanelSafe's computer vision models, or until you withdraw your consent.",
+                sec3_li3: "<strong>Immediate deletion via your Tracking ID (`tracking_id`):</strong> You can withdraw your consent and request immediate deletion of any stored photo and its metadata at any time by emailing <a href='mailto:marjalelectricista@gmail.com'>marjalelectricista@gmail.com</a> with your <strong>Tracking ID</strong> (e.g., `BKR-XXXXX`).",
+                sec3_li4: "<strong>GDPR rights:</strong> You may exercise your rights of access, rectification, erasure, restriction, objection, and data portability by emailing <a href='mailto:marjalelectricista@gmail.com'>marjalelectricista@gmail.com</a>. You also have the right to lodge a complaint with the Spanish Data Protection Agency (<a href='https://www.aepd.es' target='_blank' rel='noopener noreferrer'>www.aepd.es</a>).",
+                sec4_title: "4. Cookie Policy & Self-Hosted Assets",
+                sec4_li1: "<strong>Zero analytics or advertising cookies:</strong> PanelSafe uses no Google Analytics, tracking pixels, or third-party advertising cookies.",
+                sec4_li2: "<strong>100% self-hosted fonts and icons:</strong> All web fonts (`Inter`, `Outfit`), icons (`Lucide`), and the in-browser viewfinder runtime (`ONNX Runtime Web`) are served directly from `panelsafe.cv`, with zero automatic requests to Google Fonts or external CDNs.",
+                sec4_li3: "<strong>Technical local storage (exempt under LSSI Art. 22.2):</strong> Your browser uses `localStorage` and `sessionStorage` strictly to remember your language preference (`breakerLang`), your latest tracking ID, or your in-progress single-line diagram draft on your own device, alongside Cloudflare's strictly necessary `__cf_bm` bot-mitigation cookie.",
+                sec5_title: "5. Technical Disclaimer (Not an Official Certification)",
+                sec5_p1: "<strong>PanelSafe is an educational and CAD drafting tool.</strong> Safety scores and single-line diagrams generated by PanelSafe are indicative drafts based on visual analysis of a photograph and <strong>never constitute an official electrical inspection, safety audit, or Electrical Installation Certificate (Boletín / CIE).</strong>",
+                sec5_p2: "A photograph cannot detect loose terminals, concealed wire gauges, insulation degradation, or physical earth-grounding resistance. Any work on an electrical panel or official certification under Spain's REBT (RD 842/2002) must be inspected on-site and signed by a <strong>licensed electrical installer</strong>.",
+                footer_text: "PanelSafe · <a href='/'>panelsafe.cv</a> · <a href='/metodologia/'>Methodology</a> · <a href='/privacidad/'>Privacy & Legal Notice</a>"
+            },
+            fr: {
+                page_title: "Politique de Confidentialité et Mentions Légales | PanelSafe",
+                nav_brand: '⚡ <span class="nav-brand-text">PanelSafe</span>',
+                nav_home: "Accueil",
+                nav_analysis: "Analyseur IA",
+                nav_unifilar: "Schéma unifilaire",
+                nav_blog: "Blog",
+                nav_methodology: "Méthodologie",
+                hero_title: "Politique de Confidentialité, Cookies et Mentions Légales",
+                hero_subtitle: "Informations transparentes conformément au Règlement Général sur la Protection des Données (RGPD Art. 13), à la loi espagnole LOPDGDD (LO 3/2018) et à la LSSI-CE (Loi 34/2002 Art. 10 et 22.2).",
+                sec1_title: "1. Éditeur du Site et Responsable du Traitement",
+                sec1_intro: "Conformément à l'article 10 de la loi espagnole 34/2002 (LSSI-CE) et à l'article 13 du Règlement (UE) 2016/679 (RGPD), l'éditeur et responsable du traitement de <strong>panelsafe.cv</strong> est :",
+                sec1_li1: "<strong>Éditeur et Responsable :</strong> Eric Sean McNeel (développeur de PanelSafe et installateur électricien agréé titulaire du certificat CIBTB-01815).",
+                sec1_li2: "<strong>Adresse de contact :</strong> Carrer Migjorn 12, ático 5, 12598 Peñíscola (Castellón), Espagne.",
+                sec1_li3: "<strong>E-mail de contact et d'exercice des droits RGPD :</strong> <a href='mailto:marjalelectricista@gmail.com'>marjalelectricista@gmail.com</a>",
+                sec1_li4: "<strong>Téléphone :</strong> +34 684 17 31 15",
+                sec1_li5: "<strong>Transparence professionnelle :</strong> PanelSafe est développé par Eric Sean McNeel, qui dirige également l'entreprise d'installation électrique <a href='https://electromarjal.com' target='_blank' rel='noopener noreferrer'>ElectroMarjal</a> (MARJAL INNOVACIONES ELECTRICAS, S.L.). La méthodologie de notation est publique, déterministe et identique sur toutes les pages (<a href='/metodologia/'>voir la Méthodologie</a>).",
+                sec2_title: "2. Données Traitées et Double Consentement Séparé",
+                sec2_intro: "PanelSafe sépare strictement l'analyse ponctuelle de l'image de la conservation facultative pour l'entraînement du modèle d'IA :",
+                sec2_li1: "<strong>A) Analyse ponctuelle de la photo (Obligatoire pour utiliser l'outil · RGPD Art. 6.1.a / 6.1.b) :</strong> Lorsque vous envoyez la photo de votre tableau électrique et indiquez le pays ainsi que le résultat facultatif du bouton de test du différentiel, notre modèle de vision par ordinateur traite l'image uniquement pour calculer le score éducatif de sécurité ou générer le brouillon de schéma unifilaire. <strong>Si vous ne cochez pas la case facultative d'entraînement, la photo est analysée en mémoire et n'est jamais conservée (`photo_stored: false`).</strong>",
+                sec2_li2: "<strong>B) Conservation facultative pour améliorer le modèle (`training_consent` · RGPD Art. 6.1.a) :</strong> Uniquement si vous cochez explicitement la case facultative (dans le formulaire d'évaluation ou via « Envoyer au coffre » dans l'Analyseur IA), nous conservons la photo, les annotations techniques et l'identifiant de suivi (`tracking_id`) afin d'entraîner et d'évaluer les modèles de détection de PanelSafe. Cette case n'est jamais pré-cochée.",
+                sec2_li3: "<strong>C) Aucune conservation des coordonnées sur les pages partenaires :</strong> Sur les pages d'électriciens partenaires (`/c/...`), PanelSafe ne stocke jamais votre nom, numéro de téléphone ou code postal sur ses serveurs ; tout contact s'effectue directement depuis votre application WhatsApp, téléphone ou messagerie.",
+                sec3_title: "3. Hébergement dans l'UE, Durée de Conservation et Droits RGPD",
+                sec3_li1: "<strong>Localisation des données :</strong> Les images et journaux techniques conservés avec le consentement de l'utilisateur sont stockés sur nos propres serveurs situés en Espagne (Union européenne), protégés par contrôle d'accès et chiffrement TLS. En cas d'indisponibilité temporaire du serveur principal, l'inférence visuelle peut être exécutée de manière éphémère sans stockage permanent sur une infrastructure cloud de secours.",
+                sec3_li2: "<strong>Durée de conservation :</strong> Les photos sans consentement d'entraînement sont supprimées immédiatement après l'analyse. Les photos avec consentement explicite sont conservées tant qu'elles sont utiles pour entraîner et évaluer nos modèles, ou jusqu'au retrait de votre consentement.",
+                sec3_li3: "<strong>Suppression immédiate via votre identifiant de suivi (`tracking_id`) :</strong> Vous pouvez retirer votre consentement et demander la suppression immédiate d'une photo conservée à tout moment en écrivant à <a href='mailto:marjalelectricista@gmail.com'>marjalelectricista@gmail.com</a> avec votre <strong>identifiant de suivi</strong> (par ex. `BKR-XXXXX`).",
+                sec3_li4: "<strong>Exercice de vos droits RGPD :</strong> Vous pouvez exercer vos droits d'accès, de rectification, d'effacement, de limitation, d'opposition et de portabilité en écrivant à <a href='mailto:marjalelectricista@gmail.com'>marjalelectricista@gmail.com</a>, ou introduire une réclamation auprès de l'Agence espagnole de protection des données (<a href='https://www.aepd.es' target='_blank' rel='noopener noreferrer'>www.aepd.es</a>).",
+                sec4_title: "4. Politique de Cookies et Ressources Auto-hébergées",
+                sec4_li1: "<strong>Zéro cookie analytique ou publicitaire :</strong> PanelSafe n'utilise ni Google Analytics, ni pixels de suivi, ni cookies publicitaires tiers.",
+                sec4_li2: "<strong>Polices et icônes 100 % auto-hébergées :</strong> Les polices (`Inter`, `Outfit`), les icônes (`Lucide`) et le moteur du viseur (`ONNX Runtime Web`) sont servis directement depuis `panelsafe.cv`, sans connexion vers Google Fonts ou des CDN tiers.",
+                sec4_li3: "<strong>Stockage local technique (exempté selon LSSI Art. 22.2) :</strong> Le navigateur utilise uniquement `localStorage` et `sessionStorage` pour mémoriser la langue choisie (`breakerLang`), le dernier identifiant de suivi ou le brouillon de schéma unifilaire sur votre appareil, ainsi que le cookie technique de sécurité `__cf_bm` de Cloudflare.",
+                sec5_title: "5. Avertissement Technique (Absence de Certification Officielle)",
+                sec5_p1: "<strong>PanelSafe est un outil pédagogique et d'aide au dessin technique.</strong> Le score de sécurité et les schémas unifilaires générés sont des brouillons indicatifs basés sur l'analyse visuelle d'une photo et <strong>ne constituent jamais une inspection officielle, un audit réglementaire ni un Certificat d'Installation Électrique (Boletín / CIE).</strong>",
+                sec5_p2: "Une photographie ne permet pas de vérifier le serrage des bornes, la section réelle des conducteurs cachés, l'état de l'isolement ou la résistance de la prise de terre. Toute intervention ou certification officielle doit être réalisée sur place et signée par un <strong>installateur électricien agréé</strong>.",
+                footer_text: "PanelSafe · <a href='/'>panelsafe.cv</a> · <a href='/metodologia/'>Méthodologie</a> · <a href='/privacidad/'>Confidentialité et Mentions Légales</a>"
+            }
+        };
+
+        let currentLang = 'es';
+
+        function setLanguage(lang) {
+            if (!translations[lang]) lang = 'es';
+            currentLang = lang;
+
+            const navLang = document.getElementById('nav-lang');
+            if (navLang) navLang.value = lang;
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang] && translations[lang][key]) {
+                    if (el.tagName === 'INPUT' || el.tagName === 'OPTION') {
+                        el.textContent = translations[lang][key];
+                    } else {
+                        el.innerHTML = translations[lang][key];
+                    }
+                }
+            });
+
+            document.title = translations[lang].page_title;
+            localStorage.setItem('breakerLang', lang);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedLang = localStorage.getItem('breakerLang') || 'es';
+            setLanguage(savedLang);
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
+</body>
+
+</html>
