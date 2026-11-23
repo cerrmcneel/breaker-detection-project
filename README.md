@@ -158,6 +158,22 @@ Model weights (`models/`) are not in the repository.
 `FAILOVER_TIMEOUT`, `INFERENCE_BUDGET`, `UPLOAD_DIR`, `PREDICTIONS_DB_PATH`.
 `docker-compose.yml` also needs `CLOUDFLARE_TUNNEL_TOKEN` in `.env`.
 
+## Handling a deletion request
+
+Users can request erasure of a stored photo and its metadata using their `tracking_id` (e.g. `BKR-XXXXX`). Always run a **dry run** first inside the gateway container to review every matched path and row count before deleting anything:
+
+```bash
+docker exec -w /code breaker-app python -m src.tools.delete_by_tracking_id --tracking-id BKR-XXXXX
+```
+
+Once the dry-run output looks right, re-run with `--apply`:
+
+```bash
+docker exec -w /code breaker-app python -m src.tools.delete_by_tracking_id --tracking-id BKR-XXXXX --apply
+```
+
+With `--apply`, the tool deletes the kept photo from `data/images/raw_uploads/`, any pixel-matched copies and `.txt` labels from `data/dataset/{train,val}/`, matching vault image/JSON pairs from `data/active_learning/`, and the `predictions` + linked `corrections` rows from `data/predictions.db` (or `--db PATH`). It keeps the consent log entry in `data/images/upload_log.json` with `saved_filename` cleared and a `deleted_on_request` timestamp added, and appends a count-only audit entry (no filenames, hashes, or image data) to `data/deletions_log.json`. An unknown tracking ID exits non-zero without touching disk.
+
 ## About the developer
 
 With a professional background as an **electrician** and **ESL teacher**, I am moving into
