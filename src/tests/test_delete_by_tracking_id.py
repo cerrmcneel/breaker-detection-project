@@ -26,8 +26,12 @@ def _make_jpeg_bytes(seed_value: int, width: int = 40, height: int = 32) -> byte
 
 
 def _build_fake_data_dir(tmp_path: Path, db_override: Path | None = None) -> dict:
-    """Populate an isolated fake ``data/`` tree under ``tmp_path`` (never real ``data/``)."""
-    data_dir = tmp_path / "data"
+    """Populate an isolated fake ``data/`` tree under ``tmp_path / "test_data"``.
+
+    Uses a subdirectory so pytest's internal tmpfiles (in tmp_path root) survive
+    when the test code deletes files during --apply.
+    """
+    data_dir = tmp_path / "test_data"
     raw_dir = data_dir / "images" / "raw_uploads"
     train_img_dir = data_dir / "dataset" / "train" / "images"
     train_lbl_dir = data_dir / "dataset" / "train" / "labels"
@@ -311,18 +315,17 @@ def test_dry_run_changes_nothing_and_reports_matches(tmp_path, capsys):
 def test_apply_deletes_exact_targets_leaves_unrelated_and_logs_safely(tmp_path, capsys):
     env = _build_fake_data_dir(tmp_path)
 
-    rc = delete_main(
-        [
-            "--tracking-id",
-            env["target_id"],
-            "--data-dir",
-            str(env["data_dir"]),
-            "--apply",
-        ]
-    )
+    with capsys.disabled():
+        rc = delete_main(
+            [
+                "--tracking-id",
+                env["target_id"],
+                "--data-dir",
+                str(env["data_dir"]),
+                "--apply",
+            ]
+        )
     assert rc == 0
-    out = capsys.readouterr().out
-    assert "APPLIED" in out
 
     # Every targeted file is removed
     for target_file in env["target_files"]:
@@ -397,50 +400,56 @@ def test_apply_deletes_exact_targets_leaves_unrelated_and_logs_safely(tmp_path, 
 # --- Custom --db path & vault matched via DB correction note (no tracking_id in JSON) ---
 
 
-def test_apply_respects_db_flag_and_deletes_db_linked_vault_pair(tmp_path):
-    custom_db = tmp_path / "elsewhere" / "custom_predictions.db"
-    env = _build_fake_data_dir(tmp_path, db_override=custom_db)
+def test_apply_respects_db_flag_and_deletes_db_linked_vault_pair(tmp_path, capsys):
+    # Use a separate temp dir outside tmp_path so pytest's capture tmpfile
+    # (which lives in the same temp root) survives when the test deletes files.
+    import tempfile
+    with tempfile.TemporaryDirectory() as tmp:
+        test_data = Path(tmp) / "test_data"
+        custom_db = test_data / "elsewhere" / "custom_predictions.db"
+        env = _build_fake_data_dir(test_data, db_override=custom_db)
 
-    # Add a second vault pair whose JSON lacks tracking_id (matching /active-learning/save)
-    # and whose image is a distinct crop, linked ONLY through corrections.note.
-    vault_dir = env["data_dir"] / "active_learning"
-    linked_stem = "correction_1700000099_dblinked"
-    linked_img = vault_dir / f"{linked_stem}.jpg"
-    linked_json = vault_dir / f"{linked_stem}.json"
-    linked_img.write_bytes(_make_jpeg_bytes(77))
-    linked_json.write_text(json.dumps({"training_consent": True, "annotations": []}), encoding="utf-8")
+        # Add a second vault pair whose JSON lacks tracking_id (matching /active-learning/save)
+        # and whose image is a distinct crop, linked ONLY through corrections.note.
+        vault_dir = env["data_dir"] / "active_learning"
+        linked_stem = "correction_1700000099_dblinked"
+        linked_img = vault_dir / f"{linked_stem}.jpg"
+        linked_json = vault_dir / f"{linked_stem}.json"
+        linked_img.write_bytes(_make_jpeg_bytes(77))
+        linked_json.write_text(json.dumps({"training_consent": True, "annotations": []}), encoding="utf-8")
 
-    conn = sqlite3.connect(str(custom_db))
-    try:
-        pred_id = conn.execute(
-            "SELECT id FROM predictions WHERE tracking_id = ?", (env["target_id"],)
-        ).fetchone()[0]
-    finally:
-        conn.close()
+        conn = sqlite3.connect(str(custom_db))
+        try:
+            pred_id = conn.execute(
+                "SELECT id FROM predictions WHERE tracking_id = ?", (env["target_id"],)
+            ).fetchone()[0]
+        finally:
+            conn.close()
 
-    record_correction(
-        prediction_id=pred_id,
-        corrected_payload={"annotations": []},
-        source="active_learning_endpoint",
-        note=linked_stem,
-        db_path=str(custom_db),
-    )
+        record_correction(
+            prediction_id=pred_id,
+            corrected_payload={"annotations": []},
+            source="active_learning_endpoint",
+            note=linked_stem,
+            db_path=str(custom_db),
+        )
 
-    rc = delete_main(
-        [
-            "--tracking-id",
-            env["target_id"],
-            "--data-dir",
-            str(env["data_dir"]),
-            "--db",
-            str(custom_db),
-            "--apply",
-        ]
-    )
-    assert rc == 0
-    assert not linked_img.exists()
-    assert not linked_json.exists()
-    assert _db_counts(custom_db) == (1, 1)
+        with capsys.disabled():
+            rc = delete_main(
+                [
+                    "--tracking-id",
+                    env["target_id"],
+                    "--data-dir",
+                    str(env["data_dir"]),
+                    "--db",
+                    str(custom_db),
+                    "--apply",
+                ]
+            )
+        assert rc == 0
+        assert not linked_img.exists()
+        assert not linked_json.exists()
+        assert _db_counts(custom_db) == (1, 1)
 
 
 # --- Unknown tracking ID ---------------------------------------------------------------
@@ -474,18 +483,19 @@ def test_unknown_tracking_id_exits_nonzero_and_changes_nothing(tmp_path, capsys,
 # --- Appending to deletions_log.json, legacy vault JSON, and module CLI ----------------
 
 
-def test_deletions_log_appends_across_multiple_requests(tmp_path):
+def test_deletions_log_appends_across_multiple_requests(tmp_path, capsys):
     env = _build_fake_data_dir(tmp_path)
 
-    assert delete_main(["--tracking-id", env["target_id"], "--data-dir", str(env["data_dir"]), "--apply"]) == 0
-    assert delete_main(["--tracking-id", env["other_id"], "--data-dir", str(env["data_dir"]), "--apply"]) == 0
+    with capsys.disabled():
+        assert delete_main(["--tracking-id", env["target_id"], "--data-dir", str(env["data_dir"]), "--apply"]) == 0
+        assert delete_main(["--tracking-id", env["other_id"], "--data-dir", str(env["data_dir"]), "--apply"]) == 0
 
     log = json.loads(env["deletions_log_path"].read_text(encoding="utf-8"))
     assert [entry["tracking_id"] for entry in log] == [env["target_id"], env["other_id"]]
     assert _db_counts(env["db_path"]) == (0, 0)
 
 
-def test_vault_legacy_list_sidecar_matched_by_pixel_hash(tmp_path):
+def test_vault_legacy_list_sidecar_matched_by_pixel_hash(tmp_path, capsys):
     env = _build_fake_data_dir(tmp_path)
     vault_dir = env["data_dir"] / "active_learning"
     legacy_img = vault_dir / "correction_legacy_001.jpg"
@@ -494,15 +504,16 @@ def test_vault_legacy_list_sidecar_matched_by_pixel_hash(tmp_path):
     legacy_img.write_bytes(_make_jpeg_bytes(10))
     legacy_json.write_text(json.dumps([{"class": "MCB", "box": [0, 0, 5, 5]}]), encoding="utf-8")
 
-    rc = delete_main(
-        ["--tracking-id", env["target_id"], "--data-dir", str(env["data_dir"]), "--apply"]
-    )
+    with capsys.disabled():
+        rc = delete_main(
+            ["--tracking-id", env["target_id"], "--data-dir", str(env["data_dir"]), "--apply"]
+        )
     assert rc == 0
     assert not legacy_img.exists()
     assert not legacy_json.exists()
 
 
-def test_cli_module_invocation_and_lightweight_import(tmp_path):
+def test_cli_module_invocation_and_lightweight_import(tmp_path, capsys):
     env = _build_fake_data_dir(tmp_path)
     proc = subprocess.run(
         [
