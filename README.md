@@ -158,6 +158,24 @@ Model weights (`models/`) are not in the repository.
 `FAILOVER_TIMEOUT`, `INFERENCE_BUDGET`, `UPLOAD_DIR`, `PREDICTIONS_DB_PATH`.
 `docker-compose.yml` also needs `CLOUDFLARE_TUNNEL_TOKEN` in `.env`.
 
+## Handling a deletion request
+
+Users can request erasure of a stored photo and its metadata using their `tracking_id` (e.g. `BKR-XXXXX`). Always run a **dry run** first inside the gateway container to review every matched path, row count, and any collision or shared-hash warnings before deleting anything:
+
+```bash
+docker exec -w /code breaker-app python -m src.tools.delete_by_tracking_id --tracking-id BKR-XXXXX
+```
+
+Before running `--apply`, **stop the `web` service** so no concurrent upload can race with the `upload_log.json` update, run the deletion in a one-off container, and start `web` again:
+
+```bash
+docker compose stop web
+docker compose run --rm --no-deps web python -m src.tools.delete_by_tracking_id --tracking-id BKR-XXXXX --apply
+docker compose start web
+```
+
+With `--apply`, the tool deletes the kept photo from `data/images/raw_uploads/`, any pixel-matched copies and `.txt` labels from `data/dataset/{train,val}/`, matching vault image/JSON pairs from `data/active_learning/`, and the `predictions` + linked `corrections` rows from `data/predictions.db` (honouring `PREDICTIONS_DB_PATH` / `UPLOAD_DIR` when `--db` / `--data-dir` are not given). If a pixel hash is also claimed by another stored record, affected hash-matched files are flagged in the dry run and skipped unless `--include-shared` is explicitly passed. It keeps the consent log entry in `data/images/upload_log.json` with `saved_filename` cleared and a `deleted_on_request` timestamp added, and appends a count-only audit entry (no filenames, hashes, or image data) to `data/deletions_log.json`. An unknown tracking ID exits non-zero without touching disk; re-running on an already-deleted ID exits cleanly without overwriting the original deletion timestamp.
+
 ## About the developer
 
 With a professional background as an **electrician** and **ESL teacher**, I am moving into
