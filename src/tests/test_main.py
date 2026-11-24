@@ -1357,3 +1357,16 @@ def test_spanish_rules_apply_when_the_user_says_spain_in_any_spelling(country):
 
     assert score == 100 - 10 - 3                          # IGA -10, surge not seen -3
     assert "REBT" in report
+
+
+# --- S1b: era estimator respects user RCD test confirmation -----------------------------
+
+@pytest.mark.parametrize("rcd_result", ["Responsive", "Slow", "Unresponsive"])
+def test_grade_panel_layout_passes_rcd_confirmation_to_era_estimator(rcd_result):
+    from app.main import grade_panel_layout
+
+    preds = [{"class": "MCB"}, {"class": "MCB"}]  # No RCD detected, <=3 MCBs
+    _score, report = grade_panel_layout(preds, rcd_result, country="ES")
+
+    assert "Pre-1973" not in report
+    assert "anterior a 1973" not in report
