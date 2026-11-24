@@ -191,7 +191,10 @@ _REBT_STANDARD_ES = {
 }
 
 
-def estimate_rebt_composition_era(predictions: List[Dict[str, Any]]) -> Tuple[str, str, List[str]]:
+def estimate_rebt_composition_era(
+    predictions: List[Dict[str, Any]],
+    rcd_confirmed_by_test: bool = False,
+) -> Tuple[str, str, List[str]]:
     """
     Infers the installation era baseline from panel component composition
     according to Spanish electrical code (REBT) evolutions.
@@ -207,13 +210,25 @@ def estimate_rebt_composition_era(predictions: List[Dict[str, Any]]) -> Tuple[st
 
     evidence = []
 
-    # 1. Pre-1973: No RCD protection
-    if rcd_count == 0 and mcb_count <= 3:
+    # 1. Pre-1973: No RCD protection (skipped when user confirmed an RCD via test
+    # or when modern components like an IGA or surge protector are detected)
+    if (
+        rcd_count == 0
+        and not rcd_confirmed_by_test
+        and main_breaker_count == 0
+        and oversurge_count == 0
+        and mcb_count <= 3
+    ):
         evidence.append("No differential (RCD) protection detected; minimal circuit separation.")
         return (
             "Pre-1973 (Pre-Normative)",
             "Pre-REBT 1973 (Obsolete)",
             evidence,
+        )
+
+    if rcd_count == 0 and rcd_confirmed_by_test:
+        evidence.append(
+            "Differential (RCD) presence confirmed by user test, though not detected in the photo."
         )
 
     # 2. REBT-1973 (1973–2002): Has RCD, but no dedicated IGA and no oversurge
@@ -270,13 +285,16 @@ def estimate_panel_era(
     predictions: List[Dict[str, Any]],
     ocr_texts: Optional[List[str]] = None,
     current_year: int = 2026,
+    rcd_confirmed_by_test: bool = False,
 ) -> EraEstimate:
     """
     Computes a unified, defensible era estimate for a panel by synthesizing
     catalog OCR evidence with REBT composition rules.
     """
     # 1. Run composition baseline
-    comp_era, rebt_std, comp_evidence = estimate_rebt_composition_era(predictions)
+    comp_era, rebt_std, comp_evidence = estimate_rebt_composition_era(
+        predictions, rcd_confirmed_by_test=rcd_confirmed_by_test
+    )
 
     # 2. Extract catalog signatures from OCR texts
     catalog_matches: List[CatalogMatch] = []

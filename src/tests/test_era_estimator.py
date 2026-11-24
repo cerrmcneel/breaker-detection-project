@@ -317,3 +317,68 @@ def test_medium_confidence_composition_only_carries_no_low_confidence_qualifier(
     assert result.confidence == "medium"
     assert "Confianza baja" not in result.feedback_es
     assert "Low confidence" not in result.feedback_en
+
+
+# --- S1b: RCD confirmed by test & missed-RCD blind spot -------------------------------
+
+def test_rcd_confirmed_by_test_skips_pre_1973():
+    """When user confirms RCD via test, era must not say 'Pre-1973'."""
+    preds = [{"class": "MCB"}, {"class": "MCB"}]  # No RCD detected, <=3 MCBs
+    era, std, evidence = estimate_rebt_composition_era(preds, rcd_confirmed_by_test=True)
+    assert "Pre-1973" not in era
+    assert "1973" in era or "2002" in era
+    assert any("confirmed by user test" in e for e in evidence)
+
+
+def test_rcd_confirmed_with_main_breaker_gives_reasonable_era():
+    """RCD confirmed + main breaker but no oversurge -> 2002-2019."""
+    preds = [
+        {"class": "MAINBREAKER"},
+        {"class": "MCB"},
+        {"class": "MCB"},
+    ]
+    era, std, evidence = estimate_rebt_composition_era(preds, rcd_confirmed_by_test=True)
+    assert "Pre-1973" not in era
+    assert "2002" in era  # IGA present -> REBT-2002
+    assert any("confirmed by user test" in e for e in evidence)
+
+
+def test_rcd_confirmed_in_unified_estimate():
+    """estimate_panel_era passes rcd_confirmed_by_test through."""
+    preds = [{"class": "MCB"}, {"class": "MCB"}]
+    result = estimate_panel_era(preds, ocr_texts=[], rcd_confirmed_by_test=True, current_year=2026)
+    assert "Pre-1973" not in result.era_range
+    assert any("confirmed by user test" in e for e in result.evidence)
+
+
+def test_missed_rcd_with_main_breaker_skips_pre_1973():
+    """A missed RCD detection with a detected IGA must not conclude Pre-1973."""
+    preds = [
+        {"class": "MAINBREAKER"},
+        {"class": "MCB"},
+        {"class": "MCB"},
+    ]
+    era, std, evidence = estimate_rebt_composition_era(preds, rcd_confirmed_by_test=False)
+    assert "Pre-1973" not in era
+    assert "2002" in era
+    result = estimate_panel_era(preds, ocr_texts=[], current_year=2026)
+    assert "Pre-1973" not in result.era_range
+
+
+def test_missed_rcd_with_oversurge_skips_pre_1973():
+    """A missed RCD detection with a detected surge protector must not conclude Pre-1973."""
+    preds = [
+        {"class": "OVERSURGE"},
+        {"class": "MCB"},
+    ]
+    era, std, evidence = estimate_rebt_composition_era(preds, rcd_confirmed_by_test=False)
+    assert "Pre-1973" not in era
+    assert "2020" in era
+
+
+def test_rcd_detected_and_confirmed_does_not_claim_not_detected():
+    """When RCD is both detected in photo and confirmed by test, don't say not detected."""
+    preds = [{"class": "RCD"}, {"class": "MCB"}]
+    era, std, evidence = estimate_rebt_composition_era(preds, rcd_confirmed_by_test=True)
+    assert "Pre-1973" not in era
+    assert not any("not detected in the photo" in e for e in evidence)

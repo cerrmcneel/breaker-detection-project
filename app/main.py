@@ -653,7 +653,9 @@ def grade_panel_layout(predictions, rcd_test_result, country="Unknown"):
         try:
             from src.model.era_estimator import estimate_panel_era
             ocr_texts = [p.get("ocr_text", "") for p in predictions if isinstance(p, dict)]
-            era_estimate = estimate_panel_era(predictions, ocr_texts=ocr_texts)
+            era_estimate = estimate_panel_era(
+                predictions, ocr_texts=ocr_texts, rcd_confirmed_by_test=rcd_confirmed_by_test
+            )
             if era_estimate.feedback_es:
                 feedback_es.append(era_estimate.feedback_es)
             if era_estimate.feedback_en:
