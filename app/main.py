@@ -885,11 +885,14 @@ async def save_active_learning(
 
         # The sidecar carries the record of consent next to the corrections it covers.
         # It used to be the bare annotations list; import_corrections.py reads both.
+        normalized_tracking_id = tracking_id.strip().upper() if tracking_id and tracking_id.strip() else None
         sidecar = {
             "training_consent": True,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "annotations": parsed_annotations,
         }
+        if normalized_tracking_id:
+            sidecar["tracking_id"] = normalized_tracking_id
 
         def _persist_correction():
             os.makedirs(active_learning_dir, exist_ok=True)
@@ -906,9 +909,9 @@ async def save_active_learning(
         # one) -- none of that affects the response. The correction is already
         # safely on disk above regardless of whether this linking step succeeds.
         linked_prediction_id = None
-        if tracking_id:
+        if normalized_tracking_id:
             linked_prediction_id = await run_in_threadpool(
-                find_prediction_id_by_tracking_id, tracking_id
+                find_prediction_id_by_tracking_id, normalized_tracking_id
             )
             if linked_prediction_id is not None:
                 await run_in_threadpool(
@@ -919,7 +922,9 @@ async def save_active_learning(
                     note=base_name,
                 )
             else:
-                logger.info(f"active-learning correction: tracking_id {tracking_id!r} did not resolve to a prediction row.")
+                logger.info(
+                    f"active-learning correction: tracking_id {normalized_tracking_id!r} did not resolve to a prediction row."
+                )
 
         return {"status": "success", "linked_prediction_id": linked_prediction_id}
     except HTTPException:
