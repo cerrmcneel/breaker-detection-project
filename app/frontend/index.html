@@ -443,6 +443,16 @@
             }
         }
 
+        @media (max-width: 639px) {
+            nav.navbar .nav-link {
+                min-height: var(--tap-min);
+                display: flex;
+                align-items: center;
+                padding: 8px 16px;
+                box-sizing: border-box;
+            }
+        }
+
         @media (max-width: 480px) {
             .navbar { padding: 0 0.75rem; }
             /* The page heading right below already says "PanelSafe Portal", so the
@@ -454,6 +464,13 @@
         .nav-link.active {
             color: var(--secondary);
             background-color: var(--primary-light);
+        }
+
+        footer a {
+            display: inline-flex;
+            align-items: center;
+            min-height: var(--tap-min);
+            padding: 0 4px;
         }
 
         .rcd-section {
