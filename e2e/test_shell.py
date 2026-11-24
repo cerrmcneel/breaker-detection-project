@@ -108,7 +108,7 @@ def test_collapsed_menu_opens_and_its_links_are_tappable(page, base_url, width):
 
     page.locator("nav.navbar summary").click()
     shown = visible(links)
-    assert len(shown) == 4, f"expected 4 links in the open menu, saw {len(shown)}"
+    assert len(shown) == 5, f"expected 5 links in the open menu, saw {len(shown)}"
     for link in shown:
         box = link.bounding_box()
         assert box["height"] >= MIN_TAP_TARGET_PX, f"link is {box['height']:.0f}px tall"
@@ -122,7 +122,7 @@ def test_collapsed_menu_opens_and_its_links_are_tappable(page, base_url, width):
 def test_nav_links_are_always_shown_on_wide_screens(page, base_url, width):
     open_landing(page, base_url, width)
 
-    assert len(visible(page.locator("nav.navbar .nav-link"))) == 4
+    assert len(visible(page.locator("nav.navbar .nav-link"))) == 5
     assert not page.locator("nav.navbar summary").is_visible(), "menu button on a wide screen"
 
 
