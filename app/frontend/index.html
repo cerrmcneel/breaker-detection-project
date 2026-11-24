@@ -148,6 +148,8 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
+            min-height: var(--tap-min);
+            min-width: var(--tap-min);
             padding: 12px 24px;
             border-radius: 12px;
             font-size: 16px;
@@ -156,6 +158,7 @@
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             border: none;
             width: 100%;
+            box-sizing: border-box;
         }
 
         .btn-primary {
@@ -278,23 +281,37 @@
         }
 
         .progress-container {
-            margin-bottom: var(--space-4);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-3);
             background: #141219;
-            padding: 1.25rem;
+            padding: var(--space-2);
             border-radius: 12px;
             border: 1px solid rgba(145, 55, 175, 0.2);
+            box-sizing: border-box;
         }
 
         .progress-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 0.75rem;
+            gap: var(--space-1);
+            margin-bottom: 0;
+            flex-grow: 1;
         }
 
         .progress-title {
             font-weight: 700;
-            font-size: 0.875rem;
+            font-size: 0.8rem;
+            text-align: left;
+        }
+
+        .progress-badge-group {
+            display: flex;
+            align-items: center;
+            gap: var(--space-1);
+            flex-shrink: 0;
         }
 
         .progress-badge {
@@ -302,8 +319,9 @@
             color: white;
             padding: 4px 10px;
             border-radius: 20px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 700;
+            white-space: nowrap;
         }
 
         .progress-bar-bg {
@@ -456,6 +474,13 @@
             background-color: var(--primary-light);
         }
 
+        footer a {
+            display: inline-flex;
+            align-items: center;
+            min-height: var(--tap-min);
+            padding: 0 4px;
+        }
+
         .rcd-section {
             background: rgba(20, 18, 25, 0.6);
             border: 1px solid rgba(145, 55, 175, 0.2);
@@ -463,12 +488,14 @@
             padding: var(--space-2);
             margin-bottom: var(--space-3);
             text-align: left;
+            box-sizing: border-box;
         }
 
         .rcd-toggle {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: var(--space-1);
+            min-height: var(--tap-min);
             cursor: pointer;
             font-weight: 600;
             font-size: 0.9375rem;
@@ -477,31 +504,65 @@
         .rcd-toggle input {
             width: 20px;
             height: 20px;
+            flex-shrink: 0;
+            margin: 0;
             accent-color: var(--primary);
         }
 
         .rcd-options {
             display: none;
-            margin-top: 0.75rem;
+            margin-top: var(--space-1);
+        }
+
+        .rcd-option {
+            display: flex;
+            align-items: center;
+            gap: var(--space-1);
+            min-height: var(--tap-min);
+        }
+
+        .rcd-option input[type="radio"] {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            margin: 0;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
+        .rcd-option label {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            min-height: var(--tap-min);
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--text-muted);
         }
 
         .lang-switcher {
             display: flex;
             justify-content: center;
-            gap: 6px;
+            gap: var(--space-1);
             margin-bottom: var(--space-2);
         }
 
         .lang-btn {
-            padding: 6px 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: var(--tap-min);
+            min-height: var(--tap-min);
+            padding: var(--space-1) var(--space-2);
             border-radius: 8px;
             border: 1px solid rgba(145, 55, 175, 0.3);
             background: transparent;
             color: var(--text-muted);
-            font-size: 13px;
+            font-size: 0.875rem;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.2s;
+            box-sizing: border-box;
         }
 
         .lang-btn.active {
@@ -516,6 +577,11 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            min-height: var(--tap-min);
+        }
+
+        .instruction-card h3.tips-accordion {
+            margin: 0;
         }
 
         .tips-accordion .chevron {
@@ -535,17 +601,33 @@
 
         .tips-body.open {
             max-height: 300px;
+            margin-top: var(--space-1);
+        }
+
+        .form-group {
+            margin-bottom: var(--space-3);
+            text-align: left;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: var(--space-1);
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text);
         }
 
         .country-select {
             width: 100%;
+            min-height: var(--tap-min);
             box-sizing: border-box;
-            padding: 12px;
+            padding: var(--space-1) var(--space-4) var(--space-1) var(--space-2);
             border-radius: 12px;
             border: 1px solid #E2E8F0;
             font-size: 16px;
             background-color: #fff;
-            margin-bottom: var(--space-3);
+            color: #0f172a;
+            margin-bottom: 0;
             appearance: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748B'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
             background-repeat: no-repeat;
@@ -554,7 +636,8 @@
         }
 
         #status {
-            margin-top: 1.5rem;
+            margin-top: var(--space-3);
+            margin-bottom: var(--space-3);
             padding: var(--space-2);
             border-radius: 12px;
             display: none;
@@ -1081,7 +1164,7 @@
             flex-direction: column;
             width: 100%;
             height: 100%;
-            padding: var(--space-3);
+            padding: var(--space-3) var(--space-3) 0;
             box-sizing: border-box;
             overflow: hidden;
             background: var(--card-bg);
@@ -1094,6 +1177,18 @@
             flex: 1 1 auto;
             min-height: 0;
             overflow-y: auto;
+            scroll-padding-bottom: calc(var(--tap-min) + var(--space-4));
+            margin-top: 0;
+            padding: 0;
+            width: 100%;
+            max-width: 100%;
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            box-sizing: border-box;
         }
 
         .modal-close-btn {
@@ -1112,6 +1207,169 @@
             color: #ffffff;
         }
 
+        .upload-banner-img {
+            width: 100%;
+            border-radius: 8px;
+            margin-bottom: var(--space-1);
+            object-fit: cover;
+            max-height: 200px;
+            display: block;
+        }
+
+        .photo-credit {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 4px;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: var(--space-2);
+            text-align: right;
+        }
+
+        .photo-credit a {
+            display: inline-flex;
+            align-items: center;
+            min-height: var(--tap-min);
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .modal-audit-title {
+            margin: var(--space-2) 0 var(--space-1);
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: var(--text);
+        }
+
+        .modal-audit-subtitle {
+            margin: 0 0 var(--space-3);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* Photo buttons: stacked full-width on phones, side-by-side row from 640px
+           when they fit without wrapping text. */
+        .upload-options {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-1);
+            margin-bottom: var(--space-2);
+        }
+
+        .upload-options .btn {
+            padding: var(--space-1) var(--space-2);
+        }
+
+        .upload-filename {
+            display: none;
+            margin-bottom: var(--space-2);
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            overflow-wrap: anywhere;
+        }
+
+        .preview-actions {
+            display: none;
+            flex-direction: column;
+            gap: var(--space-1);
+            margin-bottom: var(--space-2);
+            width: 100%;
+        }
+
+        .preview-actions .btn {
+            flex: 1;
+        }
+
+        /* GDPR consent block: 44px minimum clickable targets on labels and links. */
+        .consent-container {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-1);
+            text-align: left;
+            margin: var(--space-3) 0;
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        .consent-row {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--space-1);
+            min-height: var(--tap-min);
+        }
+
+        .consent-row input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin: 2px 0 0;
+            flex-shrink: 0;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        .consent-row label {
+            flex: 1;
+            min-height: var(--tap-min);
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        #privacy-policy-link {
+            display: inline-flex;
+            align-items: center;
+            min-height: var(--tap-min);
+            min-width: var(--tap-min);
+            color: #c084fc;
+            text-decoration: underline;
+            font-weight: 500;
+        }
+
+        .privacy-panel {
+            display: none;
+            margin-top: var(--space-1);
+            padding: var(--space-2);
+            background: rgba(20, 18, 25, 0.9);
+            border: 1px solid rgba(145, 55, 175, 0.25);
+            border-left: 3px solid var(--primary);
+            border-radius: 8px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            overflow-wrap: break-word;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .privacy-panel strong {
+            color: var(--text);
+        }
+
+        .privacy-panel a {
+            display: inline-flex;
+            align-items: center;
+            min-height: var(--tap-min);
+            color: #c084fc;
+            text-decoration: underline;
+        }
+
+        /* Sticky footer submit on phones so Submit stays reachable inside the sheet. */
+        .form-submit-bar {
+            position: sticky;
+            bottom: 0;
+            z-index: 10;
+            width: 100%;
+            box-sizing: border-box;
+            background: var(--card-bg);
+            border-top: 1px solid rgba(145, 55, 175, 0.2);
+            padding: var(--space-2) 0 calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
+            margin-top: var(--space-2);
+        }
+
+        .form-submit-bar #submit-btn {
+            margin-top: 0;
+        }
+
         @media (min-width: 640px) {
             .upload-modal-overlay {
                 padding: var(--page-pad);
@@ -1128,11 +1386,41 @@
                 box-shadow: var(--shadow);
             }
 
+            .upload-modal-content > .container {
+                scroll-padding-bottom: 0;
+            }
+
             .modal-close-btn {
                 position: absolute;
                 top: 16px;
                 right: 16px;
                 z-index: 1; /* the form column below it is its own stacking context */
+            }
+
+            .upload-options {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .upload-options .btn {
+                width: auto;
+                flex: 1 1 auto;
+            }
+
+            .upload-options .btn-primary {
+                flex: 1 1 100%;
+            }
+
+            .preview-actions {
+                flex-direction: row;
+            }
+
+            .form-submit-bar {
+                position: static;
+                background: transparent;
+                border-top: none;
+                padding: 0;
+                margin-top: var(--space-2);
             }
         }
     </style>
@@ -1244,7 +1532,7 @@
     <div id="upload-modal" class="upload-modal-overlay">
         <div class="upload-modal-content">
             <button class="modal-close-btn" onclick="closeUploadModal()">&times;</button>
-            <div class="container" style="margin-top: 0; box-shadow: none; border: none; padding: 0; width: 100%; background: transparent;">
+            <div class="container">
                 <!-- Language Switcher -->
                 <div class="lang-switcher">
                     <button class="lang-btn active" id="btn-en" onclick="setLanguage('en')">EN</button>
@@ -1254,15 +1542,14 @@
 
                 <!-- Upload Portal View -->
                 <div id="upload-portal-view">
-                    <img src="/assets/mostafa-mahmoudi-47jO5Y8nsYo-unsplash.jpg" alt="Circuit Breakers Panel"
-                        style="width: 100%; border-radius: 8px; margin-bottom: 0.5rem; object-fit: cover; max-height: 200px;">
-                    <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 1.5rem; text-align: right;">
+                    <img src="/assets/mostafa-mahmoudi-47jO5Y8nsYo-unsplash.jpg" alt="Circuit Breakers Panel" class="upload-banner-img">
+                    <div class="photo-credit">
                         <span data-i18n="photo_by">Photo by</span> <a href="https://unsplash.com/@mostafa_mahmoudi24"
-                            target="_blank" style="color: var(--primary); text-decoration: none;">Mostafa Mahmoudi</a> <span
+                            target="_blank">Mostafa Mahmoudi</a> <span
                             data-i18n="on_unsplash">on Unsplash</span>
                     </div>
-                    <h2 data-i18n="modal_audit_title" style="margin-top: 15px; margin-bottom: 5px; font-weight: 800; font-size: 1.5rem; color: var(--text);">Panel Safety Audit</h2>
-                    <p data-i18n="phase" style="margin-top: 0; margin-bottom: 1.5rem; color: var(--text-muted); font-size: 0.9rem;">Safety Assessment Portal</p>
+                    <h2 data-i18n="modal_audit_title" class="modal-audit-title">Panel Safety Audit</h2>
+                    <p data-i18n="phase" class="modal-audit-subtitle">Safety Assessment Portal</p>
 
 
                     <div class="instruction-card">
@@ -1282,11 +1569,11 @@
                     </div>
 
                     <!-- Progress Tracker -->
-                    <div class="progress-container" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem;">
-                        <div class="progress-header" style="margin-bottom: 0; flex-grow: 1;">
-                            <span class="progress-title" data-i18n="goal" style="font-size: 0.8rem;">Dataset Photos</span>
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <span class="progress-badge" id="upload-count" style="font-size: 11px;">0/1000</span>
+                    <div class="progress-container">
+                        <div class="progress-header">
+                            <span class="progress-title" data-i18n="goal">Dataset Photos</span>
+                            <div class="progress-badge-group">
+                                <span class="progress-badge" id="upload-count">0/1000</span>
                             </div>
                         </div>
                     </div>
@@ -1294,7 +1581,7 @@
                     <!-- Form -->
                     <form id="uploadForm">
                         <div class="form-group">
-                            <label class="form-label" data-i18n="select_country">Select Country:</label>
+                            <label class="form-label" for="countrySelect" data-i18n="select_country">Select Country:</label>
                             <input list="countries" name="country" id="countrySelect" class="country-select" placeholder="Type country name..." required>
                             <datalist id="countries">
                                 <option value="Afghanistan">
@@ -1527,7 +1814,7 @@
                             <div class="preview-guide"></div>
                         </div>
 
-                        <div id="upload-options" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 1rem;">
+                        <div id="upload-options" class="upload-options">
                             <button type="button" class="btn btn-primary" id="viewfinder-btn">
                                 🎯 <span data-i18n="use_viewfinder">Use Camera Viewfinder</span>
                             </button>
@@ -1541,37 +1828,39 @@
 
                         <input type="file" id="fileInput" class="hidden-input" accept="image/*">
                         <input type="file" id="cameraInput" class="hidden-input" accept="image/*" capture="environment">
-                        <span id="fileName" class="text-muted" style="display: none; margin-bottom: 1rem; font-size: 14px;">No file chosen</span>
+                        <span id="fileName" class="text-muted upload-filename">No file chosen</span>
 
-                        <div id="preview-actions" style="display: none; gap: 10px; margin-bottom: 1rem; width: 100%;">
-                            <button type="button" class="btn btn-outline" id="retake-btn" style="flex: 1;" data-i18n="btn_retake">🔄 Retake</button>
-                            <button type="button" class="btn btn-primary" id="confirm-btn" style="flex: 1;" data-i18n="btn_use_photo">✅ Use This Photo</button>
+                        <div id="preview-actions" class="preview-actions">
+                            <button type="button" class="btn btn-outline" id="retake-btn" data-i18n="btn_retake">🔄 Retake</button>
+                            <button type="button" class="btn btn-primary" id="confirm-btn" data-i18n="btn_use_photo">✅ Use This Photo</button>
                         </div>
 
-                        <div class="consent-container" style="text-align: left; margin: 1.5rem 0; font-size: 14px; line-height: 1.5;">
-                            <div style="display: flex; align-items: flex-start; gap: 8px;">
-                                <input type="checkbox" id="consent-checkbox" style="margin-top: 3px; cursor: pointer;">
-                                <label for="consent-checkbox" style="cursor: pointer; color: var(--text-muted);" data-i18n="consent_checkbox_label">
-                                    I agree to my panel photo and country being analysed to calculate my safety score, under the <a href="#" id="privacy-policy-link" style="color: var(--primary); text-decoration: underline; font-weight: 500;">Privacy Policy</a>. (Required)
+                        <div class="consent-container">
+                            <div class="consent-row">
+                                <input type="checkbox" id="consent-checkbox">
+                                <label for="consent-checkbox" data-i18n="consent_checkbox_label">
+                                    I agree to my panel photo and country being analysed to calculate my safety score, under the <a href="#" id="privacy-policy-link">Privacy Policy</a>. (Required)
                                 </label>
                             </div>
                             <!-- Separate, optional consent for training use (GDPR). Never pre-ticked,
                                  and not restored after the viewfinder round trip. -->
-                            <div style="display: flex; align-items: flex-start; gap: 8px; margin-top: 10px;">
-                                <input type="checkbox" id="training-consent-checkbox" style="margin-top: 3px; cursor: pointer;">
-                                <label for="training-consent-checkbox" style="cursor: pointer; color: var(--text-muted);" data-i18n="training_consent_label">
+                            <div class="consent-row">
+                                <input type="checkbox" id="training-consent-checkbox">
+                                <label for="training-consent-checkbox" data-i18n="training_consent_label">
                                     Optional: also keep my photo so PanelSafe can improve its detection model. If you leave this unticked, the photo is analysed and not kept.
                                 </label>
                             </div>
                             
-                            <div id="privacy-policy-panel" style="display: none; margin-top: 10px; padding: 12px; background: #F1F5F9; border-radius: 8px; border-left: 3px solid var(--primary); font-size: 12px; color: var(--text-muted); line-height: 1.4; animation: slideIn 0.3s ease-out;">
+                            <div id="privacy-policy-panel" class="privacy-panel">
                                 <div data-i18n="privacy_policy_content">
-                                    <strong>Privacy & Consent Notice (GDPR/ePrivacy):</strong><br>- <strong>Analysis:</strong> we analyse your panel photo and country to calculate your safety score.<br>- <strong>Training (optional, separate consent):</strong> we keep the photo to retrain our detection model <em>only</em> if you tick the optional box. Otherwise it is analysed and not kept.<br>- <strong>Cookies & Tracking:</strong> we do not set cookies or use tracking cookies.<br>- <strong>Hosting & Storage:</strong> kept images and the associated logs are stored securely in Spain/EU.<br>- <strong>How long:</strong> a kept photo stays for as long as it is useful to train and evaluate our models, until you withdraw your consent.<br>- <strong>Your Rights:</strong> to withdraw consent and have a kept photo deleted, email marjalelectricista@gmail.com with your Tracking ID.<br>- <strong>Data controller:</strong> Eric Sean McNeel (PanelSafe), marjalelectricista@gmail.com. <a href='/privacidad/' target='_blank' style='color: var(--primary); text-decoration: underline;'>Full Privacy Policy & Legal Notice</a>.
+                                    <strong>Privacy & Consent Notice (GDPR/ePrivacy):</strong><br>- <strong>Analysis:</strong> we analyse your panel photo and country to calculate your safety score.<br>- <strong>Training (optional, separate consent):</strong> we keep the photo to retrain our detection model <em>only</em> if you tick the optional box. Otherwise it is analysed and not kept.<br>- <strong>Cookies & Tracking:</strong> we do not set cookies or use tracking cookies.<br>- <strong>Hosting & Storage:</strong> kept images and the associated logs are stored securely in Spain/EU.<br>- <strong>How long:</strong> a kept photo stays for as long as it is useful to train and evaluate our models, until you withdraw your consent.<br>- <strong>Your Rights:</strong> to withdraw consent and have a kept photo deleted, email marjalelectricista@gmail.com with your Tracking ID.<br>- <strong>Data controller:</strong> Eric Sean McNeel (PanelSafe), marjalelectricista@gmail.com. <a href='/privacidad/' target='_blank'>Full Privacy Policy & Legal Notice</a>.
                                 </div>
                             </div>
                         </div>
 
-                        <button type="submit" class="btn btn-primary" id="submit-btn" data-i18n="upload_btn" disabled>Upload</button>
+                        <div class="form-submit-bar">
+                            <button type="submit" class="btn btn-primary" id="submit-btn" data-i18n="upload_btn" disabled>Upload</button>
+                        </div>
                     </form>
 
                     <div id="status"></div>
@@ -1725,11 +2014,11 @@
                 score_result_text: "Your Manual Safety Score:",
                 score_feedback: "Expert Feedback:",
                 score_not_found: "Tracking ID not found. Please verify the code and try again.",
-                consent_checkbox_label: "I agree to my panel photo and country being analysed to calculate my safety score, under the <a href='#' id='privacy-policy-link' style='color: var(--primary); text-decoration: underline; font-weight: 500;'>Privacy Policy</a>. (Required)",
+                consent_checkbox_label: "I agree to my panel photo and country being analysed to calculate my safety score, under the <a href='#' id='privacy-policy-link'>Privacy Policy</a>. (Required)",
                 training_consent_label: "Optional: also keep my photo so PanelSafe can improve its detection model. If you leave this unticked, the photo is analysed and not kept.",
                 photo_not_stored_note: "Your photo was analysed and not kept.",
                 photo_stored_note: "Your photo was kept to improve the model. To have it deleted, email marjalelectricista@gmail.com with your tracking ID.",
-                privacy_policy_content: "<strong>Privacy & Consent Notice (GDPR/ePrivacy):</strong><br>- <strong>Analysis:</strong> we analyse your panel photo and country to calculate your safety score.<br>- <strong>Training (optional, separate consent):</strong> we keep the photo to retrain our detection model <em>only</em> if you tick the optional box. Otherwise it is analysed and not kept.<br>- <strong>Cookies & Tracking:</strong> we do not set cookies or use tracking cookies.<br>- <strong>Hosting & Storage:</strong> kept images and the associated logs are stored securely in Spain/EU.<br>- <strong>How long:</strong> a kept photo stays for as long as it is useful to train and evaluate our models, until you withdraw your consent.<br>- <strong>Your Rights:</strong> to withdraw consent and have a kept photo deleted, email marjalelectricista@gmail.com with your Tracking ID.<br>- <strong>Data controller:</strong> Eric Sean McNeel (PanelSafe), marjalelectricista@gmail.com. <a href='/privacidad/' target='_blank' style='color: var(--primary); text-decoration: underline;'>Full Privacy Policy & Legal Notice</a>."
+                privacy_policy_content: "<strong>Privacy & Consent Notice (GDPR/ePrivacy):</strong><br>- <strong>Analysis:</strong> we analyse your panel photo and country to calculate your safety score.<br>- <strong>Training (optional, separate consent):</strong> we keep the photo to retrain our detection model <em>only</em> if you tick the optional box. Otherwise it is analysed and not kept.<br>- <strong>Cookies & Tracking:</strong> we do not set cookies or use tracking cookies.<br>- <strong>Hosting & Storage:</strong> kept images and the associated logs are stored securely in Spain/EU.<br>- <strong>How long:</strong> a kept photo stays for as long as it is useful to train and evaluate our models, until you withdraw your consent.<br>- <strong>Your Rights:</strong> to withdraw consent and have a kept photo deleted, email marjalelectricista@gmail.com with your Tracking ID.<br>- <strong>Data controller:</strong> Eric Sean McNeel (PanelSafe), marjalelectricista@gmail.com. <a href='/privacidad/' target='_blank'>Full Privacy Policy & Legal Notice</a>."
             },
             es: {
                 photo_by: "Foto de",
@@ -1822,11 +2111,11 @@
                 score_result_text: "Su Puntuación de Seguridad Manual:",
                 score_feedback: "Comentarios del Experto:",
                 score_not_found: "ID de seguimiento no encontrado. Verifique el código e intente de nuevo.",
-                consent_checkbox_label: "Acepto que se analicen la foto de mi cuadro y mi país para calcular mi puntuación de seguridad, según la <a href='#' id='privacy-policy-link' style='color: var(--primary); text-decoration: underline; font-weight: 500;'>Política de Privacidad</a>. (Obligatorio)",
+                consent_checkbox_label: "Acepto que se analicen la foto de mi cuadro y mi país para calcular mi puntuación de seguridad, según la <a href='#' id='privacy-policy-link'>Política de Privacidad</a>. (Obligatorio)",
                 training_consent_label: "Opcional: conservar también mi foto para que PanelSafe mejore su modelo de detección. Si no lo marcas, la foto se analiza y no se guarda.",
                 photo_not_stored_note: "Tu foto se ha analizado y no se ha guardado.",
                 photo_stored_note: "Tu foto se ha guardado para mejorar el modelo. Para que la borremos, escribe a marjalelectricista@gmail.com con tu ID de seguimiento.",
-                privacy_policy_content: "<strong>Aviso de Privacidad y Consentimiento (RGPD/ePrivacy):</strong><br>- <strong>Análisis:</strong> analizamos la foto de tu cuadro y tu país para calcular tu puntuación de seguridad.<br>- <strong>Entrenamiento (opcional, consentimiento aparte):</strong> guardamos la foto para reentrenar nuestro modelo de detección <em>solo</em> si marcas la casilla opcional. Si no, se analiza y no se guarda.<br>- <strong>Cookies:</strong> no utilizamos cookies de seguimiento ni cookies de usuario.<br>- <strong>Almacenamiento:</strong> las imágenes guardadas y los registros asociados se almacenan de forma segura en España/UE.<br>- <strong>Cuánto tiempo:</strong> una foto guardada se conserva mientras sea útil para entrenar y evaluar nuestros modelos, hasta que retires tu consentimiento.<br>- <strong>Tus derechos:</strong> para retirar tu consentimiento y que borremos una foto guardada, escribe a marjalelectricista@gmail.com con tu ID de seguimiento.<br>- <strong>Responsable del tratamiento:</strong> Eric Sean McNeel (PanelSafe), marjalelectricista@gmail.com. <a href='/privacidad/' target='_blank' style='color: var(--primary); text-decoration: underline;'>Política de Privacidad y Aviso Legal completos</a>."
+                privacy_policy_content: "<strong>Aviso de Privacidad y Consentimiento (RGPD/ePrivacy):</strong><br>- <strong>Análisis:</strong> analizamos la foto de tu cuadro y tu país para calcular tu puntuación de seguridad.<br>- <strong>Entrenamiento (opcional, consentimiento aparte):</strong> guardamos la foto para reentrenar nuestro modelo de detección <em>solo</em> si marcas la casilla opcional. Si no, se analiza y no se guarda.<br>- <strong>Cookies:</strong> no utilizamos cookies de seguimiento ni cookies de usuario.<br>- <strong>Almacenamiento:</strong> las imágenes guardadas y los registros asociados se almacenan de forma segura en España/UE.<br>- <strong>Cuánto tiempo:</strong> una foto guardada se conserva mientras sea útil para entrenar y evaluar nuestros modelos, hasta que retires tu consentimiento.<br>- <strong>Tus derechos:</strong> para retirar tu consentimiento y que borremos una foto guardada, escribe a marjalelectricista@gmail.com con tu ID de seguimiento.<br>- <strong>Responsable del tratamiento:</strong> Eric Sean McNeel (PanelSafe), marjalelectricista@gmail.com. <a href='/privacidad/' target='_blank'>Política de Privacidad y Aviso Legal completos</a>."
             },
             fr: {
                 photo_by: "Photo de",
@@ -1920,11 +2209,11 @@
                 score_result_text: "Votre score de sécurité manuel :",
                 score_feedback: "Commentaires de l'expert :",
                 score_not_found: "Identifiant de suivi introuvable. Vérifiez le code et réessayez.",
-                consent_checkbox_label: "J'accepte que la photo de mon tableau et mon pays soient analysés pour calculer mon score de sécurité, conformément à la <a href='#' id='privacy-policy-link' style='color: var(--primary); text-decoration: underline; font-weight: 500;'>Politique de confidentialité</a>. (Obligatoire)",
+                consent_checkbox_label: "J'accepte que la photo de mon tableau et mon pays soient analysés pour calculer mon score de sécurité, conformément à la <a href='#' id='privacy-policy-link'>Politique de confidentialité</a>. (Obligatoire)",
                 training_consent_label: "Facultatif : conserver aussi ma photo pour que PanelSafe améliore son modèle de détection. Si vous ne cochez pas cette case, la photo est analysée et n'est pas conservée.",
                 photo_not_stored_note: "Votre photo a été analysée et n'a pas été conservée.",
                 photo_stored_note: "Votre photo a été conservée pour améliorer le modèle. Pour la faire supprimer, écrivez à marjalelectricista@gmail.com avec votre identifiant de suivi.",
-                privacy_policy_content: "<strong>Avis de confidentialité et de consentement (RGPD/ePrivacy) :</strong><br>- <strong>Analyse :</strong> nous analysons la photo de votre tableau et votre pays pour calculer votre score de sécurité.<br>- <strong>Entraînement (facultatif, consentement séparé) :</strong> nous conservons la photo pour réentraîner notre modèle de détection <em>uniquement</em> si vous cochez la case facultative. Sinon, elle est analysée et n'est pas conservée.<br>- <strong>Cookies :</strong> nous n'utilisons aucun cookie de suivi.<br>- <strong>Stockage :</strong> les images conservées et les journaux associés sont stockés en toute sécurité en Espagne/UE.<br>- <strong>Durée :</strong> une photo conservée l'est tant qu'elle est utile pour entraîner et évaluer nos modèles, jusqu'au retrait de votre consentement.<br>- <strong>Vos droits :</strong> pour retirer votre consentement et faire supprimer une photo conservée, écrivez à marjalelectricista@gmail.com avec votre identifiant de suivi.<br>- <strong>Responsable du traitement :</strong> Eric Sean McNeel (PanelSafe), marjalelectricista@gmail.com. <a href='/privacidad/' target='_blank' style='color: var(--primary); text-decoration: underline;'>Politique de confidentialité complète</a>."
+                privacy_policy_content: "<strong>Avis de confidentialité et de consentement (RGPD/ePrivacy) :</strong><br>- <strong>Analyse :</strong> nous analysons la photo de votre tableau et votre pays pour calculer votre score de sécurité.<br>- <strong>Entraînement (facultatif, consentement séparé) :</strong> nous conservons la photo pour réentraîner notre modèle de détection <em>uniquement</em> si vous cochez la case facultative. Sinon, elle est analysée et n'est pas conservée.<br>- <strong>Cookies :</strong> nous n'utilisons aucun cookie de suivi.<br>- <strong>Stockage :</strong> les images conservées et les journaux associés sont stockés en toute sécurité en Espagne/UE.<br>- <strong>Durée :</strong> une photo conservée l'est tant qu'elle est utile pour entraîner et évaluer nos modèles, jusqu'au retrait de votre consentement.<br>- <strong>Vos droits :</strong> pour retirer votre consentement et faire supprimer une photo conservée, écrivez à marjalelectricista@gmail.com avec votre identifiant de suivi.<br>- <strong>Responsable du traitement :</strong> Eric Sean McNeel (PanelSafe), marjalelectricista@gmail.com. <a href='/privacidad/' target='_blank'>Politique de confidentialité complète</a>."
             }
         };
 

@@ -108,7 +108,7 @@ def test_collapsed_menu_opens_and_its_links_are_tappable(page, base_url, width):
 
     page.locator("nav.navbar summary").click()
     shown = visible(links)
-    assert len(shown) == 4, f"expected 4 links in the open menu, saw {len(shown)}"
+    assert len(shown) == 5, f"expected 5 links in the open menu, saw {len(shown)}"
     for link in shown:
         box = link.bounding_box()
         assert box["height"] >= MIN_TAP_TARGET_PX, f"link is {box['height']:.0f}px tall"
@@ -122,7 +122,7 @@ def test_collapsed_menu_opens_and_its_links_are_tappable(page, base_url, width):
 def test_nav_links_are_always_shown_on_wide_screens(page, base_url, width):
     open_landing(page, base_url, width)
 
-    assert len(visible(page.locator("nav.navbar .nav-link"))) == 4
+    assert len(visible(page.locator("nav.navbar .nav-link"))) == 5
     assert not page.locator("nav.navbar summary").is_visible(), "menu button on a wide screen"
 
 
@@ -228,3 +228,180 @@ def test_dialog_is_a_centered_card_from_tablet_up(page, base_url, width):
 
     assert box["width"] < width, "dialog still fills the whole viewport"
     assert left_gap == pytest.approx(right_gap, abs=1), f"off-centre: {left_gap:.0f}px vs {right_gap:.0f}px"
+
+
+# --- Responsive upload form checks (roadmap slice S3 / T21) ------------------
+
+
+@pytest.mark.parametrize("width", [320, 390, 1440])
+def test_form_interactive_controls_are_at_least_44x44(page, base_url, width):
+    """Every interactive control in the upload form (using label area for
+    checkboxes and radios) must be at least 44x44 px at 320, 390 and 1440."""
+    open_landing(page, base_url, width, height=844)
+    page.evaluate("openUploadModal()")
+    # Expand optional RCD options and the privacy panel so all controls are visible.
+    page.evaluate(
+        "() => { const t = document.getElementById('rcd-tested-checkbox');"
+        " t.checked = true; t.dispatchEvent(new Event('change', {bubbles: true})); }"
+    )
+    page.locator("#privacy-policy-link").click()
+    assert page.locator("#privacy-policy-panel").is_visible()
+
+    too_small = page.evaluate(
+        """(minPx) => {
+          const form = document.getElementById('uploadForm');
+          const controls = form.querySelectorAll('a, button, select, input:not([type=hidden])');
+          const bad = [];
+          controls.forEach(el => {
+            let target = el;
+            if (el.tagName === 'INPUT' && (el.type === 'checkbox' || el.type === 'radio')) {
+              const label = el.closest('label') || (el.id && form.querySelector(`label[for="${el.id}"]`));
+              if (label) target = label;
+            }
+            const rect = target.getBoundingClientRect();
+            if (rect.width === 0 && rect.height === 0) return;
+            if (rect.width < minPx - 0.5 || rect.height < minPx - 0.5) {
+              const name = (el.id || el.textContent || el.tagName).trim().slice(0, 30);
+              bad.push(`${name}: ${Math.round(rect.width)}x${Math.round(rect.height)}px`);
+            }
+          });
+          return bad;
+        }""",
+        MIN_TAP_TARGET_PX,
+    )
+
+    assert not too_small, f"form controls under {MIN_TAP_TARGET_PX}x{MIN_TAP_TARGET_PX}px at {width}px: {too_small}"
+
+
+@pytest.mark.parametrize("lang", ["es", "fr"])
+def test_open_dialog_has_no_horizontal_scroll_at_320(page, base_url, lang):
+    """No horizontal scroll inside the open upload dialog at 320 px in ES and FR."""
+    open_landing(page, base_url, 320, height=844, lang=lang)
+    page.evaluate("openUploadModal()")
+    page.evaluate(
+        "() => { const t = document.getElementById('rcd-tested-checkbox');"
+        " t.checked = true; t.dispatchEvent(new Event('change', {bubbles: true})); }"
+    )
+    page.locator("#privacy-policy-link").click()
+    assert page.locator("#privacy-policy-panel").is_visible()
+
+    overflows = page.evaluate(
+        """() => {
+          const col = document.querySelector('.upload-modal-content > .container');
+          const modal = document.querySelector('.upload-modal-content');
+          return {
+            page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+            modal: modal.scrollWidth - modal.clientWidth,
+            col: col.scrollWidth - col.clientWidth,
+          };
+        }"""
+    )
+
+    assert overflows["page"] <= 0, f"[{lang}] page overflows by {overflows['page']}px at 320px"
+    assert overflows["modal"] <= 0, f"[{lang}] modal overflows by {overflows['modal']}px at 320px"
+    assert overflows["col"] <= 0, f"[{lang}] form column overflows by {overflows['col']}px at 320px"
+
+
+def test_upload_requires_mandatory_consent_not_training_only(page, base_url):
+    """Upload stays disabled until the required consent is ticked; training alone does not enable it."""
+    open_landing(page, base_url, 390, height=844)
+    page.evaluate("openUploadModal()")
+
+    consent = page.locator("#consent-checkbox")
+    training = page.locator("#training-consent-checkbox")
+    submit = page.locator("#submit-btn")
+
+    assert not consent.is_checked(), "required consent must start unticked"
+    assert not training.is_checked(), "optional training consent must never be pre-ticked"
+    assert submit.is_disabled(), "submit must start disabled"
+
+    # Tick optional training consent alone via its clickable label.
+    page.locator('label[for="training-consent-checkbox"]').click()
+    assert training.is_checked()
+    assert not consent.is_checked()
+    assert submit.is_disabled(), "training consent alone must not enable Upload"
+
+    # Tick required consent: now Upload becomes enabled.
+    consent.check()
+    assert submit.is_enabled(), "required consent should enable Upload"
+
+    # Untick required consent while training stays ticked: Upload returns to disabled.
+    consent.uncheck()
+    assert training.is_checked()
+    assert submit.is_disabled(), "unchecking required consent must disable Upload again"
+
+
+def test_privacy_panel_opens_and_closes_at_320(page, base_url):
+    """The privacy panel can be opened and closed at 320 px without overflowing or toggling consent."""
+    open_landing(page, base_url, 320, height=844)
+    page.evaluate("openUploadModal()")
+
+    panel = page.locator("#privacy-policy-panel")
+    link = page.locator("#privacy-policy-link")
+    consent = page.locator("#consent-checkbox")
+
+    assert not panel.is_visible()
+
+    link.click(timeout=3000)
+    assert panel.is_visible(), "privacy panel should open on link click at 320px"
+    assert not consent.is_checked(), "opening privacy panel must not toggle the consent checkbox"
+    box = panel.bounding_box()
+    assert box["x"] >= 0 and box["x"] + box["width"] <= 320.5, f"privacy panel leaves 320px viewport: {box}"
+
+    link.click(timeout=3000)
+    assert not panel.is_visible(), "privacy panel should close on second link click at 320px"
+
+
+def test_photo_buttons_stack_on_phones_and_row_from_640(page, base_url):
+    """Photo buttons stack full-width on phones and sit in a row from 640 px."""
+    # Phones: all three stacked full-width
+    for width in [320, 390]:
+        open_landing(page, base_url, width, height=844)
+        page.evaluate("openUploadModal()")
+        col_box = page.locator(".upload-modal-content > .container").bounding_box()
+        vf = page.locator("#viewfinder-btn").bounding_box()
+        cam = page.locator("#start-camera-btn").bounding_box()
+        browse = page.locator("#browse-file-btn").bounding_box()
+
+        assert vf["y"] + vf["height"] <= cam["y"] + 0.5, f"buttons not stacked at {width}px"
+        assert cam["y"] + cam["height"] <= browse["y"] + 0.5, f"buttons not stacked at {width}px"
+        for btn_box in (vf, cam, browse):
+            assert btn_box["width"] == pytest.approx(col_box["width"], abs=2), (
+                f"photo button not full-width at {width}px"
+            )
+
+    # 640px and desktop: secondary photo buttons sit side-by-side in a row
+    for width in [640, 1440]:
+        open_landing(page, base_url, width, height=900)
+        page.evaluate("openUploadModal()")
+        cam = page.locator("#start-camera-btn").bounding_box()
+        browse = page.locator("#browse-file-btn").bounding_box()
+
+        assert cam["y"] == pytest.approx(browse["y"], abs=2), f"secondary photo buttons not in a row at {width}px"
+        assert cam["x"] + cam["width"] <= browse["x"] + 0.5, f"photo buttons overlap at {width}px"
+
+
+@pytest.mark.parametrize("width", [320, 390])
+def test_submit_button_stays_reachable_on_phones(page, base_url, width):
+    """On phones, sticky footer keeps Submit reachable inside the viewport without scrolling."""
+    open_landing(page, base_url, width, height=844)
+    page.evaluate("openUploadModal()")
+
+    box = page.locator("#submit-btn").bounding_box()
+    assert box is not None
+    assert box["y"] >= 0 and box["y"] + box["height"] <= 844.5, (
+        f"submit button is outside the {width}x844 phone viewport: {box}"
+    )
+
+
+def test_upload_form_has_no_static_inline_styles(page, base_url):
+    """Inline styles inside the upload form were moved into CSS classes."""
+    open_landing(page, base_url, 390, height=844)
+    page.evaluate("openUploadModal()")
+
+    styled = page.evaluate(
+        """() => Array.from(document.querySelectorAll('#uploadForm [style]'))
+          .map(el => `${el.tagName.toLowerCase()}#${el.id}`)"""
+    )
+
+    assert not styled, f"unexpected inline style attributes in #uploadForm: {styled}"
